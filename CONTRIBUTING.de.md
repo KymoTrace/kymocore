@@ -31,5 +31,5 @@ blockiert Pull Requests ohne diese Bestätigung.
 - Neue Quelldateien beginnen mit der SPDX-Zeile
   `SPDX-License-Identifier: MIT`.
 - Die vollständigen Tests laufen in der Firmware
-  [kymoprobe](https://github.com/CodeName-666/kymoprobe), siehe
+  [kymoprobe](https://github.com/KymoTrace/kymoprobe), siehe
   [README.md](README.de.md).
