@@ -4,9 +4,9 @@
 version: "7.2.0"
 description: "Portable heap-free C++11 telemetry and opt-in execution tracing for KymoStudio: compact binary frames over UART, USB, TCP, UDP or MQTT through application callbacks."
 url: "https://kymotrace.de/kymocore.html"
-repository: "https://github.com/CodeName-666/kymocore.git"
-documentation: "https://github.com/CodeName-666/kymocore/blob/main/docs/GUIDE.md"
-issues: "https://github.com/CodeName-666/kymocore/issues"
+repository: "https://github.com/KymoTrace/kymocore.git"
+documentation: "https://github.com/KymoTrace/kymocore/blob/main/docs/GUIDE.md"
+issues: "https://github.com/KymoTrace/kymocore/issues"
 license: "MIT"
 maintainers:
   - "Christof Seidel <kontakt@kymotrace.de>"

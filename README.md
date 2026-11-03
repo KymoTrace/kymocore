@@ -190,7 +190,7 @@ is in [examples/basic](examples/basic/README.md).
 ## Supported platforms
 
 KymoCore is platform-independent. The larger hardware examples in
-[KymoProbe](https://github.com/CodeName-666/kymoprobe) cover these targets:
+[KymoProbe](https://github.com/KymoTrace/kymoprobe) cover these targets:
 
 | Family | Boards | Transport in the example |
 |---|---|---|
@@ -209,8 +209,8 @@ The complete specification with example frames is in [PROTOCOL.md](PROTOCOL.md).
 
 | Project | Role |
 |---|---|
-| **[KymoCore](https://github.com/CodeName-666/kymocore)** | this library: capture and send measurements |
-| [KymoProbe](https://github.com/CodeName-666/kymoprobe) | firmware and hardware examples for ESP32, Arduino and STM32 |
+| **[KymoCore](https://github.com/KymoTrace/kymocore)** | this library: capture and send measurements |
+| [KymoProbe](https://github.com/KymoTrace/kymoprobe) | firmware and hardware examples for ESP32, Arduino and STM32 |
 | [KymoStudio](https://kymotrace.de/#download) | desktop app: receive, display, analyse, export |
 
 ## Documentation

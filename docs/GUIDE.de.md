@@ -79,7 +79,7 @@ legt die Version fest:
 
 ```ini
 lib_deps =
-    https://github.com/CodeName-666/kymocore.git#v7.2.0
+    https://github.com/KymoTrace/kymocore.git#v7.2.0
 ```
 
 Alternativ aus diesem Repository ein Paket bauen:

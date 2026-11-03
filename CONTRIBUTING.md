@@ -32,5 +32,5 @@ If the English and German versions differ, the German version prevails.
 - New source files start with the SPDX line
   `SPDX-License-Identifier: MIT`.
 - The full tests run in the firmware
-  [kymoprobe](https://github.com/CodeName-666/kymoprobe), see
+  [kymoprobe](https://github.com/KymoTrace/kymoprobe), see
   [README.md](README.md).

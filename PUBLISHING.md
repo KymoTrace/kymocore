@@ -11,7 +11,7 @@ build real Uno/ESP32 consumers before publishing. Then update the Probe pin.
 ## Paket und Voraussetzungen
 
 Veröffentlichungseinheit ist dieses Repository **kymocore**. In der Firmware
-[kymoprobe](https://github.com/CodeName-666/kymoprobe) ist es als Git-Submodul `lib/KymoCore` eingebunden.
+[kymoprobe](https://github.com/KymoTrace/kymoprobe) ist es als Git-Submodul `lib/KymoCore` eingebunden.
 `library.json` liegt im Paketwurzelverzeichnis. Quellen, Lizenz, README,
 Protokoll, Bilder und portables Beispiel werden explizit exportiert.
 Die bestehenden Hardwarebeispiele bleiben im ECU-Repository.
@@ -113,7 +113,7 @@ dessen `library.properties`-Version zum Tag passt. Ein eigener Upload entfällt.
   jedem Push aus. Stand 6.4.0: 0 Fehler, 1 Warnung (kein `KymoCore.h`).
 - Einmalige Anmeldung: Fork von
   [arduino/library-registry](https://github.com/arduino/library-registry),
-  in `repositories.txt` die Zeile `https://github.com/CodeName-666/kymocore`
+  in `repositories.txt` die Zeile `https://github.com/KymoTrace/kymocore`
   ergänzen und einen Pull Request öffnen. Der Registry-Bot prüft automatisch und
   merged ohne Rückfragen, wenn alles passt; Meldungen erscheinen im Pull Request.
 - Nach der Aufnahme in `registries.yml` `library-manager: update` setzen. Der
@@ -130,7 +130,7 @@ ESP-IDF-Komponente (`codename-666/kymocore`, ab ESP-IDF 5.0). Das Beispiel
 Lokal funktioniert das nur, wenn der Repository-Ordner `kymocore` heißt: ESP-IDF
 benennt eine Komponente aus `override_path` nach ihrem Ordner, in `KymoCore`
 schlägt der Build mit „unknown name“ fehl. Für den Test daher
-`git clone https://github.com/CodeName-666/kymocore.git` verwenden.
+`git clone https://github.com/KymoTrace/kymocore.git` verwenden.
 
 Einmalige Einrichtung:
 

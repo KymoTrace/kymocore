@@ -17,5 +17,5 @@ and sets the required feature flags for both application and library. Other AVR
 environments are `nano` and `mega`.
 
 Larger UART, MQTT, TCP, maximum-throughput, CRC/decoder/C++ and trace/flow demos
-belong to [KymoProbe](https://github.com/CodeName-666/kymoprobe), where a central
+belong to [KymoProbe](https://github.com/KymoTrace/kymoprobe), where a central
 `src/main.cpp` selects the application. Library changes belong only to KymoCore.

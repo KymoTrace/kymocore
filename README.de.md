@@ -195,7 +195,7 @@ Ein vollständig SDK-freies, ausführbares Beispiel liegt in
 ## Unterstützte Plattformen
 
 KymoCore ist plattformunabhängig. Die größeren Hardwarebeispiele in
-[KymoProbe](https://github.com/CodeName-666/kymoprobe) decken diese Ziele ab:
+[KymoProbe](https://github.com/KymoTrace/kymoprobe) decken diese Ziele ab:
 
 | Familie | Boards | Transport im Beispiel |
 |---|---|---|
@@ -214,8 +214,8 @@ Die vollständige Spezifikation mit Beispielframes steht in [PROTOCOL.md](PROTOC
 
 | Projekt | Rolle |
 |---|---|
-| **[KymoCore](https://github.com/CodeName-666/kymocore)** | diese Library: Messwerte erfassen und senden |
-| [KymoProbe](https://github.com/CodeName-666/kymoprobe) | Firmware und Hardwarebeispiele für ESP32, Arduino und STM32 |
+| **[KymoCore](https://github.com/KymoTrace/kymocore)** | diese Library: Messwerte erfassen und senden |
+| [KymoProbe](https://github.com/KymoTrace/kymoprobe) | Firmware und Hardwarebeispiele für ESP32, Arduino und STM32 |
 | [KymoStudio](https://kymotrace.de/#download) | Desktop-App: empfangen, darstellen, analysieren, exportieren |
 
 ## Dokumentation

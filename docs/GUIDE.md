@@ -77,7 +77,7 @@ pins the version:
 
 ```ini
 lib_deps =
-    https://github.com/CodeName-666/kymocore.git#v7.2.0
+    https://github.com/KymoTrace/kymocore.git#v7.2.0
 ```
 
 Alternatively, build a package from this repository:
