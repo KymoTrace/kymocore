@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.2.1 - 2026-11-03
+
+- Links: repository, documentation and issue URLs in `library.json`,
+  `library.properties`, `idf_component.yml` and the docs point to the KymoTrace
+  organization (github.com/KymoTrace/kymocore). No change to code, API or protocol.
+
 ## 7.2.0 - 2026-10-29
 
 - License: KymoCore is now MIT-licensed (`SPDX-License-Identifier: MIT`) instead of

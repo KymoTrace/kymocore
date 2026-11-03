@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 7.2.0" src="https://img.shields.io/badge/version-7.2.0-7C5CFF">
+  <img alt="Version 7.2.1" src="https://img.shields.io/badge/version-7.2.1-7C5CFF">
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-15123A">
   <img alt="C++11 with C API" src="https://img.shields.io/badge/C%2B%2B11-C--API-A78BFA">
   <img alt="Platforms" src="https://img.shields.io/badge/Arduino%20%C2%B7%20ESP32%20%C2%B7%20STM32-PlatformIO-FDE047">
@@ -95,7 +95,7 @@ Add this to your project's `platformio.ini`:
 
 ```ini
 lib_deps =
-    codename666/KymoCore @ 7.2.0
+    codename666/KymoCore @ 7.2.1
 ```
 
 ### Complete example for Arduino and ESP32
