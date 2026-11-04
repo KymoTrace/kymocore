@@ -289,6 +289,63 @@ Reserved for later: an address-based write (parameters derived from an ELF
 symbol table) uses descriptor `0x61`, so the frames above keep their meaning. It
 must stay limited to memory ranges the firmware explicitly allows.
 
+## Live variables: the device samples variables chosen from its ELF file
+
+Since KymoCore 7.3 the host may ask the device to sample global or static
+variables by address (`KYMO_ENABLE_WATCH=1`, which requires
+`KYMO_ENABLE_DECODER=1`). The host reads names, addresses and types from the ELF
+file of the running firmware; the firmware only declares which memory ranges may
+be read. Reading only: nothing is ever written through this mechanism.
+
+The messages use the parameter control frame (descriptor `0x60`, mandatory CRC)
+with these operations:
+
+| Op | Direction | Payload after the operation byte | Meaning |
+|---|---|---|---|
+| `0x03` WATCH_INFO | Host → device | – | Stop every slot and report capabilities |
+| `0x04` WATCH_INFO_REPLY | Device → host | `slots` u8, `min_period_ms` u16, `id_length` u8 (0..20), build ID, `range_count` u8 (0..4), per range `start` u32 and `length` u32 | Capabilities |
+| `0x05` WATCH_SET | Host → device | `slot` u8, `channel` u8, `address` u32, `type` u8, `period_ms` u16 | Sample a variable; period 0 stops the slot |
+| `0x06` WATCH_ACK | Device → host | `slot` u8, `status` u8 | Result of one WATCH_SET |
+
+All multi-byte fields are little-endian. Types: 1 u8, 2 i8, 3 u16, 4 i16,
+5 u32, 6 i32, 7 f32, 8 f64, 9 bool (one byte, nonzero = 1).
+
+ACK status: 0 accepted, 1 slot out of range, 2 not completely inside an allowed
+range, 3 address not aligned to the type size, 4 unknown type, 5 period below
+`min_period_ms`. A rejected WATCH_SET leaves the slot stopped.
+
+Samples are ordinary DATA frames on the requested `channel`, with the device
+timestamp when the firmware has a clock. The value is converted to binary32, so
+integers above 2^24 lose precision. Each slot is read with exactly its type's
+width; aligned reads up to 4 bytes are single-copy atomic on 32-bit MCUs, an f64
+read may tear unless the firmware installs a lock.
+
+### Rules
+
+- WATCH_INFO stops all slots, so a host that (re)connects starts from a known
+  state, then sets every slot it wants.
+- Every WATCH_SET is answered by a WATCH_ACK. The host never assumes a slot is
+  active without one, and treats a missing answer as "not confirmed".
+- The build ID is application data: on ESP32 the first bytes of the ELF file's
+  SHA-256 (`esp_app_desc_t::app_elf_sha256`), elsewhere the GNU build ID
+  (`-Wl,--build-id`). The host accepts the ELF file when the device's ID is a
+  prefix of either; with an empty or different ID it warns and asks before use.
+- Channels share the ID space with measurements and parameters; the host picks
+  IDs that are not in use.
+- Classic CAN cannot carry these frames.
+
+### Golden vectors
+
+```text
+WATCH_INFO:                a5 5a 60 01 03 d9
+WATCH_INFO_REPLY:          a5 5a 60 12 04 08 05 00 04 de ad be ef 01 00 00 fb 3f 00 c2 02 00 75
+  8 slots, minimum 5 ms, build ID de ad be ef, range 0x3FFB0000 + 0x2C200
+WATCH_SET:                 a5 5a 60 0a 05 00 c8 34 12 fb 3f 07 14 00 55
+  slot 0, channel 200, address 0x3FFB1234, f32, every 20 ms
+WATCH_ACK accepted:        a5 5a 60 03 06 00 00 eb
+WATCH_ACK out of range:    a5 5a 60 03 06 01 02 f0   (slot 1)
+```
+
 ## Legacy JSON compatibility
 
 KymoStudio continues to accept UTF-8 JSON:
