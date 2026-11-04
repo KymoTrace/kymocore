@@ -207,6 +207,8 @@ The complete specification with example frames is in [PROTOCOL.md](PROTOCOL.md).
 
 ## Part of Kymotrace
 
+![How KymoCore, KymoProbe, KymoStudio and kymocore for Python fit together](https://raw.githubusercontent.com/KymoTrace/kymocore/main/docs/images/system-en.svg)
+
 | Project | Role |
 |---|---|
 | **[KymoCore](https://github.com/KymoTrace/kymocore)** | this library: capture and send measurements |

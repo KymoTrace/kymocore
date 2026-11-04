@@ -212,6 +212,8 @@ Die vollständige Spezifikation mit Beispielframes steht in [PROTOCOL.md](PROTOC
 
 ## Teil von Kymotrace
 
+![Wie KymoCore, KymoProbe, KymoStudio und kymocore für Python zusammenspielen](https://raw.githubusercontent.com/KymoTrace/kymocore/main/docs/images/system-de.svg)
+
 | Projekt | Rolle |
 |---|---|
 | **[KymoCore](https://github.com/KymoTrace/kymocore)** | diese Library: Messwerte erfassen und senden |
