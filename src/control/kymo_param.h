@@ -69,6 +69,7 @@
 #include <stdint.h>
 #include "../kymo_types.h"
 #include "../telemetry/kymo_protocol.h"
+#include "kymo_control_rx.h"
 
 #if KYMO_EFFECTIVE_PARAMETERS || defined(DOXYGEN)
 
@@ -199,12 +200,8 @@ typedef struct {
     const KymoParameter *table;
     /** @brief Number of table entries (1..KYMO_MAX_PARAMETERS). */
     size_t count;
-    /** @brief Bytes of the frame being reassembled. */
-    uint8_t frame[KYMO_FRAME_MAX_SIZE];
-    /** @brief Number of valid bytes in frame. */
-    size_t length;
-    /** @brief Complete-frame length once the descriptor was seen, else zero. */
-    size_t expected;
+    /** @brief Frame reassembly shared with the other back-channel modules. */
+    KymoControlRx rx;
     /** @brief One bit per table index: a readback is due. */
     uint8_t pending[(KYMO_MAX_PARAMETERS + 7u) / 8u];
     /** @brief Table index where the next readback search starts (round robin). */

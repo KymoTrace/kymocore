@@ -377,6 +377,9 @@ format. New embedded firmware should emit binary v6.
 - Embedded cyclic runtime: `src/telemetry/kymo_runtime.h/.cpp`
 - Optional C++ sender: `src/telemetry/kymo_sender.h/.cpp`
 - Embedded golden-vector test: `test/protocol_golden_test.cpp`
+- Embedded back channel: `src/control/kymo_param.h/.cpp` (parameters),
+  `src/control/kymo_watch.h/.cpp` (live variables), tests `test/param_test.cpp`
+  and `test/watch_test.cpp`
 - Desktop golden-vector tests: `KymoStudio/tests/test_binary_protocol.py`
 
 ## Versioning

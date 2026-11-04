@@ -77,6 +77,9 @@
               },
               "parameters": {
                 "type": "boolean"
+              },
+              "watch": {
+                "type": "boolean"
               }
             },
             "additionalProperties": false

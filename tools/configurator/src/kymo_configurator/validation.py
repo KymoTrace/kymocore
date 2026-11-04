@@ -108,6 +108,8 @@ def validate(project: dict[str, Any], profile_name: str | None = None) -> list[D
             if key in feat and type(feat[key]) is not bool: add("boolean.type",f"{base}.features.{key}","Feature value must be boolean")
         if p.get("enabled") is True and feat.get("parameters") is True and feat.get("decoder") is not True:
             add("feature.parameters_decoder",f"{base}.features.parameters","The parameter back channel needs the frame decoder","Enable feature decoder as well.")
+        if p.get("enabled") is True and feat.get("watch") is True and feat.get("decoder") is not True:
+            add("feature.watch_decoder",f"{base}.features.watch","Live variables need the frame decoder","Enable feature decoder as well.")
         trace=p.get("trace",{})
         if not isinstance(trace,dict): add("trace.type",base+".trace","trace must be an object"); trace={}
         for key in sorted(set(trace)-{"enabled","isr","scheduler","flow","port","clock","session","buffer","transport","bindings"}): add("schema.unknown_field",f"{base}.trace.{key}","Unknown trace field {key!r}",key=key)

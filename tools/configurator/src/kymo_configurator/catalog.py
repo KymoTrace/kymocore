@@ -314,7 +314,7 @@ def _summary_project(view: View) -> str:
 
 
 def _summary_features(view: View) -> str:
-    on = [k for k in ("x", "z", "timestamp", "crc", "decoder", "parameters", "cpp") if view.feature(k)]
+    on = [k for k in ("x", "z", "timestamp", "crc", "decoder", "parameters", "watch", "cpp") if view.feature(k)]
     api = tr("Init/Main runtime") if view.feature("runtime") else tr("no runtime")
     return api + (", " + ", ".join(on) if on else ", " + tr("scalar values only"))
 
@@ -452,6 +452,14 @@ SECTIONS: list[Section] = [
                          guided="Tick if you want to tune values such as controller gains or a setpoint "
                                 "from KymoStudio while measuring. You list them in your code with "
                                 "KYMO_PARAM; the firmware checks every value. Also tick the frame decoder."),
+                _feature("watch", "Live variables from the ELF file",
+                         "Lets KymoStudio sample global variables by address inside the memory ranges "
+                         "you allow; needs the frame decoder.",
+                         "KYMO_ENABLE_WATCH",
+                         guided="Tick if you want to pick variables in KymoStudio from your firmware's "
+                                "ELF file and watch them as curves without adding code for each one. "
+                                "Your firmware lists which memory may be read; nothing is ever written. "
+                                "Also tick the frame decoder."),
             )),
         ),
         guided_title="Which extras do you need?",

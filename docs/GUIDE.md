@@ -224,6 +224,7 @@ build_flags =
 | `KYMO_ENABLE_CRC` | 0 | Compute outgoing CRC |
 | `KYMO_ENABLE_DECODER` | 0 | Decode complete frames on the MCU |
 | `KYMO_ENABLE_PARAMETERS` | 0 | Host writes to registered parameters, `KymoParam_*` (needs DECODER) |
+| `KYMO_ENABLE_WATCH` | 0 | Live variables: host samples memory by address, `KymoWatch_*` (needs DECODER) |
 | `KYMO_ENABLE_TRACE` | profile | Trace recorder, instrumentation and mux |
 | `KYMO_ENABLE_TRACE_ISR` | profile | ISR events (needs TRACE) |
 | `KYMO_ENABLE_TRACE_SCHEDULER` | profile | Task events (needs TRACE_ISR) |
@@ -239,6 +240,8 @@ build_flags =
 | `KYMO_TRACE_MAX_ISR_DEPTH` | 8 | 1–16 |
 | `KYMO_MUX_ADMIN_RECORD_MAX` | 512 | 64–8192 bytes |
 | `KYMO_MAX_PARAMETERS` | 8 | 1–256 parameters per `KymoParamReceiver`, 1 bit each |
+| `KYMO_MAX_WATCHES` | 8 | 1–64 live-variable slots per `KymoWatch`, 16 bytes each |
+| `KYMO_WATCH_MIN_PERIOD_MS` | 5 | 1–60000 ms, shortest sampling period |
 
 Enabling a feature allows a field; each channel's flags select it for that
 channel's frame. XYZ with timestamp uses `KYMO_ALLOWED_FLAGS`, timestamp only
@@ -430,7 +433,10 @@ delivers telemetry; the app handles reception and visualisation.
 The protocol does not transmit channel names, units or sensor configurations.
 This mapping stays with the application and the app. Since 7.1 the optional
 parameter back channel (`KYMO_ENABLE_PARAMETERS`, see [PROTOCOL.md](../PROTOCOL.md))
-lets the host write registered parameters. The app can additionally receive legacy
+lets the host write registered parameters. Since 7.3 live variables
+(`KYMO_ENABLE_WATCH`) let the host sample global variables it picked from the ELF
+file, inside the memory ranges the firmware allows; the firmware passes those
+ranges and a build ID to `KymoWatch_Init`. The app can additionally receive legacy
 JSON; KymoCore encodes binary.
 
 ## Package structure and checks
