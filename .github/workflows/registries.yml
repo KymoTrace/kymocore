@@ -5,10 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Switch library-manager to "update" once KymoCore is in the Library Manager index.
+      # KymoCore is in the Library Manager index since 2026-11-05; new versions come from v* tags.
       - uses: arduino/arduino-lint-action@v3.0.0
         with:
-          library-manager: submit
+          library-manager: update
           compliance: strict
   esp-idf:
     runs-on: ubuntu-latest
