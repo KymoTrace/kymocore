@@ -9,7 +9,7 @@ from typing import Any
 
 FEATURES = ("runtime", "x", "z", "timestamp", "crc", "decoder", "cpp")
 # Added after schema 2 shipped: absent means off, so existing projects stay valid.
-OPTIONAL_FEATURES = ("parameters",)
+OPTIONAL_FEATURES = ("parameters", "watch")
 TRACE_FEATURES = ("enabled", "isr", "scheduler", "flow")
 GENERATOR_VERSION = "0.2.0"
 SCHEMA_VERSION = 2

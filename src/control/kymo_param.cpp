@@ -3,12 +3,10 @@
 #include "../kymo_config.h"
 #if KYMO_EFFECTIVE_PARAMETERS
 #include "kymo_param.h"
+#include "kymo_control_rx.h"
 #include "../common/embedded_bits.h"
 #include "../common/embedded_bytes.h"
 #include <math.h>
-
-/* Largest accepted host request payload; LIST needs one byte. */
-#define PARAM_REQUEST_MAX 8u
 
 /*******************************************************************************
  * text_length
@@ -93,18 +91,21 @@ static size_t find_index(const KymoParamReceiver *receiver, uint8_t id)
 /*******************************************************************************
  * apply_request
  ******************************************************************************/
-/* LIST queues every description and a readback of every current value. */
-static void apply_request(KymoParamReceiver *receiver)
+/* LIST queues every description and a readback of every current value. Operations
+ * of the other back-channel modules are ignored; unknown ones count as invalid. */
+static void apply_request(KymoParamReceiver *receiver, const uint8_t *frame, size_t length)
 {
-    const size_t end = receiver->length - 1u;
-    if ((KymoProtocol_Crc8(receiver->frame + 2, end - 2u) == receiver->frame[end]) &&
-        (receiver->frame[3] == 1u) && (receiver->frame[4] == KYMO_PARAM_OP_LIST)) {
+    if (!KymoControlRx_CrcValid(frame, length)) {
+        ++receiver->invalid;
+    } else if ((frame[4] == KYMO_PARAM_OP_LIST) && (frame[3] == 1u)) {
         receiver->describe_next = 0u;
         for (size_t index = 0u; index < receiver->count; ++index) {
             (void)emb_bitset_set(receiver->pending, sizeof(receiver->pending), index);
         }
-    } else {
+    } else if ((frame[4] == KYMO_PARAM_OP_LIST) || !KymoControl_IsKnownOperation(frame[4])) {
         ++receiver->invalid;
+    } else {
+        /* Another module's request. */
     }
 }
 
@@ -136,75 +137,18 @@ static size_t apply_write(KymoParamReceiver *receiver, uint8_t id, float value)
  * apply_frame
  ******************************************************************************/
 /* A write must be CRC-protected and carry only an ID and a value. */
-static size_t apply_frame(KymoParamReceiver *receiver)
+static size_t apply_frame(KymoParamReceiver *receiver, const uint8_t *frame, size_t length)
 {
     size_t applied = 0u;
     KymoDataPoint point = {};
-    if (receiver->frame[2] == KYMO_DESCRIPTOR_PARAM) {
-        apply_request(receiver);
-    } else if (!emb_u8_has_any(receiver->frame[2], KYMO_DESCRIPTOR_NO_CRC) &&
-        (KymoProtocol_Decode(receiver->frame, receiver->length, &point) == KYMO_OK) &&
+    if (frame[2] == KYMO_DESCRIPTOR_PARAM) {
+        apply_request(receiver, frame, length);
+    } else if (!emb_u8_has_any(frame[2], KYMO_DESCRIPTOR_NO_CRC) &&
+        (KymoProtocol_Decode(frame, length, &point) == KYMO_OK) &&
         (point.flags == 0u)) {
         applied = apply_write(receiver, point.id, point.value);
     } else {
         ++receiver->invalid;
-    }
-    return applied;
-}
-
-/*******************************************************************************
- * restart_at
- ******************************************************************************/
-/* After a lost sync, a sync byte may already start the next frame. */
-static void restart_at(KymoParamReceiver *receiver, uint8_t byte)
-{
-    receiver->expected = 0u;
-    receiver->length = (byte == KYMO_SYNC_0) ? 1u : 0u;
-    receiver->frame[0] = byte;
-}
-
-/*******************************************************************************
- * feed_byte
- ******************************************************************************/
-static size_t feed_byte(KymoParamReceiver *receiver, uint8_t byte)
-{
-    size_t applied = 0u;
-    if (receiver->length == 0u) {
-        restart_at(receiver, byte);
-    } else if (receiver->length == 1u) {
-        if (byte == KYMO_SYNC_1) {
-            receiver->frame[1] = byte;
-            receiver->length = 2u;
-        } else {
-            restart_at(receiver, byte);
-        }
-    } else if (receiver->length == 2u) {
-        /* A parameter control frame states its length in the next byte. */
-        receiver->expected = (byte == KYMO_DESCRIPTOR_PARAM) ? 0u : KymoProtocol_FrameLength(byte);
-        if ((receiver->expected == 0u) && (byte != KYMO_DESCRIPTOR_PARAM)) {
-            ++receiver->invalid;
-            restart_at(receiver, byte);
-        } else {
-            receiver->frame[2] = byte;
-            receiver->length = 3u;
-        }
-    } else if (receiver->expected == 0u) {
-        if ((byte == 0u) || (byte > PARAM_REQUEST_MAX)) {
-            ++receiver->invalid;
-            restart_at(receiver, byte);
-        } else {
-            receiver->frame[3] = byte;
-            receiver->length = 4u;
-            receiver->expected = 5u + byte;
-        }
-    } else {
-        receiver->frame[receiver->length] = byte;
-        ++receiver->length;
-        if (receiver->length == receiver->expected) {
-            applied = apply_frame(receiver);
-            receiver->length = 0u;
-            receiver->expected = 0u;
-        }
     }
     return applied;
 }
@@ -217,7 +161,10 @@ size_t KymoParam_Feed(KymoParamReceiver *receiver, const uint8_t *bytes, size_t 
     size_t applied = 0u;
     if ((receiver != nullptr) && (receiver->table != nullptr) && (bytes != nullptr)) {
         for (size_t offset = 0u; offset < length; ++offset) {
-            applied += feed_byte(receiver, bytes[offset]);
+            const size_t complete = KymoControlRx_Byte(&receiver->rx, bytes[offset], &receiver->invalid);
+            if (complete != 0u) {
+                applied += apply_frame(receiver, receiver->rx.frame, complete);
+            }
         }
     }
     return applied;

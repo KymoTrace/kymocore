@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased (7.3.0)
+
+- Live variables: `control/kymo_watch.h` lets the host sample global or static
+  variables that it picked from the firmware's ELF file (`KYMO_ENABLE_WATCH`, needs
+  `KYMO_ENABLE_DECODER`; `KYMO_MAX_WATCHES`, default 8; `KYMO_WATCH_MIN_PERIOD_MS`,
+  default 5). Reading only. The firmware declares the readable memory ranges and a
+  build ID; every WATCH_SET is checked (slot, type, alignment, range, period) and
+  answered with WATCH_ACK. `KymoWatch_NextSample` reads one due variable per call with
+  exactly its width and returns an ordinary DATA point; an optional reader callback
+  locks 8-byte reads or maps addresses on host builds. Protocol: operations
+  0x03..0x06 on the control descriptor `0x60`, see PROTOCOL.md.
+- Back channel: KymoParam and KymoWatch share the frame reassembly
+  (`control/kymo_control_rx.h`) and may be fed the same bytes; each ignores the
+  other's control operations. Host requests may now carry up to 16 payload bytes
+  (was 8); unknown operations still count as invalid.
+- Configurator: feature "Live variables from the ELF file" (`watch`).
+
 ## 7.2.1 - 2026-11-03
 
 - Links: repository, documentation and issue URLs in `library.json`,

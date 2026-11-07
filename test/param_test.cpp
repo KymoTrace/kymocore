@@ -234,7 +234,7 @@ static void testDiscovery(void)
     const uint32_t invalid = receiver.invalid;
     (void)KymoParam_Feed(&receiver, request, writeList(request, 1u, 0x7Fu));
     (void)KymoParam_Feed(&receiver, request, writeList(request, 2u, KYMO_PARAM_OP_LIST));
-    request[3] = 9u;
+    request[3] = 17u;  /* above KYMO_CONTROL_REQUEST_MAX */
     (void)KymoParam_Feed(&receiver, request, 4u);
     (void)writeList(request, 1u, KYMO_PARAM_OP_LIST);
     request[5] = (uint8_t)(request[5] ^ 0x01u);

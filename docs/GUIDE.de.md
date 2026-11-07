@@ -225,6 +225,8 @@ build_flags =
 | `KYMO_ENABLE_TIMESTAMP` | Profil | Zeitstempel auf dem Draht |
 | `KYMO_ENABLE_CRC` | 0 | Ausgehende CRC berechnen |
 | `KYMO_ENABLE_DECODER` | 0 | Vollständige Frames auf dem MCU dekodieren |
+| `KYMO_ENABLE_PARAMETERS` | 0 | Host schreibt registrierte Parameter, `KymoParam_*` (braucht DECODER) |
+| `KYMO_ENABLE_WATCH` | 0 | Live-Variablen: Host tastet Speicher per Adresse ab, `KymoWatch_*` (braucht DECODER) |
 | `KYMO_ENABLE_TRACE` | Profil | Trace-Recorder, Instrumentierung und Mux |
 | `KYMO_ENABLE_TRACE_ISR` | Profil | ISR-Ereignisse (braucht TRACE) |
 | `KYMO_ENABLE_TRACE_SCHEDULER` | Profil | Task-Ereignisse (braucht TRACE_ISR) |
@@ -239,6 +241,9 @@ build_flags =
 | `KYMO_TRACE_MAX_DEPTH` | 32 | 1–255 |
 | `KYMO_TRACE_MAX_ISR_DEPTH` | 8 | 1–16 |
 | `KYMO_MUX_ADMIN_RECORD_MAX` | 512 | 64–8192 Bytes |
+| `KYMO_MAX_PARAMETERS` | 8 | 1–256 Parameter pro `KymoParamReceiver`, je 1 Bit |
+| `KYMO_MAX_WATCHES` | 8 | 1–64 Live-Variablen-Slots pro `KymoWatch`, je 16 Bytes |
+| `KYMO_WATCH_MIN_PERIOD_MS` | 5 | 1–60000 ms, kürzeste Abtastperiode |
 
 Feature-Aktivierung erlaubt ein Feld; die Flags des jeweiligen Kanals wählen
 es für dessen Frame aus. XYZ mit Zeitstempel verwendet `KYMO_ALLOWED_FLAGS`,
@@ -430,7 +435,11 @@ Die Library liefert Telemetrie; die App übernimmt Empfang und Visualisierung.
 Das Protokoll überträgt keine Kanalnamen, Einheiten oder Sensorkonfigurationen.
 Diese Zuordnung bleibt bei Anwendung und App. Seit 7.1 lässt der optionale
 Parameter-Rückkanal (`KYMO_ENABLE_PARAMETERS`, siehe [PROTOCOL.md](../PROTOCOL.md))
-den Host registrierte Parameter schreiben. Legacy-JSON kann die App zusätzlich empfangen;
+den Host registrierte Parameter schreiben. Seit 7.3 lassen Live-Variablen
+(`KYMO_ENABLE_WATCH`) den Host globale Variablen abtasten, die er aus der ELF-Datei
+gewählt hat, nur in den Speicherbereichen, die die Firmware freigibt; die Firmware
+übergibt diese Bereiche und eine Build-ID an `KymoWatch_Init`. Legacy-JSON kann die
+App zusätzlich empfangen;
 KymoCore kodiert binär.
 
 ## Paketstruktur und Prüfung

@@ -15,6 +15,7 @@
  * | telemetry/kymo_runtime.h         | Kymo_Init / Kymo_Main          | KYMO_ENABLE_RUNTIME=1 |
  * | telemetry/kymo_sender.h          | KymoSender (C++ push API)      | KYMO_ENABLE_CPP=1     |
  * | control/kymo_param.h             | KymoParam (host back channel)  | KYMO_ENABLE_PARAMETERS=1 |
+ * | control/kymo_watch.h             | KymoWatch (live variables)     | KYMO_ENABLE_WATCH=1   |
  * | trace/kymo_instrumentation.h     | KYMO_TRACE_* macros            | always (compile-out)  |
  * | trace/kymo_trace.h               | KymoTraceRecorder              | KYMO_ENABLE_TRACE=1   |
  * | transport/kymo_mux.h             | KymoMux (trace + DATA link)    | KYMO_ENABLE_TRACE=1   |
@@ -38,6 +39,7 @@
 #include "telemetry/kymo_protocol.h"
 #include "telemetry/kymo_runtime.h"
 #include "control/kymo_param.h"
+#include "control/kymo_watch.h"
 #include "trace/kymo_instrumentation.h"
 
 #if KYMO_EFFECTIVE_CPP && defined(__cplusplus)

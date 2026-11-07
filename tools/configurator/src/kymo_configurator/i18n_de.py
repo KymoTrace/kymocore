@@ -253,6 +253,15 @@ DE: dict[str, str] = {
         "KymoStudio verstellen willst. Du trägst sie im Code mit KYMO_PARAM ein; die Firmware prüft jeden "
         "Wert. Kreuze auch den Frame-Decoder an.",
     "The parameter back channel needs the frame decoder": "Der Parameter-Rückkanal braucht den Frame-Decoder",
+    "Live variables from the ELF file": "Live-Variablen aus der ELF-Datei",
+    "Lets KymoStudio sample global variables by address inside the memory ranges you allow; needs the frame decoder.":
+        "KymoStudio darf globale Variablen per Adresse in den von dir freigegebenen Speicherbereichen "
+        "abtasten lassen; braucht den Frame-Decoder.",
+    "Tick if you want to pick variables in KymoStudio from your firmware's ELF file and watch them as curves without adding code for each one. Your firmware lists which memory may be read; nothing is ever written. Also tick the frame decoder.":
+        "Ankreuzen, wenn du in KymoStudio Variablen aus der ELF-Datei deiner Firmware auswählen und als "
+        "Kurven sehen willst, ohne für jede einzelne Code zu schreiben. Deine Firmware legt fest, welcher "
+        "Speicher gelesen werden darf; geschrieben wird nie. Kreuze auch den Frame-Decoder an.",
+    "Live variables need the frame decoder": "Live-Variablen brauchen den Frame-Decoder",
     "Enable feature decoder as well.": "Aktiviere zusätzlich die Funktion decoder.",
     "Only needed when the microcontroller itself must read Kymo frames.":
         "Nur nötig, wenn der Mikrocontroller selbst Kymo-Frames lesen muss.",
