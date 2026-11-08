@@ -36,6 +36,8 @@ def main():
              ["-DKYMO_ENABLE_TRACE=1"], TRACE_SOURCES + [MUX_SOURCE]),
             ("trace_instrumentation_review", "test/trace_instrumentation_review.cpp",
              TRACE_FLAGS, TRACE_SOURCES),
+            ("trace_stack_test", "test/trace_stack_test.cpp",
+             ["-DKYMO_ENABLE_TRACE=1", "-DKYMO_ENABLE_TRACE_STACK_POINTER=1"], TRACE_SOURCES),
         ):
             binary = temp / test_name
             command = [args.cxx, "-std=c++11", "-Wall", "-Wextra", "-Werror", "-O0",

@@ -760,4 +760,7 @@ DE: dict[str, str] = {
     'watch must be an object': 'watch muss ein Objekt sein',
     '{key} must be a C identifier': '{key} muss ein C-Bezeichner sein',
     '{key} must be from {low} through {high}': '{key} muss von {low} bis {high} reichen',
+    'Stack pointer': 'Stackzeiger',
+    'Puts the stack address into every scope entry and exit (no extra bytes). KymoStudio shows the stack depth per call and per task.': 'Schreibt die Stackadresse in jeden Eintritt und Austritt eines Bereichs (ohne Zusatzbytes). KymoStudio zeigt die Stacktiefe je Aufruf und je Task.',
+    "Tick to see how deep each traced function goes into its task's stack. Costs no extra bytes per event.": 'Ankreuzen, um zu sehen, wie tief jede aufgezeichnete Funktion in den Stack ihres Tasks reicht. Kostet keine Zusatzbytes pro Ereignis.',
 }

@@ -29,6 +29,7 @@
  * |                       | KYMO_ENABLE_TRACE_ISR       | 0       | ISR enter/exit (needs TRACE)            |
  * |                       | KYMO_ENABLE_TRACE_SCHEDULER | 0       | Task switches (needs TRACE_ISR)         |
  * |                       | KYMO_ENABLE_TRACE_FLOW      | 0       | Send/receive correlation (needs TRACE)  |
+ * |                       | KYMO_ENABLE_TRACE_STACK_POINTER | 0   | Stack pointer in ENTER/EXIT (TRACE)     |
  * | 4. Resource sizes     | KYMO_MAX_CHANNELS           | 16      | Telemetry channels per context (1..256) |
  * |                       | KYMO_TRACE_*                | see below | Trace ring, contexts, depths          |
  * |                       | KYMO_MUX_ADMIN_RECORD_MAX   | 512     | Largest queued admin record in bytes    |
@@ -209,6 +210,18 @@
 #endif
 #endif
 
+/** @brief Record the stack pointer in ENTER/EXIT events; requires trace; defaults to disabled.
+ * @details The value goes into the otherwise unused arg field and sets
+ * KYMO_TRACE_FLAG_STACK_SAMPLE, so events keep their 32 bytes. The host derives the
+ * stack depth per context from it. Reading costs one compiler builtin per event.
+ * @par Usage
+ * -DKYMO_ENABLE_TRACE_STACK_POINTER=1; on compilers without __builtin_frame_address
+ * also define KYMO_TRACE_READ_STACK_POINTER() to return the current stack address.
+ */
+#ifndef KYMO_ENABLE_TRACE_STACK_POINTER
+#define KYMO_ENABLE_TRACE_STACK_POINTER 0
+#endif
+
 /* ---- 4. Resource sizes -------------------------------------------------- */
 
 /** @brief Telemetry channels a single KymoContext can schedule (1..256).
@@ -285,7 +298,7 @@
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_ISR) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_SCHEDULER) || \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_FLOW)
+    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_FLOW) ||     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_STACK_POINTER)
 #error "Kymo feature switches must be 0 or 1 (literal tokens only)"
 #endif
 
@@ -305,6 +318,10 @@
 
 #if KYMO_ENABLED && KYMO_ENABLE_TRACE_FLOW && !KYMO_ENABLE_TRACE
 #error "KYMO_ENABLE_TRACE_FLOW requires KYMO_ENABLE_TRACE=1"
+#endif
+
+#if KYMO_ENABLED && KYMO_ENABLE_TRACE_STACK_POINTER && !KYMO_ENABLE_TRACE
+#error "KYMO_ENABLE_TRACE_STACK_POINTER requires KYMO_ENABLE_TRACE=1"
 #endif
 
 #if KYMO_ENABLED && KYMO_ENABLE_PARAMETERS && !KYMO_ENABLE_DECODER
@@ -397,5 +414,23 @@
 
 /** @brief Effective flow trace gate. */
 #define KYMO_EFFECTIVE_TRACE_FLOW (KYMO_EFFECTIVE_TRACE && KYMO_ENABLE_TRACE_FLOW)
+
+/** @brief Effective stack-pointer sampling gate. */
+#define KYMO_EFFECTIVE_TRACE_STACK_POINTER     (KYMO_EFFECTIVE_TRACE && KYMO_ENABLE_TRACE_STACK_POINTER)
+
+/** @brief Current stack address as uint32_t; override for compilers without the builtin.
+ * @details Platform independent by default: the frame address of the recording
+ * function sits a constant distance from the caller's stack pointer, which is all
+ * a depth comparison needs.
+ * @par Usage
+ * #define KYMO_TRACE_READ_STACK_POINTER() my_read_sp()
+ */
+#if KYMO_EFFECTIVE_TRACE_STACK_POINTER && !defined(KYMO_TRACE_READ_STACK_POINTER)
+#if defined(__GNUC__) || defined(__clang__)
+#define KYMO_TRACE_READ_STACK_POINTER() ((uint32_t)(uintptr_t)__builtin_frame_address(0))
+#else
+#error "KYMO_ENABLE_TRACE_STACK_POINTER needs KYMO_TRACE_READ_STACK_POINTER() on this compiler"
+#endif
+#endif
 
 #endif /* KYMO_CONFIG_H */

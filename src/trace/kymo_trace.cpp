@@ -167,6 +167,24 @@ KymoStatus KymoTrace_Init(KymoTraceRecorder *recorder,
     return result;
 }
 
+/** @brief Stack address for ENTER/EXIT when sampling is compiled in.
+ * @param[in,out] flags Event flags; gains KYMO_TRACE_FLAG_STACK_SAMPLE.
+ * @return The stack address, or 0 when sampling is compiled out. */
+/*******************************************************************************
+ * stackSample
+ ******************************************************************************/
+static uint32_t stackSample(uint16_t *flags)
+{
+    uint32_t stack = 0u;
+#if KYMO_EFFECTIVE_TRACE_STACK_POINTER
+    *flags = (uint16_t)(*flags | KYMO_TRACE_FLAG_STACK_SAMPLE);
+    stack = KYMO_TRACE_READ_STACK_POINTER();
+#else
+    (void)flags;
+#endif
+    return stack;
+}
+
 /*******************************************************************************
  * KymoTrace_Enter
  ******************************************************************************/
@@ -204,8 +222,9 @@ void KymoTrace_Enter(KymoTraceRecorder *recorder, uint32_t context,
             }
         }
         KymoTraceEvent event;
+        uint32_t stack = stackSample(&flags);
         makeEvent(recorder, context, symbol, KYMO_TRACE_EVENT_ENTER,
-                  (state != NULL) ? eventDepth(state->depth) : 0u, flags, 0u,
+                  (state != NULL) ? eventDepth(state->depth) : 0u, flags, stack,
                   &event, core);
         appendEvent(recorder, core, &event);
         recorderUnlock(recorder);
@@ -243,8 +262,9 @@ void KymoTrace_Exit(KymoTraceRecorder *recorder, uint32_t context,
             --state->depth;
         }
         KymoTraceEvent event;
+        uint32_t stack = stackSample(&flags);
         makeEvent(recorder, context, symbol, KYMO_TRACE_EVENT_EXIT,
-                  eventDepth(depth), flags, 0u, &event, core);
+                  eventDepth(depth), flags, stack, &event, core);
         appendEvent(recorder, core, &event);
         recorderUnlock(recorder);
     }

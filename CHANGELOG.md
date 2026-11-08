@@ -22,6 +22,11 @@
   `kymo_generated_watch.cpp` with `kymo_generated_watch_init()`, so the firmware no
   longer fills `KymoWatchConfig` by hand. Older projects stay valid.
 - GUIDE: setting up live variables, linker symbols per toolchain and the GNU build ID.
+- Trace: `KYMO_ENABLE_TRACE_STACK_POINTER` (default 0, needs `KYMO_ENABLE_TRACE`) puts
+  the stack address into the otherwise unused `arg` of ENTER and EXIT and sets the new
+  flag `KYMO_TRACE_FLAG_STACK_SAMPLE` (0x0010). Events stay 32 bytes. The address comes
+  from `__builtin_frame_address(0)`; other compilers define
+  `KYMO_TRACE_READ_STACK_POINTER()`. Configurator: trace option "Stack pointer".
 
 ## 7.2.1 - 2026-11-03
 

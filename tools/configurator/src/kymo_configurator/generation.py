@@ -354,6 +354,8 @@ def _render(project: dict[str, Any], profile: str) -> dict[str, bytes]:
     macros.update({"KYMO_ENABLE_" + k.upper(): int(v) for k,v in requested.items()})
     for k in ("enabled","isr","scheduler","flow"):
         macros["KYMO_ENABLE_TRACE" + ("_"+k.upper() if k!="enabled" else "")]=int(bool(trace.get(k,False)))
+    if trace.get("stack_pointer"):
+        macros["KYMO_ENABLE_TRACE_STACK_POINTER"]=1
     trace_buffer = trace.get("buffer", {}) if isinstance(trace.get("buffer", {}), dict) else {}
     trace_port = trace.get("port", {}) if isinstance(trace.get("port", {}), dict) else {}
     for key, macro, default in (

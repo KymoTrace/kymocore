@@ -36,6 +36,8 @@ extern "C" {
 #define KYMO_TRACE_FLAG_ARG_VALID 0x0004u
 /** @brief Event flag: trusted recovery checkpoint. */
 #define KYMO_TRACE_FLAG_RECOVERY 0x0008u
+/** @brief Event flag: ENTER/EXIT arg holds the stack address (KYMO_ENABLE_TRACE_STACK_POINTER). */
+#define KYMO_TRACE_FLAG_STACK_SAMPLE 0x0010u
 
 /** @brief Recorder clock and synchronization bindings.
  * @details Only clock_ticks is required. When critical callbacks are absent the

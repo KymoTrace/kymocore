@@ -99,6 +99,9 @@
               "flow": {
                 "type": "boolean"
               },
+              "stack_pointer": {
+                "type": "boolean"
+              },
               "port": {
                 "type": "object",
                 "properties": {

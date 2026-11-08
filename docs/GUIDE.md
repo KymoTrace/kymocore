@@ -229,6 +229,7 @@ build_flags =
 | `KYMO_ENABLE_TRACE_ISR` | profile | ISR events (needs TRACE) |
 | `KYMO_ENABLE_TRACE_SCHEDULER` | profile | Task events (needs TRACE_ISR) |
 | `KYMO_ENABLE_TRACE_FLOW` | profile | Flow correlation (needs TRACE) |
+| `KYMO_ENABLE_TRACE_STACK_POINTER` | 0 | Stack address in ENTER/EXIT `arg`, flag `STACK_SAMPLE` (needs TRACE; other compilers: `KYMO_TRACE_READ_STACK_POINTER()`) |
 
 | Size | Default | Range |
 |---|---:|---|

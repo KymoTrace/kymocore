@@ -653,6 +653,13 @@ SECTIONS: list[Section] = [
                                   "between an interrupt and a task.",
                       enabled_when=_trace_requested, requires="Enable trace recording first.",
                       on_change=_mark_custom),
+                Field("trace.stack_pointer", (PROFILE, "trace", "stack_pointer"), "Stack pointer",
+                      "Puts the stack address into every scope entry and exit (no extra bytes). "
+                      "KymoStudio shows the stack depth per call and per task.",
+                      guided_help="Tick to see how deep each traced function goes into its task's stack. "
+                                  "Costs no extra bytes per event.",
+                      target="KYMO_ENABLE_TRACE_STACK_POINTER", enabled_when=_trace_requested,
+                      requires="Enable trace recording first.", on_change=_mark_custom),
             )),
             Group("Target", (
                 Field("port.kind", ("port", "kind"), "Target port",

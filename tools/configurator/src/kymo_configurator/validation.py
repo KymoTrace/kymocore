@@ -126,8 +126,8 @@ def validate(project: dict[str, Any], profile_name: str | None = None) -> list[D
             add("watch.no_range","watch.range_start","Live variables need at least one readable memory range","Enter the linker symbols around .data and .bss.")
         trace=p.get("trace",{})
         if not isinstance(trace,dict): add("trace.type",base+".trace","trace must be an object"); trace={}
-        for key in sorted(set(trace)-{"enabled","isr","scheduler","flow","port","clock","session","buffer","transport","bindings"}): add("schema.unknown_field",f"{base}.trace.{key}","Unknown trace field {key!r}",key=key)
-        for key in ("enabled","isr","scheduler","flow"):
+        for key in sorted(set(trace)-{"enabled","isr","scheduler","flow","stack_pointer","port","clock","session","buffer","transport","bindings"}): add("schema.unknown_field",f"{base}.trace.{key}","Unknown trace field {key!r}",key=key)
+        for key in ("enabled","isr","scheduler","flow","stack_pointer"):
             if key in trace and type(trace[key]) is not bool: add("boolean.type",f"{base}.trace.{key}","Trace option must be boolean")
         sections={"port":{"kind","core_count","scheduler_complete","isr_complete","core_state_complete"},"clock":{"callback","frequency_hz","counter_bits","domain_id","smp_synchronized","reset_rule"},"session":{"callback"},"buffer":{"events_per_core","max_contexts","max_depth","max_isr_nesting"},"transport":{"mode","max_frame_bytes","drain_events","drain_bytes","max_flush_latency_ms","write_borrows_buffer"},"bindings":{"clock","current_context","core_id","critical_enter","critical_exit","session_id","trace_write","mux_write","transport_busy"}}
         for section,allowed in sections.items():
