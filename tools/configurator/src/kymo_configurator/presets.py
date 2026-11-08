@@ -23,7 +23,8 @@ class Preset:
 
 
 _BASE = {"runtime": True, "x": False, "z": False, "timestamp": False,
-         "crc": False, "decoder": False, "cpp": False, "parameters": False, "watch": False}
+         "crc": False, "decoder": False, "cpp": False, "parameters": False, "watch": False,
+         "memory": False}
 _NO_TRACE = {"enabled": False, "isr": False, "scheduler": False, "flow": False}
 
 PRESETS: dict[str, Preset] = {

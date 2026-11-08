@@ -330,7 +330,7 @@ def _summary_project(view: View) -> str:
 
 
 def _summary_features(view: View) -> str:
-    on = [k for k in ("x", "z", "timestamp", "crc", "decoder", "parameters", "watch", "cpp") if view.feature(k)]
+    on = [k for k in ("x", "z", "timestamp", "crc", "decoder", "parameters", "watch", "memory", "cpp") if view.feature(k)]
     api = tr("Init/Main runtime") if view.feature("runtime") else tr("no runtime")
     return api + (", " + ", ".join(on) if on else ", " + tr("scalar values only"))
 
@@ -476,6 +476,13 @@ SECTIONS: list[Section] = [
                                 "ELF file and watch them as curves without adding code for each one. "
                                 "Your firmware lists which memory may be read; nothing is ever written. "
                                 "Also tick the frame decoder."),
+                _feature("memory", "Memory telemetry (stacks and heap)",
+                         "Reports task stack peaks and heap levels as named curves (KymoMemory); "
+                         "your callback reads the values.",
+                         "KYMO_ENABLE_MEMORY",
+                         guided="Tick to watch how full your task stacks and your heap get. You list "
+                                "the tasks and heaps in your code and read their values in one "
+                                "callback; KymoStudio names the curves after them."),
             )),
             Group("Live variables", (
                 _watch_field("symbols", "Linker symbols",

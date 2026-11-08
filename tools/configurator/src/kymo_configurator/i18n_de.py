@@ -763,4 +763,7 @@ DE: dict[str, str] = {
     'Stack pointer': 'Stackzeiger',
     'Puts the stack address into every scope entry and exit (no extra bytes). KymoStudio shows the stack depth per call and per task.': 'Schreibt die Stackadresse in jeden Eintritt und Austritt eines Bereichs (ohne Zusatzbytes). KymoStudio zeigt die Stacktiefe je Aufruf und je Task.',
     "Tick to see how deep each traced function goes into its task's stack. Costs no extra bytes per event.": 'Ankreuzen, um zu sehen, wie tief jede aufgezeichnete Funktion in den Stack ihres Tasks reicht. Kostet keine Zusatzbytes pro Ereignis.',
+    'Memory telemetry (stacks and heap)': 'Speicher-Telemetrie (Stacks und Heap)',
+    'Reports task stack peaks and heap levels as named curves (KymoMemory); your callback reads the values.': 'Meldet Stack-Spitzen der Tasks und den Heap-Stand als benannte Kurven (KymoMemory); dein Callback liest die Werte.',
+    'Tick to watch how full your task stacks and your heap get. You list the tasks and heaps in your code and read their values in one callback; KymoStudio names the curves after them.': 'Ankreuzen, um zu sehen, wie voll Task-Stacks und Heap werden. Du listest Tasks und Heaps in deinem Code und liest ihre Werte in einem Callback; KymoStudio benennt die Kurven danach.',
 }

@@ -40,6 +40,7 @@
 #include "telemetry/kymo_runtime.h"
 #include "control/kymo_param.h"
 #include "control/kymo_watch.h"
+#include "telemetry/kymo_memory.h"
 #include "trace/kymo_instrumentation.h"
 
 #if KYMO_EFFECTIVE_CPP && defined(__cplusplus)

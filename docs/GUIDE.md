@@ -225,6 +225,7 @@ build_flags =
 | `KYMO_ENABLE_DECODER` | 0 | Decode complete frames on the MCU |
 | `KYMO_ENABLE_PARAMETERS` | 0 | Host writes to registered parameters, `KymoParam_*` (needs DECODER) |
 | `KYMO_ENABLE_WATCH` | 0 | Live variables: host samples memory by address, `KymoWatch_*` (needs DECODER) |
+| `KYMO_ENABLE_MEMORY` | 0 | Memory telemetry: stack peaks and heap levels as named curves, `KymoMemory_*` |
 | `KYMO_ENABLE_TRACE` | profile | Trace recorder, instrumentation and mux |
 | `KYMO_ENABLE_TRACE_ISR` | profile | ISR events (needs TRACE) |
 | `KYMO_ENABLE_TRACE_SCHEDULER` | profile | Task events (needs TRACE_ISR) |
@@ -242,6 +243,7 @@ build_flags =
 | `KYMO_MUX_ADMIN_RECORD_MAX` | 512 | 64–8192 bytes |
 | `KYMO_MAX_PARAMETERS` | 8 | 1–256 parameters per `KymoParamReceiver`, 1 bit each |
 | `KYMO_MAX_WATCHES` | 8 | 1–64 live-variable slots per `KymoWatch`, 16 bytes each |
+| `KYMO_MAX_MEMORY_ENTRIES` | 8 | 1–32 entries per `KymoMemory`; the entries live in the application |
 | `KYMO_WATCH_MIN_PERIOD_MS` | 5 | 1–60000 ms, shortest sampling period |
 
 Enabling a feature allows a field; each channel's flags select it for that

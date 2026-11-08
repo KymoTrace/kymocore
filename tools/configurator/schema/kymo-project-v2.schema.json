@@ -80,6 +80,9 @@
               },
               "watch": {
                 "type": "boolean"
+              },
+              "memory": {
+                "type": "boolean"
               }
             },
             "additionalProperties": false

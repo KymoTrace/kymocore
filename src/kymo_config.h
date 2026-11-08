@@ -25,6 +25,7 @@
  * |                       | KYMO_ENABLE_DECODER         | 0       | Frame decoder on the MCU                |
  * | 2b. Back channel      | KYMO_ENABLE_PARAMETERS      | 0       | Host writes to registered parameters    |
  * |                       | KYMO_ENABLE_WATCH           | 0       | Host samples variables by address (ELF) |
+ * |                       | KYMO_ENABLE_MEMORY          | 0       | Stack peaks and heap levels as curves   |
  * | 3. Execution tracing  | KYMO_ENABLE_TRACE           | 0       | Trace recorder, instrumentation, mux    |
  * |                       | KYMO_ENABLE_TRACE_ISR       | 0       | ISR enter/exit (needs TRACE)            |
  * |                       | KYMO_ENABLE_TRACE_SCHEDULER | 0       | Task switches (needs TRACE_ISR)         |
@@ -36,6 +37,7 @@
  * |                       | KYMO_MAX_PARAMETERS         | 8       | Parameters per receiver (1..256)        |
  * |                       | KYMO_MAX_WATCHES            | 8       | Live-variable slots (1..64)             |
  * |                       | KYMO_WATCH_MIN_PERIOD_MS    | 5       | Shortest sampling period (1..60000)     |
+ * |                       | KYMO_MAX_MEMORY_ENTRIES     | 8       | Reported memory entries (1..32)         |
  *
  * Profiles only change defaults; every switch can still be set individually:
  * - KYMO_PROFILE_MINIMAL (0): scalar values, no timestamp, no tracing.
@@ -172,6 +174,16 @@
 #define KYMO_ENABLE_WATCH 0
 #endif
 
+/** @brief Report stack peaks and heap levels (KymoMemory); defaults to disabled.
+ * @details Needs no decoder: the device describes its entries with MEMORY_INFO
+ * frames by itself and samples them as ordinary DATA points.
+ * @par Usage
+ * -DKYMO_ENABLE_MEMORY=1, then KymoMemory_Init with a read callback.
+ */
+#ifndef KYMO_ENABLE_MEMORY
+#define KYMO_ENABLE_MEMORY 0
+#endif
+
 /* ---- 3. Execution tracing ----------------------------------------------- */
 
 /** @brief Compile the trace recorder, instrumentation and mux; on in the TRACE profile. */
@@ -283,6 +295,15 @@
 #define KYMO_WATCH_MIN_PERIOD_MS 5u
 #endif
 
+/** @brief Most entries one KymoMemory reports (1..32).
+ * @details Costs nothing per entry inside KymoCore; the entries live in the application.
+ * @par Usage
+ * -DKYMO_MAX_MEMORY_ENTRIES=16 for many tasks.
+ */
+#ifndef KYMO_MAX_MEMORY_ENTRIES
+#define KYMO_MAX_MEMORY_ENTRIES 8u
+#endif
+
 /* ---- Validation --------------------------------------------------------- */
 
 #if !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLED) || \
@@ -294,7 +315,7 @@
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CRC) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_DECODER) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_PARAMETERS) || \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_WATCH) || \
+    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_WATCH) ||     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_MEMORY) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_ISR) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_SCHEDULER) || \
@@ -334,6 +355,10 @@
 
 #if (KYMO_MAX_WATCHES < 1u) || (KYMO_MAX_WATCHES > 64u)
 #error "KYMO_MAX_WATCHES must be from 1 through 64"
+#endif
+
+#if (KYMO_MAX_MEMORY_ENTRIES < 1u) || (KYMO_MAX_MEMORY_ENTRIES > 32u)
+#error "KYMO_MAX_MEMORY_ENTRIES must be from 1 through 32"
 #endif
 
 #if (KYMO_WATCH_MIN_PERIOD_MS < 1u) || (KYMO_WATCH_MIN_PERIOD_MS > 60000u)
@@ -401,6 +426,9 @@
 
 /** @brief Effective live-variable gate (back channel, sampling by address). */
 #define KYMO_EFFECTIVE_WATCH (KYMO_ENABLED && KYMO_ENABLE_WATCH)
+
+/** @brief Effective memory telemetry gate. */
+#define KYMO_EFFECTIVE_MEMORY (KYMO_ENABLED && KYMO_ENABLE_MEMORY)
 
 /** @brief Effective trace recorder gate. */
 #define KYMO_EFFECTIVE_TRACE (KYMO_ENABLED && KYMO_ENABLE_TRACE)

@@ -346,6 +346,36 @@ WATCH_ACK accepted:        a5 5a 60 03 06 00 00 eb
 WATCH_ACK out of range:    a5 5a 60 03 06 01 02 f0   (slot 1)
 ```
 
+## Memory telemetry: stack peaks and heap levels
+
+Since KymoCore 7.3 the device may report its memory as named curves
+(`KYMO_ENABLE_MEMORY=1`, no decoder needed). The firmware lists the entries
+(task stacks, heaps) and reads the values in a callback; KymoCore does not call
+any RTOS or allocator function itself.
+
+Every entry has its own DATA channel. The device describes each entry with a
+control frame (descriptor `0x60`, mandatory CRC), unsolicited: right after
+start, every `info_period_ms` and when the firmware calls
+`KymoMemory_RequestInfo`.
+
+| Op | Direction | Payload after the operation byte | Meaning |
+|---|---|---|---|
+| `0x07` MEMORY_INFO | Device → host | `channel` u8, `kind` u8, `total` u32, name (0..16 bytes UTF-8, rest of the payload) | Describes one entry |
+
+Kinds: 1 peak stack use in bytes (stack size minus watermark), 2 free heap bytes
+now, 3 lowest free heap bytes since start. `total` is the stack or heap size in
+bytes, 0 when unknown. Samples are ordinary DATA frames on `channel` with the value
+in bytes; the firmware converts words to bytes before reporting.
+
+Hosts name the channel after the entry, e.g. `stack/parser` or `heap/heap`, and
+keep showing the last description until a new one arrives. A restart of the device
+repeats every MEMORY_INFO.
+
+```text
+MEMORY_INFO:               a5 5a 60 0d 07 dc 01 00 10 00 00 70 61 72 73 65 72 7e
+  channel 220, peak stack use, total 4096 bytes, name "parser"
+```
+
 ## Legacy JSON compatibility
 
 KymoStudio continues to accept UTF-8 JSON:

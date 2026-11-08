@@ -70,10 +70,15 @@ def main():
                                                 "-DKYMO_WATCH_MIN_PERIOD_MS=10"])):
             build_and_run(args.cxx, temp, f"watch_{index}", "test/watch_test.cpp",
                           flags, param_sources)
+        for index, flags in enumerate((["-DKYMO_ENABLE_MEMORY=1"],
+                                       ["-DKYMO_ENABLE_MEMORY=1", "-DKYMO_ENABLE_CRC=1",
+                                        "-DKYMO_MAX_MEMORY_ENTRIES=32"])):
+            build_and_run(args.cxx, temp, f"memory_{index}", "test/memory_test.cpp",
+                          flags, TELEMETRY_SOURCES + ["src/telemetry/kymo_memory.cpp"])
         probe = temp / "entry.c"
         probe.write_text("#include <KymoCore.h>\nint main(void) { return 0; }\n",
                          encoding="utf-8")
-        for flags in PROFILES + (PARAMETERS, WATCH, PARAMETERS + WATCH[1:]):
+        for flags in PROFILES + (PARAMETERS, WATCH, PARAMETERS + WATCH[1:], ["-DKYMO_ENABLE_MEMORY=1"]):
             run([args.cc, "-std=c99", *WARNINGS, *flags, "-Isrc", "-c", probe,
                  "-o", temp / "entry.o"])
         refused = subprocess.run([args.cc, "-std=c99", "-DKYMO_ENABLE_PARAMETERS=1", "-Isrc",

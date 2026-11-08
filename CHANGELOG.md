@@ -22,6 +22,13 @@
   `kymo_generated_watch.cpp` with `kymo_generated_watch_init()`, so the firmware no
   longer fills `KymoWatchConfig` by hand. Older projects stay valid.
 - GUIDE: setting up live variables, linker symbols per toolchain and the GNU build ID.
+- Memory telemetry: `telemetry/kymo_memory.h` (`KYMO_ENABLE_MEMORY`, no decoder needed;
+  `KYMO_MAX_MEMORY_ENTRIES`, default 8) reports task stack peaks and heap levels as named
+  curves. The firmware lists the entries and reads the values in a callback; KymoCore
+  calls no RTOS function. MEMORY_INFO (operation 0x07 on the control descriptor `0x60`)
+  describes each entry with channel, kind, total size and name, unsolicited on start,
+  periodically and on request. About 0.6 KB flash on Cortex-M4. Configurator: feature
+  "Memory telemetry" (`memory`).
 - Trace: `KYMO_ENABLE_TRACE_STACK_POINTER` (default 0, needs `KYMO_ENABLE_TRACE`) puts
   the stack address into the otherwise unused `arg` of ENTER and EXIT and sets the new
   flag `KYMO_TRACE_FLAG_STACK_SAMPLE` (0x0010). Events stay 32 bytes. The address comes
