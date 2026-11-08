@@ -448,6 +448,51 @@
         },
         "additionalProperties": false
       }
+    },
+    "watch": {
+      "type": "object",
+      "description": "Live variables (KymoWatch): readable ranges from linker symbols, build ID callback, slots.",
+      "properties": {
+        "symbols": {
+          "enum": [
+            "esp32",
+            "stm32",
+            "cmsis",
+            "custom"
+          ]
+        },
+        "range_start": {
+          "type": "string",
+          "pattern": "^([A-Za-z_][A-Za-z0-9_]*)?$"
+        },
+        "range_end": {
+          "type": "string",
+          "pattern": "^([A-Za-z_][A-Za-z0-9_]*)?$"
+        },
+        "range2_start": {
+          "type": "string",
+          "pattern": "^([A-Za-z_][A-Za-z0-9_]*)?$"
+        },
+        "range2_end": {
+          "type": "string",
+          "pattern": "^([A-Za-z_][A-Za-z0-9_]*)?$"
+        },
+        "build_id": {
+          "type": "string",
+          "pattern": "^([A-Za-z_][A-Za-z0-9_]*)?$"
+        },
+        "slots": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "min_period_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

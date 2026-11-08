@@ -9,10 +9,11 @@ from .i18n import tr
 from .model import CORE_CONFIG_API_VERSION, FEATURES, OPTIONAL_FEATURES, SCHEMA_VERSION
 from .presets import CUSTOM, PRESETS
 from .resolution import resolve_profile
+from .watch_config import WATCH_KEYS, WATCH_SYMBOLS, watch_ranges, watch_settings
 
 IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 PORTS = {"generic", "esp32_freertos", "stm32_baremetal"}
-TOP_FIELDS={"schema_version","project_name","core_config_api_version","profiles","active_profile","channels","bindings","port","build","resources","symbols","contexts"}
+TOP_FIELDS={"schema_version","project_name","core_config_api_version","profiles","active_profile","channels","bindings","port","build","resources","symbols","contexts","watch"}
 
 EXTENSION_FIELDS: set[str] = set()
 """Top-level project fields owned by registered extensions."""
@@ -93,6 +94,17 @@ def validate(project: dict[str, Any], profile_name: str | None = None) -> list[D
     resources=project.get("resources",{})
     if not isinstance(resources,dict): add("resources.type","resources","resources must be an object"); resources={}
     for key in sorted(set(resources)-{"ram_budget_bytes","transport_bytes_per_second"}): add("schema.unknown_field",f"resources.{key}","Unknown resource field {key!r}",key=key)
+    watch_doc=project.get("watch",{})
+    if not isinstance(watch_doc,dict): add("watch.type","watch","watch must be an object"); watch_doc={}
+    for key in sorted(set(watch_doc)-WATCH_KEYS): add("schema.unknown_field",f"watch.{key}","Unknown watch field {key!r}",key=key)
+    watch=watch_settings({"watch":watch_doc})
+    if watch["symbols"] not in WATCH_SYMBOLS: add("watch.symbols","watch.symbols","Symbol preset must be one of: {choices}",choices=", ".join(WATCH_SYMBOLS))
+    for key in ("range_start","range_end","range2_start","range2_end","build_id"):
+        value=watch[key]
+        if not isinstance(value,str) or (value and not IDENT.fullmatch(value)): add("watch.identifier",f"watch.{key}","{key} must be a C identifier",key=key)
+    for low,high,key in ((1,64,"slots"),(1,60000,"min_period_ms")):
+        if type(watch[key]) is not int or not low<=watch[key]<=high: add("watch.range",f"watch.{key}","{key} must be from {low} through {high}",key=key,low=low,high=high)
+    if bool(watch["range2_start"])!=bool(watch["range2_end"]): add("watch.range2_incomplete","watch.range2_start","The second range needs a start and an end symbol")
     for pname,p in profiles.items():
         base=f"profiles.{pname}"
         if not isinstance(p,dict): add("profile.type",base,"Profile must be an object"); continue
@@ -110,6 +122,8 @@ def validate(project: dict[str, Any], profile_name: str | None = None) -> list[D
             add("feature.parameters_decoder",f"{base}.features.parameters","The parameter back channel needs the frame decoder","Enable feature decoder as well.")
         if p.get("enabled") is True and feat.get("watch") is True and feat.get("decoder") is not True:
             add("feature.watch_decoder",f"{base}.features.watch","Live variables need the frame decoder","Enable feature decoder as well.")
+        if p.get("enabled") is True and feat.get("watch") is True and not watch_ranges(watch):
+            add("watch.no_range","watch.range_start","Live variables need at least one readable memory range","Enter the linker symbols around .data and .bss.")
         trace=p.get("trace",{})
         if not isinstance(trace,dict): add("trace.type",base+".trace","trace must be an object"); trace={}
         for key in sorted(set(trace)-{"enabled","isr","scheduler","flow","port","clock","session","buffer","transport","bindings"}): add("schema.unknown_field",f"{base}.trace.{key}","Unknown trace field {key!r}",key=key)

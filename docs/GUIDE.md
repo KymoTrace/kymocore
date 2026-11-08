@@ -439,6 +439,39 @@ file, inside the memory ranges the firmware allows; the firmware passes those
 ranges and a build ID to `KymoWatch_Init`. The app can additionally receive legacy
 JSON; KymoCore encodes binary.
 
+### Setting up live variables
+
+The firmware gives KymoWatch two things: the memory ranges the host may read and
+a build ID that lets KymoStudio check whether the loaded ELF file matches the
+running firmware. The Kymo Configurator generates both (section "Telemetry
+features" → "Live variables"): it writes `kymo_generated_watch.cpp`; the firmware
+calls `kymo_generated_watch_init()` once at start-up and then uses
+`kymo_generated_watch`.
+
+Ranges: usually `.data` and `.bss` together. The linker symbols depend on the
+toolchain:
+
+| Platform | Start | End |
+|---|---|---|
+| ESP32 (Arduino, ESP-IDF) | `_data_start` | `_bss_end` |
+| STM32CubeIDE / CubeMX | `_sdata` | `_ebss` |
+| CMSIS GCC, RP2040 (pico-sdk), nRF | `__data_start__` | `__bss_end__` |
+
+A second range, for example external RAM, is possible (up to `KYMO_WATCH_MAX_RANGES`).
+
+Build ID: optional, but without it KymoStudio cannot check the ELF file.
+KymoStudio recognises two forms:
+
+- **ESP32:** the first 16 bytes of the ELF file's SHA-256 from the app description
+  (`esp_ota_get_app_description()->app_elf_sha256`).
+- **Other platforms:** the GNU build ID. With `-Wl,--build-id` the linker puts it
+  into the `.note.gnu.build-id` section; the linker script must keep that section
+  and place symbols around it, e.g. `__build_id_start`. The ID itself starts
+  16 bytes after the section start (note header) and is 20 bytes long for SHA-1.
+
+The configurator callback has the form `size_t name(const uint8_t **id)`: it points
+`*id` at the bytes and returns the length; 0 means unknown.
+
 ## Package structure and checks
 
 ```text

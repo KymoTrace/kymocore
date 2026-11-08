@@ -442,6 +442,41 @@ gewählt hat, nur in den Speicherbereichen, die die Firmware freigibt; die Firmw
 App zusätzlich empfangen;
 KymoCore kodiert binär.
 
+### Live-Variablen einrichten
+
+Die Firmware gibt KymoWatch zwei Dinge: die Speicherbereiche, die der Host lesen
+darf, und eine Build-ID, mit der KymoStudio prüft, ob die geladene ELF-Datei zur
+laufenden Firmware passt. Am einfachsten erzeugt der Kymo Configurator beides
+(Abschnitt „Telemetry features“ → „Live-Variablen“): Er schreibt
+`kymo_generated_watch.cpp`; die Firmware ruft `kymo_generated_watch_init()` einmal
+beim Start auf und nutzt danach `kymo_generated_watch`.
+
+Bereiche: In der Regel `.data` und `.bss` zusammen. Die Linker-Symbole hängen von
+der Toolchain ab:
+
+| Plattform | Anfang | Ende |
+|---|---|---|
+| ESP32 (Arduino, ESP-IDF) | `_data_start` | `_bss_end` |
+| STM32CubeIDE / CubeMX | `_sdata` | `_ebss` |
+| CMSIS-GCC, RP2040 (pico-sdk), nRF | `__data_start__` | `__bss_end__` |
+
+Ein zweiter Bereich, etwa externer RAM, ist möglich (bis `KYMO_WATCH_MAX_RANGES`).
+
+Build-ID: Sie ist optional, ohne sie kann KymoStudio die ELF-Datei aber nicht
+prüfen. KymoStudio erkennt zwei Formen:
+
+- **ESP32:** die ersten 16 Byte des SHA-256 der ELF-Datei aus der App-Beschreibung
+  (`esp_ota_get_app_description()->app_elf_sha256`).
+- **Andere Plattformen:** die GNU-Build-ID. Mit `-Wl,--build-id` legt der Linker
+  sie in die Sektion `.note.gnu.build-id`; das Linker-Skript muss diese Sektion
+  behalten und Symbole darum setzen, z. B. `__build_id_start`. Die Build-ID selbst
+  beginnt 16 Byte nach dem Sektionsanfang (Kopf der Note) und ist bei SHA-1 20 Byte
+  lang.
+
+Der Callback für den Configurator hat die Form
+`size_t name(const uint8_t **id)`: Er zeigt mit `*id` auf die Bytes und gibt die
+Länge zurück, 0 heißt unbekannt.
+
 ## Paketstruktur und Prüfung
 
 ```text

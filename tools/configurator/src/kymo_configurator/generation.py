@@ -9,6 +9,7 @@ from .model import GENERATOR_VERSION
 from .resolution import resolve_profile
 from .validation import validate
 from .build_exports import render_exports
+from .watch_config import WATCH_HEADER, render_watch_source, watch_macros, watch_settings
 
 
 def _canonical(obj: Any) -> bytes:
@@ -364,6 +365,9 @@ def _render(project: dict[str, Any], profile: str) -> dict[str, bytes]:
         macros[macro] = int(trace_buffer.get(key, default))
     macros["KYMO_TRACE_CORE_COUNT"] = int(trace_port.get("core_count", 1))
     macros["KYMO_MAX_CHANNELS"] = max(1, len(channels))
+    watch = watch_settings(project) if requested.get("watch") else None
+    if watch is not None:
+        macros.update(watch_macros(watch))
     if trace.get("enabled") and resolved["enabled"]:
         macros["KYMO_MUX_ADMIN_RECORD_MAX"] = max(
             len(trace_outputs["kymo_trace_metadata.json"].encode("utf-8")),
@@ -390,7 +394,7 @@ extern KymoMuxDataSlot kymo_generated_trace_data_adapter;
 KymoStatus kymo_generated_trace_init(void *user);
 void kymo_generated_trace_service(void);
 #endif
-#ifdef __cplusplus
+@@WATCH_HEADER@@#ifdef __cplusplus
 }
 #if KYMO_EFFECTIVE_CPP
 extern KymoSender kymo_generated_sender;
@@ -399,6 +403,7 @@ void kymo_generated_init_cpp_sender(void);
 #endif
 #endif
 '''
+    h = h.replace("@@WATCH_HEADER@@", WATCH_HEADER if watch is not None else "")
     binds=project.get("bindings",{})
     trace_enabled = bool(resolved["enabled"] and trace.get("enabled", False))
     trace_transport = trace.get("transport", {})
@@ -458,6 +463,8 @@ const KymoConfig kymo_generated_config = {{
     files={"kymo_user_config.h":user_header,"kymo_generated_config.h":h,"kymo_generated_config.cpp":config,
            "kymo_trace_ids.h":"\n".join(ids)+"\n"}
     files.update(trace_outputs)
+    if watch is not None:
+        files["kymo_generated_watch.cpp"] = render_watch_source(watch)
     files.update(render_exports())
     for renderer in RENDERERS:
         files.update(renderer(project, profile, resolved))

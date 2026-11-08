@@ -15,7 +15,13 @@
   (`control/kymo_control_rx.h`) and may be fed the same bytes; each ignores the
   other's control operations. Host requests may now carry up to 16 payload bytes
   (was 8); unknown operations still count as invalid.
-- Configurator: feature "Live variables from the ELF file" (`watch`).
+- Configurator: feature "Live variables from the ELF file" (`watch`). The optional
+  top-level `watch` object holds the readable ranges as linker symbols (presets for
+  ESP32, STM32CubeIDE and CMSIS GCC/RP2040/nRF, a second range for external RAM), a
+  build ID callback, the slot count and the shortest period. The generator writes
+  `kymo_generated_watch.cpp` with `kymo_generated_watch_init()`, so the firmware no
+  longer fills `KymoWatchConfig` by hand. Older projects stay valid.
+- GUIDE: setting up live variables, linker symbols per toolchain and the GNU build ID.
 
 ## 7.2.1 - 2026-11-03
 

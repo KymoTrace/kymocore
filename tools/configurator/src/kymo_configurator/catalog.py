@@ -21,6 +21,7 @@ from .model import FEATURES
 from .presets import CUSTOM, PRESETS, apply_preset, matching_preset
 from .i18n import tr
 from .resolution import resolve_profile
+from .watch_config import WATCH_DEFAULTS, apply_symbol_preset
 
 PROFILE = "@profile"
 """Path token that stands for ``doc["profiles"][<active profile>]``."""
@@ -270,6 +271,21 @@ def _trace_busy_needed(view: View) -> bool:
     return view.trace() and bool(view.get((PROFILE, "trace", "transport", "write_borrows_buffer"), False))
 
 
+def _watch(view: View) -> bool:
+    return view.feature("watch")
+
+
+def _watch_symbols_changed(doc: dict[str, Any], profile: str, old: Any, new: Any) -> None:
+    """A symbol preset fills in its linker symbols; 'custom' keeps what was entered."""
+    apply_symbol_preset(doc, new)
+
+
+def _watch_field(key: str, label: str, help_text: str, **extra: Any) -> Field:
+    return Field(f"watch.{key}", ("watch", key), label, help_text,
+                 default=WATCH_DEFAULTS[key], enabled_when=_watch,
+                 requires="Enable live variables first.", **extra)
+
+
 def _feature(key: str, label: str, help_text: str, macro: str, advanced: bool = False,
              enabled_when: Predicate | None = _on, guided: str = "") -> Field:
     return Field(f"features.{key}", (PROFILE, "features", key), label, help_text,
@@ -461,6 +477,36 @@ SECTIONS: list[Section] = [
                                 "Your firmware lists which memory may be read; nothing is ever written. "
                                 "Also tick the frame decoder."),
             )),
+            Group("Live variables", (
+                _watch_field("symbols", "Linker symbols",
+                             "Fills in the symbols that enclose .data and .bss for common toolchains.",
+                             kind="choice", on_change=_watch_symbols_changed,
+                             choices=(("esp32", "ESP32 (_data_start .. _bss_end)"),
+                                      ("stm32", "STM32CubeIDE (_sdata .. _ebss)"),
+                                      ("cmsis", "CMSIS GCC, RP2040, nRF (__data_start__ .. __bss_end__)"),
+                                      ("custom", "Custom")),
+                             guided_help="Choose your chip family. The firmware then allows KymoStudio "
+                                         "to read exactly your global variables and nothing else."),
+                _watch_field("range_start", "Readable range: start symbol",
+                             "Linker symbol at the first readable byte.", kind="identifier"),
+                _watch_field("range_end", "Readable range: end symbol",
+                             "Linker symbol just past the last readable byte.", kind="identifier"),
+                _watch_field("range2_start", "Second range: start symbol",
+                             "Optional, e.g. external RAM.", kind="identifier", advanced=True),
+                _watch_field("range2_end", "Second range: end symbol",
+                             "Optional, e.g. external RAM.", kind="identifier", advanced=True),
+                _watch_field("build_id", "Build ID callback",
+                             "Your function size_t name(const uint8_t **id) that points at the build ID "
+                             "and returns its length. Empty: KymoStudio cannot check the ELF file.",
+                             kind="identifier", placeholder="kymo_port_build_id",
+                             example="size_t {name}(const uint8_t **id) { *id = build_id; return 16u; }"),
+                _watch_field("slots", "Slots", "Variables sampled at the same time; 16 bytes RAM each.",
+                             kind="int", minimum=1, maximum=64, target="KYMO_MAX_WATCHES", advanced=True),
+                _watch_field("min_period_ms", "Shortest period (ms)",
+                             "Requests below this period are rejected.", kind="int", minimum=1,
+                             maximum=60000, target="KYMO_WATCH_MIN_PERIOD_MS", advanced=True),
+            ), description="Generates kymo_generated_watch.cpp; call kymo_generated_watch_init() once "
+                           "at start-up.", visible_when=_watch),
         ),
         guided_title="Which extras do you need?",
         guided_intro="Here you choose which building blocks of KymoCore end up on your "
