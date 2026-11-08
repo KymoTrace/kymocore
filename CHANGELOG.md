@@ -22,6 +22,13 @@
   `kymo_generated_watch.cpp` with `kymo_generated_watch_init()`, so the firmware no
   longer fills `KymoWatchConfig` by hand. Older projects stay valid.
 - GUIDE: setting up live variables, linker symbols per toolchain and the GNU build ID.
+- CRC tables: `KYMO_ENABLE_CRC_TABLE` (default 0) computes the CRC-8 of data and control
+  frames and the trace CRC-16 by table lookup instead of bit by bit. Results are
+  unchanged; flash grows by 244 bytes (CRC-8) and 486 bytes (CRC-16) on Cortex-M4.
+  Worth it on fast transports. Native tests compare both against the bitwise
+  reference. Configurator: feature "CRC lookup tables" (`crc_table`).
+- Configurator: RAM estimate of the KymoCore state objects per profile (from sizes
+  measured on Cortex-M4); the review warns when it exceeds `resources.ram_budget_bytes`.
 - Memory telemetry: `telemetry/kymo_memory.h` (`KYMO_ENABLE_MEMORY`, no decoder needed;
   `KYMO_MAX_MEMORY_ENTRIES`, default 8) reports task stack peaks and heap levels as named
   curves. The firmware lists the entries and reads the values in a callback; KymoCore

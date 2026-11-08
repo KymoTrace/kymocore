@@ -222,6 +222,7 @@ build_flags =
 | `KYMO_ENABLE_Z` | profile | Optional Z coordinate, independent of X |
 | `KYMO_ENABLE_TIMESTAMP` | profile | Timestamp on the wire |
 | `KYMO_ENABLE_CRC` | 0 | Compute outgoing CRC |
+| `KYMO_ENABLE_CRC_TABLE` | 0 | CRC-8 and trace CRC-16 by lookup table: same result, far fewer operations, 256/512 bytes of flash (worth it on USB or Wi-Fi) |
 | `KYMO_ENABLE_DECODER` | 0 | Decode complete frames on the MCU |
 | `KYMO_ENABLE_PARAMETERS` | 0 | Host writes to registered parameters, `KymoParam_*` (needs DECODER) |
 | `KYMO_ENABLE_WATCH` | 0 | Live variables: host samples memory by address, `KymoWatch_*` (needs DECODER) |

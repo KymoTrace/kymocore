@@ -36,6 +36,12 @@ def main():
              ["-DKYMO_ENABLE_TRACE=1"], TRACE_SOURCES + [MUX_SOURCE]),
             ("trace_instrumentation_review", "test/trace_instrumentation_review.cpp",
              TRACE_FLAGS, TRACE_SOURCES),
+            ("trace_mux_table_test", "test/trace_mux_test.cpp",
+             TRACE_FLAGS + ["-DKYMO_TRACE_MAX_DEPTH=2", "-DKYMO_ENABLE_CRC_TABLE=1"],
+             TRACE_SOURCES + [MUX_SOURCE]),
+            ("crc_table_test", "test/crc_table_test.cpp",
+             ["-DKYMO_ENABLE_TRACE=1", "-DKYMO_ENABLE_CRC=1", "-DKYMO_ENABLE_CRC_TABLE=1"],
+             TRACE_SOURCES + ["src/telemetry/kymo_protocol.cpp"]),
             ("trace_stack_test", "test/trace_stack_test.cpp",
              ["-DKYMO_ENABLE_TRACE=1", "-DKYMO_ENABLE_TRACE_STACK_POINTER=1"], TRACE_SOURCES),
         ):

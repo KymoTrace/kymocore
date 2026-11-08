@@ -52,6 +52,10 @@ def main():
             build_and_run(args.cxx, temp, "protocol_golden_" + crc,
                           "test/protocol_golden_test.cpp",
                           FULL_TELEMETRY + ["-DKYMO_ENABLE_CRC=" + crc], TELEMETRY_SOURCES)
+        # Table CRCs must produce the same golden frames.
+        build_and_run(args.cxx, temp, "protocol_golden_table", "test/protocol_golden_test.cpp",
+                      FULL_TELEMETRY + ["-DKYMO_ENABLE_CRC=1", "-DKYMO_ENABLE_CRC_TABLE=1"],
+                      TELEMETRY_SOURCES)
         for index, flags in enumerate(([], FULL_TELEMETRY,
                                        FULL_TELEMETRY + ["-DKYMO_ENABLE_CRC=1"],
                                        ["-DKYMO_MAX_CHANNELS=256"])):
@@ -59,6 +63,7 @@ def main():
                           flags, TELEMETRY_SOURCES)
         param_sources = TELEMETRY_SOURCES + CONTROL_SOURCES
         for index, flags in enumerate((PARAMETERS, PARAMETERS + ["-DKYMO_ENABLE_CRC=1"],
+                                       PARAMETERS + ["-DKYMO_ENABLE_CRC_TABLE=1"],
                                        PARAMETERS + ["-DKYMO_PROFILE=KYMO_PROFILE_XYZ"],
                                        PARAMETERS + ["-DKYMO_MAX_PARAMETERS=256"])):
             build_and_run(args.cxx, temp, f"param_{index}", "test/param_test.cpp",

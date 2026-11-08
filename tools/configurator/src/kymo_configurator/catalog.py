@@ -330,7 +330,8 @@ def _summary_project(view: View) -> str:
 
 
 def _summary_features(view: View) -> str:
-    on = [k for k in ("x", "z", "timestamp", "crc", "decoder", "parameters", "watch", "memory", "cpp") if view.feature(k)]
+    on = [k for k in ("x", "z", "timestamp", "crc", "crc_table", "decoder", "parameters", "watch", "memory", "cpp")
+          if view.feature(k)]
     api = tr("Init/Main runtime") if view.feature("runtime") else tr("no runtime")
     return api + (", " + ", ".join(on) if on else ", " + tr("scalar values only"))
 
@@ -459,6 +460,9 @@ SECTIONS: list[Section] = [
                          guided="Tick if the connection can corrupt data (long cables, radio, motors "
                                 "nearby). Broken frames are then dropped instead of drawn wrong. Over a "
                                 "short USB cable it is usually not needed."),
+                _feature("crc_table", "CRC lookup tables",
+                         "Computes CRC-8 and the trace CRC-16 with tables: same result, far fewer "
+                         "operations, 256 and 512 bytes of flash.", "KYMO_ENABLE_CRC_TABLE", advanced=True),
                 _feature("decoder", "Frame decoder on the MCU",
                          "Only needed when the microcontroller itself must read Kymo frames.",
                          "KYMO_ENABLE_DECODER", advanced=True),

@@ -83,6 +83,9 @@
               },
               "memory": {
                 "type": "boolean"
+              },
+              "crc_table": {
+                "type": "boolean"
               }
             },
             "additionalProperties": false

@@ -22,6 +22,7 @@
  * |                       | KYMO_ENABLE_Z               | 0       | Z coordinate per sample                 |
  * |                       | KYMO_ENABLE_TIMESTAMP       | 0       | Timestamp per sample                    |
  * |                       | KYMO_ENABLE_CRC             | 0       | CRC-8 on outgoing frames                |
+ * |                       | KYMO_ENABLE_CRC_TABLE       | 0       | Table CRCs: faster, 256/512 B flash     |
  * |                       | KYMO_ENABLE_DECODER         | 0       | Frame decoder on the MCU                |
  * | 2b. Back channel      | KYMO_ENABLE_PARAMETERS      | 0       | Host writes to registered parameters    |
  * |                       | KYMO_ENABLE_WATCH           | 0       | Host samples variables by address (ELF) |
@@ -155,6 +156,17 @@
 /** @brief Protect outgoing DATA frames with CRC; defaults to disabled. */
 #ifndef KYMO_ENABLE_CRC
 #define KYMO_ENABLE_CRC 0
+#endif
+
+/** @brief Compute CRC-8 and the trace CRC-16 with lookup tables; defaults to disabled.
+ * @details Same results, about eight times fewer operations per byte, for 256 bytes
+ * (CRC-8, when CRC or the decoder is compiled in) plus 512 bytes (CRC-16, when trace
+ * is compiled in) of flash. Worth it on fast transports such as USB or Wi-Fi.
+ * @par Usage
+ * -DKYMO_ENABLE_CRC_TABLE=1
+ */
+#ifndef KYMO_ENABLE_CRC_TABLE
+#define KYMO_ENABLE_CRC_TABLE 0
 #endif
 
 /** @brief Compile complete-frame MCU decoding; defaults to disabled. */
@@ -312,7 +324,7 @@
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_X) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_Z) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TIMESTAMP) || \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CRC) || \
+    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CRC) ||     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CRC_TABLE) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_DECODER) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_PARAMETERS) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_WATCH) ||     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_MEMORY) || \

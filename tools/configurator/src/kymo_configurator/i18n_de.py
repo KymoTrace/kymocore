@@ -766,4 +766,8 @@ DE: dict[str, str] = {
     'Memory telemetry (stacks and heap)': 'Speicher-Telemetrie (Stacks und Heap)',
     'Reports task stack peaks and heap levels as named curves (KymoMemory); your callback reads the values.': 'Meldet Stack-Spitzen der Tasks und den Heap-Stand als benannte Kurven (KymoMemory); dein Callback liest die Werte.',
     'Tick to watch how full your task stacks and your heap get. You list the tasks and heaps in your code and read their values in one callback; KymoStudio names the curves after them.': 'Ankreuzen, um zu sehen, wie voll Task-Stacks und Heap werden. Du listest Tasks und Heaps in deinem Code und liest ihre Werte in einem Callback; KymoStudio benennt die Kurven danach.',
+    'CRC lookup tables': 'CRC-Tabellen',
+    'Computes CRC-8 and the trace CRC-16 with tables: same result, far fewer operations, 256 and 512 bytes of flash.': 'Berechnet CRC-8 und die Trace-CRC-16 mit Tabellen: gleiches Ergebnis, viel weniger Rechenschritte, 256 und 512 Byte Flash.',
+    'Profile {profile} needs about {used} bytes of RAM for KymoCore, more than the budget of {budget}': 'Profil {profile} braucht für KymoCore etwa {used} Byte RAM, mehr als das Budget von {budget}',
+    'Reduce trace events or contexts, or switch off features in this profile.': 'Trace-Ereignisse oder Kontexte verringern oder Funktionen in diesem Profil abschalten.',
 }

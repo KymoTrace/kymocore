@@ -9,6 +9,7 @@ from .i18n import tr
 from .model import CORE_CONFIG_API_VERSION, FEATURES, OPTIONAL_FEATURES, SCHEMA_VERSION
 from .presets import CUSTOM, PRESETS
 from .resolution import resolve_profile
+from .resources import estimate_ram
 from .watch_config import WATCH_KEYS, WATCH_SYMBOLS, watch_ranges, watch_settings
 
 IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -259,6 +260,13 @@ def validate(project: dict[str, Any], profile_name: str | None = None) -> list[D
             for key in allowed:
                 item=value.get(key)
                 if item is not None and (type(item) is not int or item<=0): add("resource.value",f"resources.{key}","Resource budgets must be positive integers or null")
+    budget=(project.get("resources") or {}).get("ram_budget_bytes") if isinstance(project.get("resources"),dict) else None
+    if type(budget) is int and budget>0 and not any(d.severity=="error" for d in out):
+        for name in ([selected] if selected else []):
+            used=sum(estimate_ram(project,name).values())
+            if used>budget:
+                add("resources.ram_budget_exceeded",f"profiles.{name}","Profile {profile} needs about {used} bytes of RAM for KymoCore, more than the budget of {budget}",
+                    "Reduce trace events or contexts, or switch off features in this profile.",severity="warning",profile=name,used=used,budget=budget)
     for validator in VALIDATORS:
         out.extend(validator(project, selected))
     return out
