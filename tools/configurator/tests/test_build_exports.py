@@ -112,8 +112,19 @@ int main(void) {
         with tempfile.TemporaryDirectory(prefix='kymo cmake ') as directory:
             root = Path(directory)
             project = default_project()
-            snapshot = generate(project, 'production', root / 'generated')
-            (root / 'main.cpp').write_text('#include <kymo_config.h>\n#if KYMO_ENABLED\n#error wrong profile\n#endif\nint main() { return 0; }\n')
+            project['profiles']['development']['features'].update(runtime=False, decoder=True, watch=True)
+            project['watch'] = {'range_start': 'test_start', 'range_end': 'test_end'}
+            snapshot = generate(project, 'development', root / 'generated')
+            (root / 'main.cpp').write_text('''#include <kymo_generated_config.h>
+#if !KYMO_EFFECTIVE_WATCH
+#error wrong profile
+#endif
+extern "C" {
+uint8_t test_start;
+uint8_t test_end;
+}
+int main() { return (int)kymo_generated_watch_init(); }
+''')
             sources = ' '.join('"' + p.as_posix() + '"' for p in sorted((CORE / 'src').rglob('*.cpp')))
             (root / 'CMakeLists.txt').write_text(f'''cmake_minimum_required(VERSION 3.19)
 project(KymoSnapshot LANGUAGES CXX)

@@ -207,6 +207,32 @@ class GuiWorkflowTests(unittest.TestCase):
         self.assertEqual(window.session.doc["project_name"], "Pflanzen")
         self.assertEqual(window.mode(), GUIDED)
 
+    def test_legacy_trace_binding_is_editable_and_watch_range_can_be_cleared(self):
+        window = self.window(PROFESSIONAL)
+        session = window.session
+        trace = session.view().profile["trace"]
+        trace["clock"]["callback"] = "legacy_clock"
+        session.touch()
+        clock = field("trace.bindings.clock")
+        self.assertEqual(session.value(clock), "legacy_clock")
+        session.set_value(clock, "")
+        self.assertNotIn("callback", trace["clock"])
+        self.assertEqual(session.value(clock), "")
+        start = field("watch.range_start")
+        session.set_value(start, "")
+        self.assertEqual(session.value(start), "")
+
+    def test_failed_open_leaves_unsaved_project_intact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            invalid = Path(directory) / "invalid.json"
+            invalid.write_text('{"profiles": null}', encoding="utf-8")
+            session = self.window(PROFESSIONAL).session
+            session.set_value(field("project_name"), "Unsaved")
+            with self.assertRaises(ValueError):
+                session.load(invalid)
+            self.assertTrue(session.dirty)
+            self.assertEqual(session.doc["project_name"], "Unsaved")
+
 
 if __name__ == "__main__":
     unittest.main()

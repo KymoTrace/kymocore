@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from .resolution import resolve_profile
+from .trace_config import trace_admin_capacity, trace_records
 from .watch_config import watch_settings
 
 
@@ -35,8 +36,14 @@ def estimate_ram(project: dict[str, Any], profile: str) -> dict[str, int]:
     if resolved["effective_trace"]["enabled"]:
         buffer = trace.get("buffer", {}) if isinstance(trace.get("buffer", {}), dict) else {}
         port = trace.get("port", {}) if isinstance(trace.get("port", {}), dict) else {}
-        events = int(buffer.get("events_per_core", 64)) * 32 * int(port.get("core_count", 1))
-        contexts = int(buffer.get("max_contexts", 16)) * (2 * int(buffer.get("max_depth", 32)) + 24)
-        parts["trace"] = events + contexts + 8         # 3,464 B with the defaults
-        parts["mux"] = 848                             # KymoMux
+        cores = int(port.get("core_count", 1))
+        events = int(buffer.get("events_per_core", 64)) * 32 * cores
+        context_size = (16 + 2 * int(buffer.get("max_depth", 32)) + 3) // 4 * 4
+        contexts = int(buffer.get("max_contexts", 16)) * context_size
+        recorder = 40 + events + contexts + 26 * cores + 2
+        if resolved["effective_trace"]["isr"]:
+            recorder += cores * (2 + 8 * int(buffer.get("max_isr_nesting", 8)))
+        parts["trace"] = (recorder + 7) // 8 * 8
+        admin = trace_admin_capacity(trace_records(project, profile))
+        parts["mux"] = (332 + admin + 7) // 8 * 8 + 24  # KymoMux and its DATA slot
     return parts

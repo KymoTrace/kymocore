@@ -10,16 +10,16 @@ Use Python 3.12. From the KymoCore repository:
 
 ```powershell
 python -m venv .venv-configurator
-.venv-configurator\Scripts\python -m pip install -e .\tools\configurator
+.venv-configurator\Scripts\python -m pip install -e ".\tools\configurator[gui]"
 .venv-configurator\Scripts\python -m kymo_configurator new kymo.project.json --name KymoProbe
 .venv-configurator\Scripts\python -m kymo_configurator gui kymo.project.json --mode guided
 ```
 
 ## Two ways to work
 
-- **Guided setup** (`gui --mode guided`): asks what you want to achieve (values over time are
-  always included; X/Y or X/Y/Z points and execution tracing can be ticked on top), then walks through channels,
-  callbacks, optional tracing and output step by step. Advanced options keep safe
+- **Guided setup** (`gui --mode guided`): choose values over time, X/Y or X/Y/Z points,
+  execution tracing, parameters, live variables, and memory telemetry. The following
+  steps reflect your selected goals. Advanced options keep safe
   defaults; a step with open problems cannot be left forward.
 - **Professional mode** (`gui --mode professional`): every setting at once, grouped
   by topic, with live status per topic (✓/⚠/✖), inline problems, a review page with
@@ -45,9 +45,9 @@ python -m kymo_configurator gui kymo.project.json --mode guided
 
 Diagnostics have stable codes and JSON field paths; `validate --json` emits them as JSON. Validation and `check` do not write files. Migration upgrades schema 1 (KymoCore 6.x) projects to schema 2 (KymoCore 7.0) and writes a new copy unless `--output` is specified; the GUI upgrades older projects on open. Generation creates an immutable `generations/<sha256>/` directory and atomically switches `active_generation.json`; `--force` is required to replace a manually edited currently selected generated file. The fixed snapshot can be pinned in a build so a concurrent generation cannot mix headers and sources.
 
-`build_check` reads the compiler's `compile_commands.json` argument arrays and verifies the effective feature macros and the actual included generated configuration for each listed translation unit. It does not start or modify the build.
+`build_check` uses the compiler and argument arrays from a trusted `compile_commands.json`. It compares the resolved feature macros, resource sizes, and included configuration header across translation units that use KymoCore.
 
-`init-port` creates a callback header/source scaffold in a new directory and refuses to overwrite an existing path. The source deliberately fails compilation while runtime is enabled until target behavior replaces its TODO stubs. With an active trace profile it also creates the trace clock, session, write and busy stubs. It does not invent clock, sensor, or transport behavior.
+`init-port` creates callback templates for the active profile in a new directory. If runtime or trace is enabled, compilation stops until you replace the TODOs with implementations for your target platform.
 
 ## Generated files and build exports
 
@@ -55,7 +55,9 @@ Each snapshot contains `kymo_user_config.h`, `kymo_generated_config.h/.cpp`, tra
 
 When the optional C++ sender is enabled, `bindings.cpp_stream` names a user-owned `KymoStream &` reference, which may refer to an instance of an application subclass. Do not declare an abstract `KymoStream` object. The generated `kymo_generated_sender` is default-constructed without calling user bindings; after the stream and clock are ready, call `kymo_generated_init_cpp_sender()` before using the sender. With effective timestamps enabled, initialization installs the configured no-argument `uint32_t` clock through `KymoSender::setClock` and samples it once as the start epoch. With timestamps disabled, an omitted `cpp_timestamp_default` defaults to false. An explicit true request while effective timestamps are off is invalid.
 
-The generated user header is intended to be selected project-wide using `KYMO_USER_CONFIG_HEADER`, so application and Core translation units resolve the same values. For CMake, include `kymo_build_export.cmake` and call `kymo_configure_targets(application_target core_target)` after defining both targets. GCC variables can be included in a make-based build; PlatformIO uses the generated pre/post scripts to add the snapshot include path and generated `.cpp`. Run the resulting firmware build to verify the specific integration.
+The generated user header is intended to be selected project-wide using `KYMO_USER_CONFIG_HEADER`, so application and Core translation units resolve the same values. For CMake, include `kymo_build_export.cmake` and call `kymo_configure_targets(application_target core_target)` after defining both targets. GCC variables can be included in a make-based build. PlatformIO uses the generated pre/post scripts to add the snapshot include path and generated sources. Each export includes `kymo_generated_watch.cpp` when the profile requests live variables.
+
+If the Make export's include path contains spaces, set `KYMO_SNAPSHOT_DIR` to the snapshot directory before including the export.
 
 An enabled trace profile emits canonical `kymo_trace_metadata.json` and `kymo_trace_dictionary.json` bodies plus a C-compatible `kymo_trace_metadata.h`. Its byte arrays can be passed to `KymoMux_QueueAdmin`; that API appends the CRC32 trailer. The dictionary SHA-256 is included in both metadata and the header. Buffer sizes and core count become compile-time settings in `kymo_user_config.h`, and the admin staging bound is sized for the generated records (up to Core's 8192-byte limit). Scheduler/ISR/core-state completeness stays false unless the project explicitly sets the corresponding `trace.port.*_complete` claim and marks its top-level port capabilities as verified. Port names do not create capability or RAM claims.
 

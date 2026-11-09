@@ -42,7 +42,7 @@ class View:
     def resolved(self) -> dict[str, Any]:
         try:
             return resolve_profile(self.doc, self.profile_name)
-        except (KeyError, TypeError, AttributeError):
+        except (KeyError, TypeError, ValueError, AttributeError):
             return {"enabled": False, "effective_features": {k: False for k in FEATURES},
                     "effective_trace": {"enabled": False}}
 
@@ -133,9 +133,14 @@ class Field:
     """True: shown as required, False: shown as optional, None: no mark."""
     cost: str = ""
     """Short memory or frame cost shown next to the switch, e.g. '64 B RAM'."""
+    aliases: tuple[tuple[str, ...], ...] = ()
 
     def value(self, view: View) -> Any:
-        return view.get(self.path, self.default)
+        value = view.get(self.path, self.default)
+        for alias in self.aliases:
+            if not value:
+                value = view.get(alias, self.default)
+        return value
 
     def is_enabled(self, view: View) -> bool:
         return self.enabled_when is None or bool(self.enabled_when(view))
@@ -145,13 +150,16 @@ class Field:
 
     def store(self, doc: dict[str, Any], profile: str, value: Any) -> None:
         """Write a value (with type normalization) and run the change hook."""
-        old = get_path(doc, self.path, profile, self.default)
+        old = self.value(View(doc, profile))
         if self.kind in ("identifier", "text"):
             value = str(value).strip() if value is not None else ""
         if self.kind == "optional_int" and value == "":
             value = None
         set_path(doc, self.path, profile, value,
-                 remove_when_empty=self.kind == "identifier")
+                 remove_when_empty=self.kind == "identifier" and self.path[0] != "watch")
+        for alias in self.aliases:
+            if get_path(doc, alias, profile) is not None:
+                set_path(doc, alias, profile, None, remove_when_empty=True)
         if self.on_change is not None and old != value:
             self.on_change(doc, profile, old, value)
 
@@ -324,10 +332,13 @@ def _binding(key: str, label: str, help_text: str, target: str, advanced: bool =
 
 def _trace_binding(key: str, label: str, help_text: str, target: str, advanced: bool = False,
                    guided: str = "", example: str = "", need: Predicate | None = None) -> Field:
+    legacy = {"clock": ("clock", "callback"), "session_id": ("session", "callback"),
+              "trace_write": ("bindings", "mux_write")}
+    aliases = ((PROFILE, "trace", *legacy[key]),) if key in legacy else ()
     return Field(f"trace.bindings.{key}", (PROFILE, "trace", "bindings", key), label, help_text,
                  kind="identifier", default="", target=target, advanced=advanced,
                  enabled_when=_trace_requested, requires="Enable trace recording first.",
-                 guided_help=guided, example=example, need=need)
+                 guided_help=guided, example=example, need=need, aliases=aliases)
 
 
 def _trace_int(key: tuple[str, ...], label: str, help_text: str, low: int, high: int, default: int,
@@ -342,7 +353,7 @@ def _trace_int(key: tuple[str, ...], label: str, help_text: str, low: int, high:
 
 def _summary_project(view: View) -> str:
     preset = view.profile.get("preset", CUSTOM)
-    title = tr(PRESETS[preset].title) if preset in PRESETS else tr("Custom selection")
+    title = tr(PRESETS[preset].title) if isinstance(preset, str) and preset in PRESETS else tr("Custom selection")
     state = tr("enabled") if view.enabled else tr("compiled out (KYMO_ENABLED=0)")
     return tr("Profile '{name}': {title}, {state}", name=view.profile_name, title=title, state=state)
 
@@ -375,7 +386,7 @@ def _summary_channels(view: View) -> str:
     traffic = 0.0
     for ch in channels:
         period = ch.get("period_ms") if isinstance(ch, dict) else None
-        if type(period) is int and period > 0:
+        if type(period) is int and 0 < period <= 2147483647:
             size = 9 + 4 * sum(bool(ch.get(k)) for k in ("x", "z", "timestamp"))
             rate += 1000.0 / period
             traffic += 1000.0 / period * size
@@ -385,7 +396,18 @@ def _summary_channels(view: View) -> str:
 
 def _summary_callbacks(view: View) -> str:
     b = view.doc.get("bindings", {}) if isinstance(view.doc.get("bindings"), dict) else {}
-    missing = [k for k in ("clock", "sample", "write") if not b.get(k)]
+    required = []
+    if _runtime(view):
+        required.extend(("clock", "sample"))
+    if _runtime_direct_write(view):
+        required.append("write")
+    if _busy_needed(view):
+        required.append("busy")
+    if _cpp(view):
+        required.append("cpp_stream")
+    if _cpp_time(view):
+        required.append("cpp_clock")
+    missing = [k for k in required if not b.get(k)]
     return tr("all required callbacks named") if not missing else tr("missing: ") + ", ".join(missing)
 
 
@@ -722,12 +744,24 @@ SECTIONS: list[Section] = [
                                ("stm32_baremetal", "STM32 bare metal")),
                       enabled_when=_trace_requested, requires="Enable trace recording first.",
                       on_change=_port_changed),
+                Field("port.capabilities_verified", ("port", "capabilities_verified"), "Verified port capabilities",
+                      "Set only after testing scheduler and interrupt tracing on this port.",
+                      advanced=True, enabled_when=_trace_requested, requires="Enable trace recording first."),
+                Field("trace.port.scheduler_complete", (PROFILE, "trace", "port", "scheduler_complete"),
+                      "Complete scheduler coverage", "The verified port records all scheduler switches.",
+                      advanced=True, enabled_when=_trace_requested, requires="Enable trace recording first."),
+                Field("trace.port.isr_complete", (PROFILE, "trace", "port", "isr_complete"),
+                      "Complete interrupt coverage", "The verified port records all interrupt entries and exits.",
+                      advanced=True, enabled_when=_trace_requested, requires="Enable trace recording first."),
+                Field("trace.port.core_state_complete", (PROFILE, "trace", "port", "core_state_complete"),
+                      "Complete core state coverage", "The verified port records all core state changes.",
+                      advanced=True, enabled_when=_trace_requested, requires="Enable trace recording first."),
                 _trace_int(("port", "core_count"), "CPU cores", "Number of cores that record events.",
                            1, 2, 1, "KYMO_TRACE_CORE_COUNT",
                            guided="1 for most microcontrollers; 2 for dual-core chips such as the ESP32."),
                 _trace_int(("clock", "frequency_hz"), "Trace clock (Hz)",
                            "Tick rate of your trace clock, e.g. 1000000 for microseconds.",
-                           1, 2147483647, 1000000,
+                           1, 0xFFFFFFFFFFFFFFFF, 1000000,
                            guided="How many times per second your trace clock counts. 1000000 means it "
                                   "counts microseconds, e.g. micros() on Arduino."),
                 Field("trace.clock.counter_bits", (PROFILE, "trace", "clock", "counter_bits"),

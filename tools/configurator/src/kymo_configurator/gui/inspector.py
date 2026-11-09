@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout, Q
 
 from .. import catalog
 from ..i18n import tr
-from ..resources import estimate_ram
 from . import style
 from .highlight import CodeHighlighter
 from .parts import StackedBar, chip, rule, set_chip
@@ -34,6 +33,7 @@ def _bytes(value: int) -> str:
 
 def _label(text: str = "", name: str = "") -> QLabel:
     label = QLabel(text)
+    label.setTextFormat(Qt.TextFormat.PlainText)
     if name:
         label.setObjectName(name)
     return label
@@ -148,16 +148,20 @@ class InspectorPanel(QWidget):
         self.refresh()
 
     def _refresh_ram(self) -> None:
-        parts = estimate_ram(self.session.doc, self.session.profile)
+        parts = self.session.ram_parts()
+        self._clear(self.ram_rows)
+        if parts is None:
+            self.ram_total.setText("—")
+            self.ram_bar.set_parts([])
+            return
         total = sum(parts.values())
         budget = (self.session.doc.get("resources") or {}).get("ram_budget_bytes")
-        scale = budget if isinstance(budget, int) and budget > 0 else max(total, 1)
-        self.ram_total.setText(f"{_bytes(total)} / {_bytes(budget)}" if scale == budget else _bytes(total))
+        scale = budget if budget is not None else max(total, 1)
+        self.ram_total.setText(f"{_bytes(total)} / {_bytes(budget)}" if budget is not None else _bytes(total))
         ordered = sorted(parts.items(), key=lambda item: -item[1])
         names = ram_parts()
         self.ram_bar.set_parts([(value / scale, names.get(key, (key, style.TEXT_HINT))[1])
                                 for key, value in ordered])
-        self._clear(self.ram_rows)
         for row, (key, value) in enumerate(ordered):
             self.ram_rows.addWidget(_label(names.get(key, (key, ""))[0], "inspectorSmall"), row, 0)
             self.ram_rows.addWidget(_label(_bytes(value), "inspectorValue"), row, 1)

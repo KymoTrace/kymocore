@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
+from .trace_config import trace_callbacks
 
 
 @dataclass(frozen=True)
@@ -51,8 +52,17 @@ PRESETS: dict[str, Preset] = {
 
 CUSTOM = "custom"
 
-TRACE_DEFAULT_BINDINGS = {"clock": "kymo_port_trace_clock", "trace_write": "kymo_port_trace_write"}
+TRACE_DEFAULT_BINDINGS = {"clock": "kymo_port_trace_clock", "trace_write": "kymo_port_trace_write",
+                          "session_id": "kymo_trace_session_id"}
 """Function names suggested when tracing is chosen; implemented in the port file."""
+
+
+def _suggest_trace_bindings(trace: dict[str, Any]) -> None:
+    callbacks = trace_callbacks(trace)
+    bindings = trace.setdefault("bindings", {})
+    for key, name in TRACE_DEFAULT_BINDINGS.items():
+        if not callbacks.get(key):
+            bindings.setdefault(key, name)
 
 
 def apply_preset(profile: dict[str, Any], key: str) -> None:
@@ -61,10 +71,10 @@ def apply_preset(profile: dict[str, Any], key: str) -> None:
     profile.setdefault("features", {}).update(preset.features)
     trace = profile.setdefault("trace", {})
     trace.update(preset.trace)
+    if "stack_pointer" in trace:
+        trace["stack_pointer"] = False
     if preset.trace.get("enabled"):
-        bindings = trace.setdefault("bindings", {})
-        for name, function in TRACE_DEFAULT_BINDINGS.items():
-            bindings.setdefault(name, function)
+        _suggest_trace_bindings(trace)
     profile["preset"] = key
 
 
@@ -86,17 +96,19 @@ def apply_goals(profile: dict[str, Any], xyz: bool, trace: bool) -> None:
     matches, or "custom" (for example tracing without XYZ).
     """
     features = profile.setdefault("features", {})
-    if xyz:
-        features["runtime"] = True
-    for key in _XYZ_KEYS:
-        features[key] = xyz
-    if trace:
-        profile.setdefault("trace", {}).update(PRESETS["trace"].trace)
-        bindings = profile["trace"].setdefault("bindings", {})
-        for name, function in TRACE_DEFAULT_BINDINGS.items():
-            bindings.setdefault(name, function)
-    else:
-        profile.setdefault("trace", {}).update(_NO_TRACE)
+    had_xyz, had_trace = goals(profile)
+    if xyz != had_xyz:
+        if xyz and not values_selected(profile):
+            features["runtime"] = True
+        for key in _XYZ_KEYS:
+            features[key] = xyz
+    if trace != had_trace:
+        settings = profile.setdefault("trace", {})
+        settings["enabled"] = trace
+        if trace:
+            if not any(trace_callbacks(settings).get(key) for key in ("clock", "trace_write")):
+                settings.update(PRESETS["trace"].trace)
+            _suggest_trace_bindings(settings)
     profile["preset"] = matching_preset(profile)
 
 
@@ -142,10 +154,14 @@ def matching_preset(profile: dict[str, Any]) -> str:
     """Return the preset whose switches equal the profile, else "custom"."""
     features = profile.get("features", {})
     trace = profile.get("trace", {})
+    if (not isinstance(features, dict) or not isinstance(trace, dict)
+            or (trace.get("enabled") and trace.get("stack_pointer"))):
+        return CUSTOM
     result = CUSTOM
     for key, preset in PRESETS.items():
-        if (all(features.get(k) == v for k, v in preset.features.items()) and
-                all(bool(trace.get(k, False)) == v for k, v in preset.trace.items())):
+        if (all(features.get(k, False) is v for k, v in preset.features.items()) and
+                all(bool(trace.get(k, False) and (k == "enabled" or trace.get("enabled"))) == v
+                    for k, v in preset.trace.items())):
             result = key
             break
     return result

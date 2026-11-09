@@ -137,4 +137,8 @@ class ProfessionalEditor(QWidget):
 
     def open_section(self, key: str) -> None:
         if key in self.keys:
-            self.nav.setCurrentRow(self.keys.index(key))
+            row = self.keys.index(key)
+            if self.nav.item(row).isHidden():
+                self.search.clear()
+                self.nav.item(row).setHidden(False)
+            self.nav.setCurrentRow(row)

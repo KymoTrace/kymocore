@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QComboBox, QFileDialog, QFrame, QHBoxLayout, QInp
 from ..i18n import LANGUAGES, language, set_language, tr
 from ..model import CORE_CONFIG_API_VERSION
 from ..presets import PRESETS, apply_preset
+from ..validation import PROFILE_NAME
 from .guided import GuidedWizard
 from .parts import chip, rule, set_chip
 from .professional import ProfessionalEditor
@@ -90,7 +91,7 @@ class StartPage(QWidget):
             (GUIDED, tr("Guided setup"),
              tr("Step by step: KymoCore asks what you want to achieve and only shows what matters for it. "
                 "Advanced options keep safe defaults. Recommended for the first project."),
-             tr("5 to 7 steps, depending on the goal"), tr("Start guided setup")),
+             tr("Steps adapt to your goals"), tr("Start guided setup")),
             (PROFESSIONAL, tr("Professional mode"),
              tr("All settings at once, grouped by topic, with live status, diagnostics and a preview "
                 "of the generated files. For users who know KymoCore."),
@@ -199,6 +200,11 @@ class MainWindow(QMainWindow):
         """(Re)create header, pages and status bar in the current language; the session is kept."""
         for action in self.actions():
             self.removeAction(action)
+            action.deleteLater()
+        if hasattr(self, "_modes"):
+            for action in self._modes.actions():
+                action.deleteLater()
+            self._modes.deleteLater()
         self._build_actions()
         central = QWidget()
         outer = QVBoxLayout(central)
@@ -242,12 +248,12 @@ class MainWindow(QMainWindow):
         self.save_action = self._action(tr("&Save"), self.save, QKeySequence.StandardKey.Save)
         self.save_as_action = self._action(tr("Save &as…"), self.save_as, QKeySequence.StandardKey.SaveAs)
         self.quit_action = self._action(tr("&Quit"), self.close, QKeySequence.StandardKey.Quit)
-        modes = QActionGroup(self)
+        self._modes = QActionGroup(self)
         self.guided_action = QAction(tr("Guided setup"), self)
         self.professional_action = QAction(tr("Professional mode"), self)
         for action, target in ((self.guided_action, GUIDED), (self.professional_action, PROFESSIONAL)):
             action.setCheckable(True)
-            modes.addAction(action)
+            self._modes.addAction(action)
             action.triggered.connect(lambda _=False, m=target: self.set_mode(m))
 
     def _header_button(self, text: str, slot, name: str = "", tip: str = "") -> QPushButton:
@@ -270,6 +276,7 @@ class MainWindow(QMainWindow):
         title = QLabel(tr("KymoCore Configurator"))
         title.setObjectName("appTitle")
         self.project_label = QLabel("")
+        self.project_label.setTextFormat(Qt.TextFormat.PlainText)
         self.project_label.setObjectName("projectName")
         self.dirty_dot = QLabel("●")
         self.dirty_dot.setObjectName("dirtyDot")
@@ -348,6 +355,7 @@ class MainWindow(QMainWindow):
                 bar.removeWidget(child)
                 child.deleteLater()
         self.status_profile = QLabel("")
+        self.status_profile.setTextFormat(Qt.TextFormat.PlainText)
         self.status_errors = chip("", "danger")
         self.status_warnings = chip("", "warning")
         version = QLabel(tr("Configuration API {version}", version=CORE_CONFIG_API_VERSION))
@@ -366,16 +374,19 @@ class MainWindow(QMainWindow):
         set_language(code)
         settings().setValue("language", code)
         guided_step = self.guided.index
+        professional_section = self.professional.current_key()
         mode = self.mode()
         self._build_ui(mode)
         self.guided.index = guided_step
         self.guided.refresh()
+        self.professional.open_section(professional_section)
 
     def _load_profiles(self) -> None:
         self.profile.blockSignals(True)
         self.profile.clear()
         self.profile.addItems(self.session.profiles)
-        self.profile.setCurrentText(self.session.profile)
+        selected = self.session.doc.get("active_profile")
+        self.profile.setCurrentIndex(self.profile.findText(selected) if isinstance(selected, str) else -1)
         self.profile.blockSignals(False)
 
     def _update_chrome(self) -> None:
@@ -420,6 +431,10 @@ class MainWindow(QMainWindow):
                "Name (e.g. production):", name=self.session.profile))
         name = name.strip()
         if not ok or not name:
+            return
+        if not PROFILE_NAME.fullmatch(name):
+            QMessageBox.warning(self, tr("New profile"), tr(
+                "Profile names may contain only letters, digits, underscore and hyphen (1..64 characters)"))
             return
         try:
             self.session.duplicate_profile(name)
@@ -479,7 +494,7 @@ class MainWindow(QMainWindow):
             return self.save_as()
         try:
             self.session.save()
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             QMessageBox.critical(self, tr("Save failed"), str(exc))
             return False
         remember_project(self.session.path)
@@ -492,7 +507,7 @@ class MainWindow(QMainWindow):
             return False
         try:
             self.session.save(name)
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             QMessageBox.critical(self, tr("Save failed"), str(exc))
             return False
         remember_project(Path(name))

@@ -37,6 +37,13 @@ class EngineTests(unittest.TestCase):
             self.assertTrue((path/"kymo_port.cpp").exists())
             with self.assertRaises(FileExistsError): create_port_template(default_project(),path)
 
+    def test_disabled_cpp_profile_generates_without_an_unused_stream_binding(self):
+        project = default_project()
+        project["profiles"]["production"]["features"]["cpp"] = True
+        with tempfile.TemporaryDirectory() as directory:
+            generate(project, "production", directory)
+            self.assertTrue(check(project, "production", directory)[0])
+
     def test_generation_snapshot_deterministic_and_checkable(self):
         p=default_project()
         with tempfile.TemporaryDirectory() as d:

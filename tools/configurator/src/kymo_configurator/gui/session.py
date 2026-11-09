@@ -8,19 +8,18 @@ from __future__ import annotations
 
 import copy
 import difflib
-import json
 from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import QObject, Signal
 
 from .. import catalog
-from ..generation import _render, generate
+from ..generation import _linked, _render, generate, selected_generation
 from ..i18n import tr
 from ..migration import migrate, needs_migration
 from ..model import default_project, load_project, save_project
-from ..resolution import resolve_profile
-from ..validation import Diagnostic, validate
+from ..resources import estimate_ram
+from ..validation import Diagnostic, PROFILE_NAME, validate
 
 
 class ProjectSession(QObject):
@@ -41,12 +40,22 @@ class ProjectSession(QObject):
 
     # --- document lifecycle -------------------------------------------------
     def _prepare(self, doc: dict[str, Any]) -> dict[str, Any]:
-        self.notes = []
-        if needs_migration(doc):
+        migrated = needs_migration(doc)
+        if migrated:
             doc = migrate(doc)
+        invalid_shape = {
+            "schema.type", "schema.version", "profiles.empty", "profile.type", "features.type",
+            "trace.type", "trace.section_type", "build.type", "resources.type", "bindings.type",
+            "port.type", "watch.type", "channels.type", "channel.type", "registry.type", "registry.row",
+        }
+        problems = [d for d in validate(doc) if d.code in invalid_shape]
+        if problems:
+            raise ValueError("\n".join(f"{d.path}: {d.localized()[0]}" for d in problems))
+        self.notes = []
+        self.dirty = migrated
+        if migrated:
             self.notes.append(tr("This project was written for KymoCore 6.x and has been upgraded "
                                  "to the KymoCore 7.0 format. Save to keep the upgrade."))
-            self.dirty = True
         return doc
 
     def new(self) -> None:
@@ -58,7 +67,6 @@ class ProjectSession(QObject):
 
     def load(self, path: str | Path) -> None:
         doc = load_project(path)
-        self.dirty = False
         self.doc = self._prepare(doc)
         self.path = Path(path)
         self._invalidate(replaced=True)
@@ -97,14 +105,15 @@ class ProjectSession(QObject):
         """Copy the active profile under ``name`` (or a free ``<profile>_copy`` name) and select it."""
         source = self.profile
         if name is None:
-            base = source + "_copy"
+            base = source[:59] + "_copy"
             name = base
             index = 2
             while name in self.profiles:
-                name = f"{base}{index}"
+                suffix = str(index)
+                name = base[:64 - len(suffix)] + suffix
                 index += 1
-        elif not name or name in self.profiles:
-            raise ValueError(f"Profile name '{name}' is empty or already used")
+        elif not PROFILE_NAME.fullmatch(name) or name in self.profiles:
+            raise ValueError("Invalid or duplicate profile name")
         self.doc["profiles"][name] = copy.deepcopy(self.doc["profiles"][source])
         self.doc["active_profile"] = name
         self.dirty = True
@@ -136,7 +145,7 @@ class ProjectSession(QObject):
     # --- validation, preview, generation --------------------------------------
     def diagnostics(self) -> list[Diagnostic]:
         if self._diagnostics is None:
-            self._diagnostics = validate(self.doc, self.profile)
+            self._diagnostics = validate(self.doc)
         return self._diagnostics
 
     def errors(self) -> list[Diagnostic]:
@@ -154,13 +163,22 @@ class ProjectSession(QObject):
         base = (self.path.parent if self.path else Path.cwd()) / configured
         return base / self.profile
 
+    def ram_parts(self) -> dict[str, int] | None:
+        """A malformed configuration has no reliable estimate."""
+        if self.errors():
+            return None
+        return estimate_ram(self.doc, self.profile)
+
     def effective_macros(self) -> list[tuple[str, int]]:
-        resolved = resolve_profile(self.doc, self.profile)
+        resolved = self.view().resolved()
         macros = [("KYMO_ENABLED", int(resolved["enabled"]))]
         macros += [(f"KYMO_ENABLE_{k.upper()}", int(v)) for k, v in resolved["effective_features"].items()]
         trace = resolved["effective_trace"]
         macros.append(("KYMO_ENABLE_TRACE", int(trace["enabled"])))
-        macros += [(f"KYMO_ENABLE_TRACE_{k.upper()}", int(trace[k])) for k in ("isr", "scheduler", "flow")]
+        macros += [(f"KYMO_ENABLE_TRACE_{k.upper()}", int(trace.get(k, False)))
+                   for k in ("isr", "scheduler", "flow")]
+        macros.append(("KYMO_ENABLE_TRACE_STACK_POINTER", int(
+            trace["enabled"] and bool(self.view().get((catalog.PROFILE, "trace", "stack_pointer"), False)))))
         channels = self.doc.get("channels", [])
         macros.append(("KYMO_MAX_CHANNELS", max(1, len(channels) if isinstance(channels, list) else 1)))
         return macros
@@ -169,18 +187,21 @@ class ProjectSession(QObject):
         """Generated file name -> (change state, unified diff or content lines)."""
         rendered = _render(self.doc, self.profile)
         previous = None
-        out = self.output_path()
         try:
-            selector = json.loads((out / "active_generation.json").read_text(encoding="utf-8"))
-            previous = out / "generations" / selector["generation"]
-        except (OSError, KeyError, json.JSONDecodeError):
-            previous = None
+            previous, _ = selected_generation(self.output_path())
+        except (OSError, ValueError):
+            pass
         result = {}
         for name, data in sorted(rendered.items()):
             new = data.decode("utf-8").splitlines()
             old_file = previous / name if previous else None
-            old = old_file.read_text(encoding="utf-8").splitlines() if old_file and old_file.exists() else []
-            if not old:
+            old = None
+            if old_file is not None and not _linked(old_file):
+                try:
+                    old = old_file.read_text(encoding="utf-8").splitlines()
+                except (OSError, UnicodeError):
+                    pass
+            if old is None:
                 result[name] = ("new", new)
             elif old == new:
                 result[name] = ("unchanged", new)
@@ -190,4 +211,8 @@ class ProjectSession(QObject):
         return result
 
     def generate(self) -> Path:
-        return generate(self.doc, self.profile, self.output_path())
+        if errors := self.errors():
+            raise ValueError("\n".join(f"{d.path}: {d.localized()[0]}" for d in errors))
+        snapshot = generate(self.doc, self.profile, self.output_path())
+        self.changed.emit()
+        return snapshot

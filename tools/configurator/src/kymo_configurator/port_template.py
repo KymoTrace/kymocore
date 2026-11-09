@@ -1,87 +1,101 @@
 # SPDX-License-Identifier: MIT
 """Create an explicitly requested, never-overwriting callback scaffold."""
 from __future__ import annotations
-import shutil, tempfile
 from pathlib import Path
 from typing import Any
 
-def render_port_template(project:dict[str,Any])->dict[str,str]:
-    b=project.get("bindings",{})
-    clock=b.get("clock","kymo_port_clock_ms"); sample=b.get("sample","kymo_port_sample"); write=b.get("write","kymo_port_write")
-    busy=b.get("busy","kymo_port_busy"); service=b.get("service","kymo_port_service")
-    declarations=f'''#pragma once
-#include <KymoCore.h>
-#ifdef __cplusplus
-extern "C" {{
-#endif
-uint32_t {clock}(void *user);
-uint8_t {sample}(void *user, uint8_t id, KymoSample *sample);
-uint8_t {write}(void *user, const uint8_t *bytes, uint8_t length);
-'''
-    if busy: declarations+=f"uint8_t {busy}(void *user);\n"
-    if service: declarations+=f"void {service}(void *user);\n"
-    declarations+="#ifdef __cplusplus\n}\n#endif\n"
-    bodies=f'''/* User-owned starter only. Replace each TODO with target-specific behavior. */
-#include "kymo_port.h"
-#include <kymo_config.h>
-#if KYMO_EFFECTIVE_RUNTIME
-#error Implement the Kymo port callbacks in this file before enabling runtime
-extern "C" uint32_t {clock}(void *user) {{
-    (void)user;
-    /* TODO: return a monotonic millisecond counter. */
-    return 0u;
-}}
-extern "C" uint8_t {sample}(void *user, uint8_t id, KymoSample *sample) {{
-    (void)user; (void)id; (void)sample;
-    /* TODO: copy a measurement and return nonzero only when available. */
-    return 0u;
-}}
-extern "C" uint8_t {write}(void *user, const uint8_t *bytes, uint8_t length) {{
-    (void)user; (void)bytes; (void)length;
-    /* TODO: accept and report a prefix of the provided bytes. */
-    return 0u;
-}}
-'''
-    if busy: bodies+=f'''extern "C" uint8_t {busy}(void *user) {{
-    (void)user;
-    /* TODO: report whether a borrowed TX buffer is still in use. */
-    return 0u;
-}}
-'''
-    if service: bodies+=f'''extern "C" void {service}(void *user) {{
-    (void)user;
-    /* TODO: perform bounded transport service, if required. */
-}}
-'''
-    bodies+="#endif /* KYMO_EFFECTIVE_RUNTIME */\n"
-    profile=project.get("profiles",{}).get(project.get("active_profile"),{})
-    trace=profile.get("trace",{}) if isinstance(profile,dict) else {}
-    if isinstance(trace,dict) and trace.get("enabled"):
-        tb=trace.get("bindings",{}); session=tb.get("session_id") or trace.get("session",{}).get("callback")
-        stubs=[(tb.get("clock"),"uint64_t {name}(void *user)","return the free-running trace tick counter","0u"),
-               (session,"uint64_t {name}(void)","return a new random session ID per boot","0u"),
-               (tb.get("trace_write"),"size_t {name}(void *user, const uint8_t *bytes, size_t length)","write a prefix of the mux frame and return its length","0u"),
-               (tb.get("transport_busy"),"uint8_t {name}(void *user)","report nonzero while the driver owns the frame","0u")]
-        declarations=declarations.replace("#ifdef __cplusplus\n}\n#endif\n","")
-        declarations+="#if KYMO_EFFECTIVE_TRACE\n"+"".join(f"{sig.format(name=name)};\n" for name,sig,_,_ in stubs if name)+"#endif\n#ifdef __cplusplus\n}\n#endif\n"
-        bodies+="#if KYMO_EFFECTIVE_TRACE\n"
-        for name,sig,todo,value in stubs:
-            if name:
-                params=[p.strip().split()[-1].lstrip("*") for p in sig.split("(",1)[1].rstrip(")").split(",") if p.strip() not in ("void","")]
-                unused=" ".join(f"(void){p};" for p in params)
-                unused_line=f"    {unused}\n" if unused else ""
-                bodies+=f'extern "C" {sig.format(name=name)} {{\n{unused_line}    /* TODO: {todo}. */\n    return {value};\n}}\n'
-        bodies+="#endif /* KYMO_EFFECTIVE_TRACE */\n"
-    return {"kymo_port.h":declarations,"kymo_port.cpp":bodies}
+from .resolution import resolve_profile
+from .trace_config import trace_callbacks
+from .validation import validate
 
-def create_port_template(project:dict[str,Any],destination:str|Path)->Path:
-    target=Path(destination).resolve()
-    if target.exists(): raise FileExistsError(f"Refusing to overwrite existing port template path: {target}")
-    target.parent.mkdir(parents=True,exist_ok=True)
-    staging=Path(tempfile.mkdtemp(prefix=".kymo-port-",dir=target.parent))
+
+def render_port_template(project: dict[str, Any]) -> dict[str, str]:
+    errors = [f"{d.path}: {d.message}" for d in validate(project) if d.severity == "error"]
+    if errors:
+        raise ValueError("\n".join(errors))
+    resolved = resolve_profile(project, project["active_profile"])
+    bindings = resolved["bindings"]
+    trace = resolved["requested_trace"]
+    tracing = resolved["effective_trace"]["enabled"]
+    shared = tracing and trace.get("transport", {}).get("mode") == "shared_v2"
+    callbacks = trace_callbacks(trace)
+    runtime_stubs = [
+        (bindings.get("clock"), "uint32_t", "void *user", "return a monotonic millisecond counter"),
+        (bindings.get("sample"), "uint8_t", "void *user, uint8_t id, KymoSample *sample",
+         "copy a measurement and return nonzero only when available"),
+        (None if shared else bindings.get("write"), "uint8_t",
+         "void *user, const uint8_t *bytes, uint8_t length", "accept and report a prefix of the provided bytes"),
+        (None if shared else bindings.get("busy"), "uint8_t", "void *user",
+         "report whether a borrowed TX buffer is still in use"),
+        (bindings.get("service"), "void", "void *user", "perform bounded transport service, if required"),
+    ]
+    trace_stubs = [
+        (callbacks["clock"], "uint64_t", "void *user", "return the free-running trace tick counter"),
+        (callbacks["session_id"], "uint64_t", "void", "return a new random session ID per boot"),
+        (callbacks["trace_write"], "size_t", "void *user, const uint8_t *bytes, size_t length",
+         "write a prefix of the mux frame and return its length"),
+        (callbacks.get("transport_busy"), "uint8_t", "void *user", "report nonzero while the driver owns the frame"),
+        (callbacks.get("core_id"), "uint8_t", "void *user", "return the ID of the executing core"),
+        (callbacks.get("current_context"), "uint32_t", "void *user", "return the current context ID"),
+        (callbacks.get("critical_enter"), "void", "void *user", "enter a recorder critical section"),
+        (callbacks.get("critical_exit"), "void", "void *user", "leave the recorder critical section"),
+    ]
+
+    header = ["#pragma once", "#include <KymoCore.h>", "#ifdef __cplusplus", 'extern "C" {', "#endif"]
+    source = ["/* User-owned starter only. Replace each TODO with target-specific behavior. */",
+              '#include "kymo_port.h"']
+    # A shared callback must remain available when any consuming feature is on,
+    # including when compiler definitions disable another feature in this profile.
+    functions = {}
+    for feature, enabled, stubs in (
+        ("RUNTIME", resolved["effective_features"]["runtime"], runtime_stubs),
+        ("TRACE", tracing, trace_stubs),
+    ):
+        if not enabled:
+            continue
+        guard = f"KYMO_EFFECTIVE_{feature}"
+        source.extend((f"#if {guard}",
+                       f"#error Implement the Kymo port callbacks before enabling {feature.lower()}", "#endif"))
+        for name, result, params, todo in stubs:
+            if not name:
+                continue
+            if name not in functions:
+                functions[name] = (result, params, todo, [])
+            guards = functions[name][3]
+            if guard not in guards:
+                guards.append(guard)
+    for name, (result, params, todo, guards) in functions.items():
+        guard = " || ".join(guards)
+        declaration = f"{result} {name}({params})"
+        header.extend((f"#if {guard}", declaration + ";", "#endif"))
+        source.extend((f"#if {guard}", "/" + "*" * 79, f" * {name}",
+                       " " + "*" * 78 + "/", f'extern "C" {declaration} {{'))
+        if params != "void":
+            for param in params.split(", "):
+                source.append(f"    (void){param.split()[-1].lstrip('*')};")
+        source.append(f"    /* TODO: {todo}. */")
+        if result != "void":
+            source.append("    return 0u;")
+        source.extend(("}", "#endif"))
+    header.extend(("#ifdef __cplusplus", "}", "#endif"))
+    return {"kymo_port.h": "\n".join(header) + "\n", "kymo_port.cpp": "\n".join(source) + "\n"}
+
+
+def create_port_template(project: dict[str, Any], destination: str | Path) -> Path:
+    target = Path(destination).absolute()
+    files = render_port_template(project)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.mkdir()
+    written = []
     try:
-        for name,content in render_port_template(project).items(): (staging/name).write_text(content,encoding="utf-8",newline="\n")
-        staging.replace(target)
-    except Exception:
-        shutil.rmtree(staging,ignore_errors=True); raise
+        for name, content in files.items():
+            path = target / name
+            with path.open("x", encoding="utf-8", newline="\n") as stream:
+                written.append(path)
+                stream.write(content)
+    except OSError:
+        for path in written:
+            path.unlink(missing_ok=True)
+        target.rmdir()
+        raise
     return target

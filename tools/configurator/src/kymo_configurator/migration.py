@@ -9,7 +9,10 @@ from .model import CORE_CONFIG_API_VERSION, SCHEMA_VERSION
 def _to_v1(result: dict[str, Any]) -> None:
     """Early development fixture without schema_version."""
     result["schema_version"] = 1
-    result.setdefault("active_profile", next(iter(result.get("profiles", {})), "development"))
+    profiles = result.get("profiles")
+    if not isinstance(profiles, dict):
+        raise ValueError("Migration requires profiles to be an object")
+    result.setdefault("active_profile", next(iter(profiles), "development"))
     result.setdefault("core_config_api_version", 1)
 
 
@@ -28,7 +31,7 @@ def _v1_to_v2(result: dict[str, Any]) -> None:
 def needs_migration(project: dict[str, Any]) -> bool:
     """True when the document is an older, migratable schema."""
     version = project.get("schema_version")
-    return (version is None and "profiles" in project) or version == 1
+    return (version is None and "profiles" in project) or (type(version) is int and version == 1)
 
 
 def migrate(project: dict[str, Any], to_schema: int = SCHEMA_VERSION) -> dict[str, Any]:
@@ -39,6 +42,8 @@ def migrate(project: dict[str, Any], to_schema: int = SCHEMA_VERSION) -> dict[st
     if version is None and "profiles" in result:
         _to_v1(result)
         version = 1
+    if type(version) is not int:
+        raise ValueError(f"No migration path from schema {version!r} to {to_schema}")
     if version == to_schema:
         return result
     if version == 1 and to_schema == 2:

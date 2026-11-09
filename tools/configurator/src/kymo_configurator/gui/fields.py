@@ -194,7 +194,7 @@ class FieldEditor(QWidget):
         elif kind == "bool":
             widget = ToggleSwitch()
             widget.toggled.connect(self._commit)
-        elif kind == "int":
+        elif kind == "int" and (self.field.maximum is None or self.field.maximum <= 2147483647):
             widget = QSpinBox()
             widget.setRange(self.field.minimum if self.field.minimum is not None else -2147483647,
                             self.field.maximum if self.field.maximum is not None else 2147483647)
@@ -320,15 +320,20 @@ class FieldEditor(QWidget):
         widget = self.input
         if kind == "bool":
             return widget.isChecked()
-        if kind == "int":
+        if isinstance(widget, QSpinBox):
             return widget.value()
         if kind == "preset":
             return self.session.value(self.field)
-        if kind in ("choice", "preset"):
+        if kind == "choice":
             return widget.currentData()
         text = widget.text().strip()
-        if kind == "optional_int":
-            return int(text) if text.isdigit() else (None if not text else text)
+        if kind in ("int", "optional_int"):
+            if not text and kind == "optional_int":
+                return None
+            try:
+                return int(text)
+            except ValueError:
+                return text
         return text
 
     def set_input(self, value: Any) -> None:
@@ -336,15 +341,16 @@ class FieldEditor(QWidget):
         widget = self.input
         if kind == "bool":
             widget.setChecked(bool(value))
-        elif kind == "int":
-            widget.setValue(int(value) if isinstance(value, int) else int(self.field.default or 0))
+        elif isinstance(widget, QSpinBox):
+            number = value if type(value) is int else self.field.default or 0
+            widget.setValue(max(widget.minimum(), min(widget.maximum(), number)))
         elif kind == "preset":
             state = self._goal_state(self.session.view().profile)
             for key, box in self._goals.items():
                 box.setChecked(state[key])
-        elif kind in ("choice", "preset"):
+        elif kind == "choice":
             index = widget.findData(value)
-            widget.setCurrentIndex(index if index >= 0 else 0)
+            widget.setCurrentIndex(index)
         else:
             text = "" if value is None else str(value)
             if widget.text() != text:
@@ -366,7 +372,7 @@ class FieldEditor(QWidget):
         view = self.session.view()
         self._updating = True
         try:
-            if not (self.field.kind in ("identifier", "text", "optional_int") and self.input.hasFocus()):
+            if not (isinstance(self.input, QLineEdit) and self.input.hasFocus()):
                 self.set_input(self.field.value(view))
         finally:
             self._updating = False

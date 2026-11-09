@@ -31,5 +31,23 @@ class CompilerAuditTests(unittest.TestCase):
                 entries[1]['arguments'][3] = '-DKYMO_ENABLED=1'
                 with self.assertRaisesRegex(ValueError, 'Configuration mismatch'):
                     check_commands(entries)
+                entries[1]['arguments'][3] = '-DKYMO_MAX_CHANNELS=2'
+                entries[0]['arguments'][3] = '-DKYMO_MAX_CHANNELS=1'
+                with self.assertRaisesRegex(ValueError, 'KYMO_MAX_CHANNELS'):
+                    check_commands(entries)
+                entries[0]['arguments'][3] = '-DKYMO_MAX_CHANNELS=16'
+                for expression in ('16u', '0x10', '(8+8)', '(1u << 4)', '(32/2)'):
+                    with self.subTest(size_expression=expression):
+                        entries[1]['arguments'][3] = '-DKYMO_MAX_CHANNELS=' + expression
+                        reports = check_commands(entries)
+                        self.assertEqual(reports[1]['values']['KYMO_MAX_CHANNELS'], 16)
+                for index, entry in enumerate(entries):
+                    header_dir = Path(directory) / str(index)
+                    header_dir.mkdir()
+                    (header_dir / 'kymo_user_config.h').write_text('#define KYMO_ENABLED 1\n')
+                    entry['arguments'][3:4] = ['-I' + str(header_dir),
+                                                '-DKYMO_USER_CONFIG_HEADER="kymo_user_config.h"']
+                with self.assertRaisesRegex(ValueError, 'KYMO_USER_CONFIG_HEADER'):
+                    check_commands(entries)
         finally:
             os.environ['PATH'] = old_path

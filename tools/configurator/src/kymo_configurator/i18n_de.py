@@ -606,7 +606,24 @@ DE: dict[str, str] = {
         "Der Kanal möchte {key} senden, aber das Profil hat diese Funktion nicht eingeschaltet",
     "Clock callback must be an identifier": "Der Name der Uhr-Funktion muss ein gültiger Bezeichner sein",
     "Clock domain ID must be 0..65535": "Die ID der Uhrendomäne muss 0..65535 sein",
-    "Clock frequency must be a positive integer": "Die Taktfrequenz muss eine positive ganze Zahl sein",
+    "Clock frequency must be a positive 64-bit integer": "Die Taktfrequenz muss eine positive 64-Bit-Ganzzahl sein",
+    "The first range needs a start and an end symbol": "Der erste Bereich braucht ein Start- und ein Endsymbol",
+    "capabilities_verified must be boolean": "capabilities_verified muss ein Wahrheitswert sein",
+    "Project data must be representable as UTF-8 JSON": "Die Projektdaten müssen sich als UTF-8-JSON speichern lassen",
+    "Trace metadata/dictionary exceeds the 8192-byte Core admin record limit":
+        "Trace-Metadaten oder das Verzeichnis überschreiten die Grenze von 8192 Byte pro Core-Admin-Datensatz",
+    "{name} has an incompatible declaration at {other}": "{name} ist unter {other} mit einer anderen Signatur deklariert",
+    "Verified port capabilities": "Verifizierte Portfunktionen",
+    "Steps adapt to your goals": "Die Schritte passen sich deinen Zielen an",
+    "Set only after testing scheduler and interrupt tracing on this port.":
+        "Erst aktivieren, nachdem Taskwechsel und Interrupts auf diesem Port getestet wurden.",
+    "Complete scheduler coverage": "Vollständige Taskwechsel",
+    "The verified port records all scheduler switches.": "Der verifizierte Port zeichnet alle Taskwechsel auf.",
+    "Complete interrupt coverage": "Vollständige Interrupt-Erfassung",
+    "The verified port records all interrupt entries and exits.":
+        "Der verifizierte Port zeichnet alle Interrupt-Ein- und -Austritte auf.",
+    "Complete core state coverage": "Vollständige Erfassung der Core-Zustände",
+    "The verified port records all core state changes.": "Der verifizierte Port zeichnet alle Core-Zustandswechsel auf.",
     "Enable feature {key} or clear this channel flag.":
         "Schalte die Funktion {key} ein oder nimm den Haken bei diesem Kanal weg.",
     "Enable trace.isr or disable scheduler tracing.":
@@ -661,7 +678,6 @@ DE: dict[str, str] = {
     "Unknown trace field {key!r}": "Unbekanntes Trace-Feld {key!r}",
     "Unknown trace port kind": "Unbekannte Trace-Port-Art",
     "Unknown trace {section} field {key!r}": "Unbekanntes Feld {key!r} in trace.{section}",
-    "Unknown {section} field {key!r}": "Unbekanntes Feld {key!r} in {section}",
     "Unsupported schema version {version}; supported version is {schema}":
         "Schemaversion {version} wird nicht unterstützt; unterstützt wird Version {schema}",
     "Use a non-empty relative path without parent-directory segments":
@@ -687,7 +703,6 @@ DE: dict[str, str] = {
     "{key} must be in {low}..{high} and a power of two":
         "{key} muss im Bereich {low}..{high} liegen und eine Zweierpotenz sein",
     "{key} must be {low}..{high}": "{key} muss {low}..{high} sein",
-    "{section} must be an object": "{section} muss ein Objekt sein",
     'Build ID callback': 'Build-ID-Callback',
     'CMSIS GCC, RP2040, nRF (__data_start__ .. __bss_end__)': 'CMSIS GCC, RP2040, nRF (__data_start__ .. __bss_end__)',
     'Choose your chip family. The firmware then allows KymoStudio to read exactly your global variables and nothing else.': 'Wähle deine Chipfamilie. Die Firmware erlaubt KymoStudio dann, genau deine globalen Variablen zu lesen und sonst nichts.',
@@ -726,7 +741,6 @@ DE: dict[str, str] = {
     'Profile {profile} needs about {used} bytes of RAM for KymoCore, more than the budget of {budget}': 'Profil {profile} braucht für KymoCore etwa {used} Byte RAM, mehr als das Budget von {budget}',
     'Reduce trace events or contexts, or switch off features in this profile.': 'Trace-Ereignisse oder Kontexte verringern oder Funktionen in diesem Profil abschalten.',
     # --- Studio-style window, start page, inspector --------------------------
-    "5 to 7 steps, depending on the goal": "5 bis 7 Schritte, je nach Ziel",
     "Check the configuration and write the generated files.": "Konfiguration prüfen und die erzeugten Dateien schreiben.",
     "Configuration API {version}": "Konfigurations-API {version}",
     "Diagnostics": "Diagnose",

@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QListWidget, QListWi
 
 from .. import catalog
 from ..i18n import tr
-from ..resources import estimate_ram
 from .parts import StatusListDelegate
 from .section_page import SectionPage
 from .session import ProjectSession
@@ -45,6 +44,7 @@ class GuidedWizard(QWidget):
         self.steps.setMouseTracking(True)
         self.steps.setSpacing(1)
         self.steps.itemClicked.connect(self._step_clicked)
+        self.steps.itemActivated.connect(self._step_clicked)
         side_layout.addWidget(self.steps, 1)
         hint = QLabel(tr("You can switch to the professional mode at any time; nothing is lost."))
         hint.setObjectName("fieldHelp")
@@ -150,6 +150,7 @@ class GuidedWizard(QWidget):
                 item.setFont(font)
             self.steps.addItem(item)
         self.steps.blockSignals(False)
+        self.steps.setCurrentRow(self.index)
         self.progress.setText(tr("Step {n} of {total}", n=self.index + 1, total=len(sections)).upper())
         self.progress_bar.setRange(0, len(sections))
         self.progress_bar.setValue(self.index + 1)
@@ -157,13 +158,18 @@ class GuidedWizard(QWidget):
         last = self.index == len(sections) - 1
         self.next_button.setVisible(not last)
         self.message.setText("")
-        total = sum(estimate_ram(self.session.doc, self.session.profile).values())
-        self.ram.setText(tr("RAM estimate: {bytes} B", bytes=f"{total:,}".replace(",", " ")))
+        parts = self.session.ram_parts()
+        self.ram.setVisible(parts is not None)
+        if parts is not None:
+            total = sum(parts.values())
+            self.ram.setText(tr("RAM estimate: {bytes} B", bytes=f"{total:,}".replace(",", " ")))
 
     def blocking_errors(self) -> list:
         return [d for d in self.session.diagnostics_for(self.current_section()) if d.severity == "error"]
 
     def next(self) -> bool:
+        if self.index >= len(self.step_sections()) - 1:
+            return False
         errors = self.blocking_errors()
         if errors:
             self.message.setText(tr("Please fix this first: ") + "; ".join(d.localized()[0] for d in errors[:3]))

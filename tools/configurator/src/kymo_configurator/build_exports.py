@@ -7,9 +7,9 @@ snapshot's export once at configure/build start; regeneration cannot mix sources
 from __future__ import annotations
 
 
-def render_exports() -> dict[str, str]:
+def render_exports(*, watch: bool = False) -> dict[str, str]:
     """Return deterministic build files; application callback files remain owned by users."""
-    return {
+    exports = {
         "kymo_build_export.cmake": r'''# Generated immutable Kymo configuration snapshot. Requires CMake 3.19+.
 # include("<snapshot>/kymo_build_export.cmake")
 # kymo_configure_targets(application_target core_target)
@@ -51,9 +51,15 @@ library = projenv.BuildLibrary(str(Path(env.subst("$BUILD_DIR")) / "kymo-generat
 env.Append(LIBS=[library])
 ''',
         "kymo_build_export.mk": r'''# Include this file by its immutable snapshot path. No Python/Qt is used.
-KYMO_SNAPSHOT_DIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+# Set KYMO_SNAPSHOT_DIR before including this file if the include path has spaces.
+ifndef KYMO_SNAPSHOT_DIR
+KYMO_SNAPSHOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+endif
+kymo_empty :=
+kymo_space := $(kymo_empty) $(kymo_empty)
+kymo_snapshot_make_path := $(subst $(kymo_space),\$(kymo_space),$(KYMO_SNAPSHOT_DIR))
 CPPFLAGS += -I"$(KYMO_SNAPSHOT_DIR)" -DKYMO_USER_CONFIG_HEADER=\"kymo_user_config.h\"
-KYMO_GENERATED_SOURCES := $(KYMO_SNAPSHOT_DIR)/kymo_generated_config.cpp
+KYMO_GENERATED_SOURCES := $(kymo_snapshot_make_path)/kymo_generated_config.cpp
 # Use CPPFLAGS for EVERY Core and application translation unit.
 # Add KYMO_GENERATED_SOURCES to application sources. Use distinct build directories per profile.
 ''',
@@ -65,3 +71,15 @@ KYMO_GENERATED_SOURCES := $(KYMO_SNAPSHOT_DIR)/kymo_generated_config.cpp
 ; Never use build_src_flags: those omit library translation units.
 ''',
     }
+    if watch:
+        exports["kymo_build_export.cmake"] = exports["kymo_build_export.cmake"].replace(
+            'PRIVATE "${KYMO_SNAPSHOT_DIR}/kymo_generated_config.cpp")',
+            'PRIVATE "${KYMO_SNAPSHOT_DIR}/kymo_generated_config.cpp"\n'
+            '        "${KYMO_SNAPSHOT_DIR}/kymo_generated_watch.cpp")')
+        exports["kymo_build_sources.py"] = exports["kymo_build_sources.py"].replace(
+            '"+<kymo_generated_config.cpp>"',
+            '"+<kymo_generated_config.cpp>", "+<kymo_generated_watch.cpp>"')
+        exports["kymo_build_export.mk"] = exports["kymo_build_export.mk"].replace(
+            '$(kymo_snapshot_make_path)/kymo_generated_config.cpp\n',
+            '$(kymo_snapshot_make_path)/kymo_generated_config.cpp $(kymo_snapshot_make_path)/kymo_generated_watch.cpp\n')
+    return exports

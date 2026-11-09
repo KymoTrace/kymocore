@@ -2,9 +2,10 @@
 """Small JSON model helpers. The source document remains a plain versioned dict."""
 from __future__ import annotations
 
-import copy
 import json
+import os
 from pathlib import Path
+import tempfile
 from typing import Any
 
 FEATURES = ("runtime", "x", "z", "timestamp", "crc", "decoder", "cpp")
@@ -62,19 +63,53 @@ def default_project(name: str = "KymoProject") -> dict[str, Any]:
 
 
 def load_project(path: str | Path) -> dict[str, Any]:
+    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        obj: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in obj:
+                raise ValueError(f"Duplicate project key: {key!r}")
+            obj[key] = value
+        return obj
+
+    def reject_constant(value: str) -> None:
+        raise ValueError(f"Invalid JSON number: {value}")
+
     try:
-        doc = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        doc = json.loads(Path(path).read_text(encoding="utf-8-sig"),
+                         object_pairs_hook=unique_object, parse_constant=reject_constant)
+    except (OSError, ValueError, RecursionError) as exc:
         raise ValueError(f"Cannot read project {path}: {exc}") from exc
     if not isinstance(doc, dict):
         raise ValueError("Project root must be a JSON object")
     return doc
 
 
-def save_project(path: str | Path, doc: dict[str, Any]) -> None:
+def canonical(doc: Any) -> bytes:
+    return (json.dumps(doc, ensure_ascii=False, allow_nan=False, sort_keys=True,
+                       separators=(",", ":")) + "\n").encode("utf-8")
+
+
+def save_project(path: str | Path, doc: dict[str, Any], *, overwrite: bool = True) -> None:
     target = Path(path)
+    data = (json.dumps(doc, ensure_ascii=False, allow_nan=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
     target.parent.mkdir(parents=True, exist_ok=True)
-    data = json.dumps(doc, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    temp = target.with_suffix(target.suffix + ".tmp")
-    temp.write_text(data, encoding="utf-8", newline="\n")
-    temp.replace(target)
+    if not overwrite:
+        stream = target.open("xb")
+        try:
+            with stream:
+                stream.write(data)
+                stream.flush()
+                os.fsync(stream.fileno())
+        except OSError:
+            target.unlink(missing_ok=True)
+            raise
+        return
+    fd, temp_name = tempfile.mkstemp(prefix=".kymo-project-", suffix=".tmp", dir=target.parent)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp_name, target)
+    finally:
+        Path(temp_name).unlink(missing_ok=True)

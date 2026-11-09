@@ -5,72 +5,18 @@ import hashlib, json, os, shutil, tempfile
 import re
 from pathlib import Path
 from typing import Any
-from .model import GENERATOR_VERSION
+from .model import GENERATOR_VERSION, canonical
+from .trace_config import trace_admin_capacity, trace_callbacks, trace_records
 from .resolution import resolve_profile
 from .validation import validate
 from .build_exports import render_exports
 from .watch_config import WATCH_HEADER, render_watch_source, watch_macros, watch_settings
 
 
-def _canonical(obj: Any) -> bytes:
-    return (json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
-
-
-def _canonical_protocol(obj: Any) -> bytes:
-    """Canonical protocol JSON has no trailing whitespace or BOM."""
-    return json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-
-
-def _render_trace_outputs(project: dict[str, Any], profile: str,
-                          effective: dict[str, bool], trace: dict[str, Any],
-                          profile_enabled: bool) -> dict[str, str]:
-    """Render immutable canonical protocol metadata and dictionary records."""
-    enabled = bool(profile_enabled and trace.get("enabled", False))
-    symbols = sorted(project.get("symbols", []), key=lambda row: row["id"])
-    contexts = sorted(project.get("contexts", []), key=lambda row: row["id"])
-    dictionary = {
-        "schema_version": 1,
-        "generation": 1,
-        "symbols": symbols,
-        "contexts": contexts,
-    }
-    dictionary_bytes = _canonical_protocol(dictionary)
+def _render_trace_outputs(trace: dict[str, Any], records: tuple[bytes, bytes]) -> dict[str, str]:
+    """Render the trace records both as JSON and as C byte arrays."""
+    metadata_bytes, dictionary_bytes = records
     dictionary_hash = hashlib.sha256(dictionary_bytes).hexdigest()
-    port = trace.get("port", {})
-    clock = trace.get("clock", {})
-    features = {
-        "trace": enabled,
-        "isr": bool(enabled and trace.get("isr", False)),
-        "scheduler": bool(enabled and trace.get("scheduler", False)),
-        "flow": bool(enabled and trace.get("flow", False)),
-    }
-    metadata = {
-        "schema_version": 1,
-        "wire_version": 2,
-        "event_schema_version": 1,
-        "device_id": project.get("project_name", "Kymo"),
-        "build_id": hashlib.sha256(_canonical({"project": project, "profile": profile})).hexdigest(),
-        "dictionary_hash": dictionary_hash,
-        "core_count": int(port.get("core_count", 1)),
-        "clock": {
-            "clock_domain_id": int(clock.get("domain_id", 0)),
-            "frequency_hz": str(clock.get("frequency_hz", 1000000)),
-            "counter_bits": int(clock.get("counter_bits", 64)),
-            "smp_synchronized": bool(clock.get("smp_synchronized", False)),
-            "reset_rule": clock.get("reset_rule", "new_session"),
-        },
-        "features": features,
-        "port_capabilities": {
-            "kind": port.get("kind", "generic"),
-            "scheduler_complete": bool(port.get("scheduler_complete", False)),
-            "isr_complete": bool(port.get("isr_complete", False)),
-            "core_state_complete": bool(port.get("core_state_complete", False)),
-        },
-    }
-    metadata_bytes = _canonical_protocol(metadata)
-    admin_capacity = max(len(metadata_bytes), len(dictionary_bytes)) + 4
-    if enabled and admin_capacity > 8192:
-        raise ValueError("Trace metadata/dictionary exceeds the 8192-byte Core admin record limit")
 
     def render_array(name: str, value: bytes) -> list[str]:
         values = ", ".join(f"0x{byte:02x}u" for byte in value)
@@ -86,9 +32,7 @@ def _render_trace_outputs(project: dict[str, Any], profile: str,
         "#include <stddef.h>",
         "#include <stdint.h>",
     ]
-    trace_bindings = trace.get("bindings", {})
-    session_callback = (trace_bindings.get("session_id") or
-                        trace.get("session", {}).get("callback"))
+    session_callback = trace_callbacks(trace)["session_id"]
     if session_callback:
         lines.append("#ifdef __cplusplus")
         lines.append('extern "C" {')
@@ -110,10 +54,6 @@ def _render_trace_outputs(project: dict[str, Any], profile: str,
         "kymo_trace_metadata.json": metadata_bytes.decode("utf-8"),
         "kymo_trace_dictionary.json": dictionary_bytes.decode("utf-8"),
     }
-
-
-def _cpp_string(text: str) -> str:
-    return json.dumps(text, ensure_ascii=True)
 
 
 def _render_cpp_sender(bindings: dict[str, Any], effective: dict[str, bool]) -> str:
@@ -159,14 +99,14 @@ def _render_trace_wiring(trace: dict[str, Any], profile_enabled: bool,
     enabled = bool(profile_enabled and trace.get("enabled", False))
     if not enabled:
         return ""
-    bindings = trace.get("bindings", {})
-    clock = bindings.get("clock") or trace.get("clock", {}).get("callback")
-    session = bindings.get("session_id") or trace.get("session", {}).get("callback")
+    bindings = trace_callbacks(trace)
+    clock = bindings["clock"]
+    session = bindings["session_id"]
     core_id = bindings.get("core_id")
     current_context = bindings.get("current_context")
     critical_enter = bindings.get("critical_enter")
     critical_exit = bindings.get("critical_exit")
-    write = bindings.get("trace_write") or bindings.get("mux_write")
+    write = bindings["trace_write"]
     busy = bindings.get("transport_busy")
     transport = trace.get("transport", {})
     port = trace.get("port", {})
@@ -347,15 +287,18 @@ def _render(project: dict[str, Any], profile: str) -> dict[str, bytes]:
     resolved = resolve_profile(project, profile)
     channels = sorted(project.get("channels", []), key=lambda c: c["id"])
     trace=resolved["requested_trace"]
-    trace_outputs = _render_trace_outputs(project, profile, resolved["effective_features"],
-                                          trace, resolved["enabled"])
+    records = trace_records(project, profile)
+    trace_outputs = _render_trace_outputs(trace, records)
     requested = resolved["requested_features"]
     macros = {"KYMO_ENABLED": int(resolved["enabled"])}
     macros.update({"KYMO_ENABLE_" + k.upper(): int(v) for k,v in requested.items()})
-    for k in ("enabled","isr","scheduler","flow"):
-        macros["KYMO_ENABLE_TRACE" + ("_"+k.upper() if k!="enabled" else "")]=int(bool(trace.get(k,False)))
-    if trace.get("stack_pointer"):
-        macros["KYMO_ENABLE_TRACE_STACK_POINTER"]=1
+    macros["KYMO_ENABLE_TRACE"] = int(trace.get("enabled", False))
+    for key in ("isr", "scheduler", "flow"):
+        macros["KYMO_ENABLE_TRACE_" + key.upper()] = int(
+            bool(trace.get("enabled") and trace.get(key)))
+    if "stack_pointer" in trace:
+        macros["KYMO_ENABLE_TRACE_STACK_POINTER"] = int(
+            bool(trace.get("enabled") and trace["stack_pointer"]))
     trace_buffer = trace.get("buffer", {}) if isinstance(trace.get("buffer", {}), dict) else {}
     trace_port = trace.get("port", {}) if isinstance(trace.get("port", {}), dict) else {}
     for key, macro, default in (
@@ -371,9 +314,7 @@ def _render(project: dict[str, Any], profile: str) -> dict[str, bytes]:
     if watch is not None:
         macros.update(watch_macros(watch))
     if trace.get("enabled") and resolved["enabled"]:
-        macros["KYMO_MUX_ADMIN_RECORD_MAX"] = max(
-            len(trace_outputs["kymo_trace_metadata.json"].encode("utf-8")),
-            len(trace_outputs["kymo_trace_dictionary.json"].encode("utf-8"))) + 4
+        macros["KYMO_MUX_ADMIN_RECORD_MAX"] = trace_admin_capacity(records)
     macro_text="\n".join(f"#ifndef {k}\n#define {k} {v}\n#endif" for k,v in macros.items())
     user_header = ("/* Generated by Kymo Configurator. Do not edit; edit kymo.project.json. */\n"
                    "#ifndef KYMO_USER_CONFIG_H\n#define KYMO_USER_CONFIG_H\n"
@@ -388,7 +329,9 @@ def _render(project: dict[str, Any], profile: str) -> dict[str, bytes]:
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if KYMO_EFFECTIVE_RUNTIME
 extern const KymoConfig kymo_generated_config;
+#endif
 #if KYMO_EFFECTIVE_TRACE
 extern KymoTraceRecorder kymo_generated_trace_recorder;
 extern KymoMux kymo_generated_trace_mux;
@@ -411,33 +354,32 @@ void kymo_generated_init_cpp_sender(void);
     trace_transport = trace.get("transport", {})
     trace_shared = trace_enabled and trace_transport.get("mode") == "shared_v2"
     # Declare only enabled runtime callbacks; binding file is user-owned.
-    if True:
-        runtime_write_declaration = ("" if trace_shared else
-            f'extern "C" uint8_t {binds.get("write", "")}(void *, const uint8_t *, uint8_t);\n')
-        declarations=f'''#if KYMO_EFFECTIVE_RUNTIME
+    runtime_write_declaration = ("" if trace_shared else
+        f'extern "C" uint8_t {binds.get("write", "")}(void *, const uint8_t *, uint8_t);\n')
+    declarations=f'''#if KYMO_EFFECTIVE_RUNTIME
 extern "C" uint32_t {binds.get('clock','')}(void *);
 extern "C" uint8_t {binds.get('sample','')}(void *, uint8_t, KymoSample *);
 {runtime_write_declaration}'''
-        busy=binds.get("busy") if binds.get("write_borrows_buffer",True) else binds.get("busy")
-        service=binds.get("service")
-        user_ptrs={key:binds.get(key) for key in ("clock_user","sample_user","transport_user")}
-        for key,name in user_ptrs.items():
-            if name: declarations+=f'extern "C" void *{name};\n'
-        if busy: declarations+=f'extern "C" uint8_t {busy}(void *);\n'
-        if service: declarations+=f'extern "C" void {service}(void *);\n'
-        declarations+="#endif\n"
-        if trace_shared:
-            declarations += "#if KYMO_EFFECTIVE_RUNTIME\nstatic void kymo_generated_runtime_service(void *);\n#endif\n"
-        channel_init=",\n".join(f"    {{{c['period_ms']}u, {c['id']}u, {int(c.get('x',False))*8 | int(c.get('z',False))*4 | int(c.get('timestamp',False))*2}u}}" for c in channels)
-        cpp_sender=""
-        if requested.get("cpp"):
-            cpp_sender = _render_cpp_sender(binds, resolved["effective_features"])
-        runtime_write = "KymoMuxDataSlot_Write" if trace_shared else binds.get("write", "")
-        runtime_busy = "KymoMuxDataSlot_IsBusy" if trace_shared else busy or "nullptr"
-        runtime_service = "kymo_generated_runtime_service" if trace_shared else service or "nullptr"
-        runtime_transport_user = ("&kymo_generated_trace_data_adapter" if trace_shared else
-                                  user_ptrs.get("transport_user") or "nullptr")
-        config = f'''/* Generated static runtime wiring; callbacks remain user-owned. */
+    busy = binds.get("busy") if not trace_shared else None
+    service=binds.get("service")
+    user_ptrs={key:binds.get(key) for key in ("clock_user","sample_user","transport_user")}
+    for key,name in user_ptrs.items():
+        if name: declarations+=f'extern "C" void *{name};\n'
+    if busy: declarations+=f'extern "C" uint8_t {busy}(void *);\n'
+    if service: declarations+=f'extern "C" void {service}(void *);\n'
+    declarations+="#endif\n"
+    if trace_shared:
+        declarations += "#if KYMO_EFFECTIVE_RUNTIME\nstatic void kymo_generated_runtime_service(void *);\n#endif\n"
+    channel_init=",\n".join(f"    {{{c['period_ms']}u, {c['id']}u, {int(c.get('x',False))*8 | int(c.get('z',False))*4 | int(c.get('timestamp',False))*2}u}}" for c in channels)
+    cpp_sender=""
+    if requested.get("cpp") and binds.get("cpp_stream"):
+        cpp_sender = _render_cpp_sender(binds, resolved["effective_features"])
+    runtime_write = "KymoMuxDataSlot_Write" if trace_shared else binds.get("write", "")
+    runtime_busy = "KymoMuxDataSlot_IsBusy" if trace_shared else busy or "nullptr"
+    runtime_service = "kymo_generated_runtime_service" if trace_shared else service or "nullptr"
+    runtime_transport_user = ("&kymo_generated_trace_data_adapter" if trace_shared else
+                              user_ptrs.get("transport_user") or "nullptr")
+    config = f'''/* Generated static runtime wiring; callbacks remain user-owned. */
 #include <kymo_generated_config.h>
 {declarations}
 #if KYMO_EFFECTIVE_RUNTIME
@@ -445,16 +387,16 @@ static const KymoChannel kymo_channels[] = {{
 {channel_init}
 }};
 const KymoConfig kymo_generated_config = {{
-    kymo_channels, {len(channels)}u,
-    {binds.get('clock','')}, {binds.get('sample','')}, {runtime_write},
-    {runtime_busy}, {runtime_service},
-    {user_ptrs.get('clock_user') or 'nullptr'}, {user_ptrs.get('sample_user') or 'nullptr'},
-    {runtime_transport_user}
+kymo_channels, {len(channels)}u,
+{binds.get('clock','')}, {binds.get('sample','')}, {runtime_write},
+{runtime_busy}, {runtime_service},
+{user_ptrs.get('clock_user') or 'nullptr'}, {user_ptrs.get('sample_user') or 'nullptr'},
+{runtime_transport_user}
 }};
  #endif
  {cpp_sender}
  {_render_trace_wiring(trace, resolved["enabled"], service,
-                        user_ptrs.get("transport_user"))}'''
+                    user_ptrs.get("transport_user"))}'''
     symbols=sorted(project.get("symbols",[]),key=lambda r:r["id"])
     contexts=sorted(project.get("contexts",[]),key=lambda r:r["id"])
     ids=['/* Generated constants. */','#ifndef KYMO_TRACE_IDS_H','#define KYMO_TRACE_IDS_H']
@@ -467,9 +409,17 @@ const KymoConfig kymo_generated_config = {{
     files.update(trace_outputs)
     if watch is not None:
         files["kymo_generated_watch.cpp"] = render_watch_source(watch)
-    files.update(render_exports())
+    files.update(render_exports(watch=watch is not None))
+    names = {name.casefold() for name in files} | {MANIFEST_NAME}
     for renderer in RENDERERS:
-        files.update(renderer(project, profile, resolved))
+        for name, data in renderer(project, profile, resolved).items():
+            if (not isinstance(name, str) or not SNAPSHOT_FILE_NAME.fullmatch(name)
+                    or WINDOWS_DEVICE_NAME.fullmatch(name.split(".", 1)[0]) or name.casefold() in names):
+                raise ValueError(f"Invalid or duplicate generated file name: {name!r}")
+            if not isinstance(data, str):
+                raise ValueError(f"Generated file {name!r} must contain text")
+            names.add(name.casefold())
+            files[name] = data
     return {name:data.encode("utf-8") for name,data in files.items()}
 
 
@@ -479,113 +429,155 @@ def manifest_for(project: dict[str,Any], profile: str, files: dict[str,bytes], i
             "files":{name:hashlib.sha256(data).hexdigest() for name,data in sorted(files.items())}}
 
 
-def generate(project: dict[str,Any], profile: str, out_dir: str|Path, *, force: bool=False) -> Path:
-    errors=[d for d in validate(project,profile) if d.severity=="error"]
-    if errors: raise ValueError("\n".join(f"{d.path}: {d.message}" for d in errors))
-    out=Path(out_dir).resolve(); out.mkdir(parents=True,exist_ok=True)
-    input_hash=hashlib.sha256(_canonical({"project":project,"profile":profile,"generator":GENERATOR_VERSION})).hexdigest()
-    files=_render(project,profile)
-    manifest=manifest_for(project,profile,files,input_hash)
-    files["kymo_generation_manifest.json"]=_canonical(manifest)
-    # Generation identity derives from the complete rendered content, including its manifest.
-    generation=hashlib.sha256(b"".join(name.encode()+b"\0"+files[name] for name in sorted(files))).hexdigest()
-    generations=out/"generations"; generations.mkdir(exist_ok=True)
-    target=generations/generation
-    active=out/"active_generation.json"
-    def verify_dir(directory:Path)->list[str]:
-        problems=[]
-        if directory.is_symlink(): return ["generation directory must not be a symlink"]
-        try: old=json.loads((directory/"kymo_generation_manifest.json").read_text(encoding="utf-8"))
-        except (OSError,json.JSONDecodeError,TypeError): return ["missing or invalid generation manifest"]
-        if not isinstance(old,dict) or not isinstance(old.get("files"),dict): return ["generation manifest has an invalid shape"]
-        expected_owned=set(old.get("files",{}))|{"kymo_generation_manifest.json"}
-        if any(not isinstance(name,str) or not re.fullmatch(r"[A-Za-z0-9_.-]+",name) for name in expected_owned): return ["manifest contains an unsafe file name"]
-        actual_owned={p.name for p in directory.iterdir() if p.is_file()}
-        if any(p.is_symlink() for p in directory.iterdir()): return ["generation contains a symlink"]
-        if actual_owned!=expected_owned: problems.append("owned file list changed or a generated file is missing")
-        for name,digest in old.get("files",{}).items():
-            p=directory/name
-            if not p.is_file(): problems.append(f"missing generated file: {name}")
-            elif hashlib.sha256(p.read_bytes()).hexdigest()!=digest: problems.append(f"edited generated file: {name}")
-        return problems
-    if target.exists():
-        problems=verify_dir(target)
-        if problems:
-            # Prefer an already selected, verified repair snapshot for deterministic repeats.
-            current=None
-            try:
-                selected=json.loads(active.read_text(encoding="utf-8"))["generation"]
-                current=generations/selected
-                if verify_dir(current)==[]:
-                    current_manifest=json.loads((current/"kymo_generation_manifest.json").read_text(encoding="utf-8"))
-                    if current_manifest.get("input_sha256")==input_hash and current_manifest.get("files")==manifest.get("files"):
-                        target=current
-            except (OSError,KeyError,json.JSONDecodeError): pass
-            if target.name==generation:
-                if not force: raise ValueError("Existing content-addressed generation has conflicts: "+"; ".join(problems)+". Regenerate with --force to publish a repaired snapshot.")
-                target=generations/(generation+"-repair")
-                repair_index=2
-                while target.exists() and verify_dir(target):
-                    if not force: raise ValueError("Existing repair snapshot is modified; use --force to publish another immutable repair snapshot.")
-                    target=generations/(generation+f"-repair{repair_index}"); repair_index+=1
-    if not target.exists():
-        staging=Path(tempfile.mkdtemp(prefix=".kymo-stage-",dir=generations))
+MANIFEST_NAME = "kymo_generation_manifest.json"
+GENERATION_NAME = re.compile(r"[a-f0-9]{64}(?:-repair[0-9]*)?")
+SNAPSHOT_FILE_NAME = re.compile(r"[A-Za-z0-9_.-]+(?<!\.)")
+WINDOWS_DEVICE_NAME = re.compile(r"CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]", re.IGNORECASE)
+
+
+def _generation_id(files: dict[str, bytes]) -> str:
+    digest = hashlib.sha256()
+    for name, data in sorted(files.items()):
+        digest.update(name.encode() + b"\0")
+        digest.update(data)
+    return digest.hexdigest()
+
+
+def _linked(path: Path) -> bool:
+    return path.is_symlink() or path.is_junction()
+
+
+def selected_generation(out: Path) -> tuple[Path, str]:
+    """Read a selector without following links or paths outside the snapshot store."""
+    active = out / "active_generation.json"
+    if _linked(active) or _linked(out / "generations"):
+        raise ValueError("Generation store and selector must not be links")
+    selector = json.loads(active.read_bytes().decode("utf-8"))
+    if not isinstance(selector, dict):
+        raise ValueError("Active generation selector is invalid")
+    name = selector.get("generation")
+    digest = selector.get("manifest_sha256")
+    if not isinstance(name, str) or not GENERATION_NAME.fullmatch(name):
+        raise ValueError("Active generation selector has an invalid generation name")
+    if not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest):
+        raise ValueError("Active generation selector has an invalid manifest hash")
+    directory = out / "generations" / name
+    if _linked(directory) or not directory.is_dir():
+        raise ValueError("Selected generation must be an existing directory without links")
+    return directory, digest
+
+
+def _verify_snapshot(directory: Path, manifest_hash: str) -> None:
+    if _linked(directory) or not directory.is_dir():
+        raise ValueError("Generation must be an existing directory without links")
+    entries = list(directory.iterdir())
+    if any(_linked(entry) or not entry.is_file() for entry in entries):
+        raise ValueError("Generation contains a link or a non-file entry")
+    manifest_bytes = (directory / MANIFEST_NAME).read_bytes()
+    if hashlib.sha256(manifest_bytes).hexdigest() != manifest_hash:
+        raise ValueError("Generation manifest hash does not match")
+    manifest = json.loads(manifest_bytes.decode("utf-8"))
+    hashes = manifest.get("files") if isinstance(manifest, dict) else None
+    if not isinstance(hashes, dict) or MANIFEST_NAME in hashes:
+        raise ValueError("Generation manifest has an invalid shape")
+    if {entry.name for entry in entries} != set(hashes) | {MANIFEST_NAME}:
+        raise ValueError("Owned file list changed or a generated file is missing")
+    files = {MANIFEST_NAME: manifest_bytes}
+    for name, digest in hashes.items():
+        data = (directory / name).read_bytes()
+        if hashlib.sha256(data).hexdigest() != digest:
+            raise ValueError(f"edited generated file: {name}")
+        files[name] = data
+    if _generation_id(files) != directory.name.split("-", 1)[0]:
+        raise ValueError("Generation contents do not match its content-addressed directory name")
+
+
+def _snapshot(project: dict[str, Any], profile: str) -> dict[str, bytes]:
+    errors = [d for d in validate(project, profile) if d.severity == "error"]
+    if errors:
+        raise ValueError("\n".join(f"{d.path}: {d.message}" for d in errors))
+    files = _render(project, profile)
+    input_hash = hashlib.sha256(canonical({
+        "project": project, "profile": profile, "generator": GENERATOR_VERSION,
+    })).hexdigest()
+    files[MANIFEST_NAME] = canonical(manifest_for(project, profile, files, input_hash))
+    return files
+
+
+def generate(project: dict[str, Any], profile: str, out_dir: str | Path, *, force: bool = False) -> Path:
+    files = _snapshot(project, profile)
+    manifest_hash = hashlib.sha256(files[MANIFEST_NAME]).hexdigest()
+    generation = _generation_id(files)
+    out = Path(out_dir).resolve()
+    active = out / "active_generation.json"
+    generations = out / "generations"
+    if _linked(generations):
+        raise ValueError("Generation store must not be a link")
+
+    current = None
+    if not force and (active.exists() or _linked(active)):
         try:
-            for name,data in files.items(): (staging/name).write_bytes(data)
-            # Flush file data before publishing the immutable directory.
-            for p in staging.iterdir():
-                with p.open("rb+") as stream: stream.flush(); os.fsync(stream.fileno())
-            try: staging.replace(target)
+            current, previous_hash = selected_generation(out)
+            _verify_snapshot(current, previous_hash)
+        except (OSError, ValueError) as exc:
+            raise ValueError(f"Selected generator-owned snapshot has conflicts: {exc}. "
+                             "Review it and use --force to publish a fresh immutable snapshot.") from exc
+
+    generations.mkdir(parents=True, exist_ok=True)
+    target = generations / generation
+    index = 0
+    while target.exists() or _linked(target):
+        try:
+            _verify_snapshot(target, manifest_hash)
+        except (OSError, ValueError) as exc:
+            if current is not None and current.name.startswith(generation + "-repair"):
+                _verify_snapshot(current, manifest_hash)
+                target = current
+                break
+            if not force:
+                raise ValueError(f"Existing content-addressed generation has conflicts: {exc}. "
+                                 "Regenerate with --force to publish a repaired snapshot.") from exc
+            index += 1
+            target = generations / (generation + ("-repair" if index == 1 else f"-repair{index}"))
+        else:
+            break
+    else:
+        staging = Path(tempfile.mkdtemp(prefix=".kymo-stage-", dir=generations))
+        try:
+            for name, data in files.items():
+                with (staging / name).open("xb") as stream:
+                    stream.write(data)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+            try:
+                staging.rename(target)
             except OSError:
-                # A concurrent writer may have published the identical immutable snapshot.
-                if target.is_dir() and verify_dir(target)==[]: shutil.rmtree(staging,ignore_errors=True)
-                else: raise
-        except Exception:
-            shutil.rmtree(staging,ignore_errors=True); raise
-    selector={"generation":target.name,"manifest_sha256":hashlib.sha256(files["kymo_generation_manifest.json"]).hexdigest()}
-    if active.exists() and not force:
-        if active.is_symlink(): raise ValueError("Active generation selector must not be a symlink")
-        try: previous=json.loads(active.read_text(encoding="utf-8"))
-        except (OSError,json.JSONDecodeError) as exc: raise ValueError("Active generation selector is invalid") from exc
-        previous_name=previous.get("generation") if isinstance(previous,dict) else None
-        if not isinstance(previous_name,str) or not re.fullmatch(r"[a-f0-9]{64}(?:-repair\d*)?",previous_name): raise ValueError("Active generation selector has an invalid generation name")
-        prevdir=generations/previous_name
-        if prevdir.is_dir():
-            manifest_file=prevdir/"kymo_generation_manifest.json"
-            if previous.get("manifest_sha256")!=hashlib.sha256(manifest_file.read_bytes()).hexdigest(): raise ValueError("Selected generation manifest hash does not match the active selector")
-            conflicts=verify_dir(prevdir)
-            if conflicts: raise ValueError(f"Selected generator-owned snapshot has conflicts ({'; '.join(conflicts)}): {prevdir}. Review it and use --force to publish a fresh immutable snapshot.")
-    fd,temp_name=tempfile.mkstemp(prefix=".active_generation-",suffix=".tmp",dir=out)
+                # A concurrent writer can publish the identical immutable snapshot first.
+                _verify_snapshot(target, manifest_hash)
+        finally:
+            if staging.exists():
+                shutil.rmtree(staging, ignore_errors=True)
+
+    selector = {"generation": target.name, "manifest_sha256": manifest_hash}
+    fd, temp_name = tempfile.mkstemp(prefix=".active_generation-", suffix=".tmp", dir=out)
     try:
-        with os.fdopen(fd,"wb") as stream:
-            stream.write(_canonical(selector)); stream.flush(); os.fsync(stream.fileno())
-        os.replace(temp_name,active)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(canonical(selector))
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp_name, active)
     finally:
-        if os.path.exists(temp_name): os.unlink(temp_name)
+        Path(temp_name).unlink(missing_ok=True)
     return target
 
 
-def check(project: dict[str,Any], profile: str, out_dir: str|Path) -> tuple[bool,str]:
+def check(project: dict[str, Any], profile: str, out_dir: str | Path) -> tuple[bool, str]:
     try:
-        expected=_render(project,profile)
-        input_hash=hashlib.sha256(_canonical({"project":project,"profile":profile,"generator":GENERATOR_VERSION})).hexdigest()
-        expected["kymo_generation_manifest.json"]=_canonical(manifest_for(project,profile,expected,input_hash))
-        selector=json.loads((Path(out_dir)/"active_generation.json").read_text(encoding="utf-8"))
-        generation_name=selector["generation"]
-        if not isinstance(generation_name,str) or not re.fullmatch(r"[a-f0-9]{64}(?:-repair\d*)?",generation_name): return False,"Active selector has an invalid generation name"
-        gen=Path(out_dir)/"generations"/generation_name
-        if gen.is_symlink(): return False,"Selected generation must not be a symlink"
-        if not gen.is_dir(): return False,"Selected immutable generation is missing"
-        manifest_bytes=(gen/"kymo_generation_manifest.json").read_bytes()
-        if hashlib.sha256(manifest_bytes).hexdigest()!=selector.get("manifest_sha256"): return False,"Selected generation manifest hash does not match active_generation.json"
-        actual=json.loads((gen/"kymo_generation_manifest.json").read_text(encoding="utf-8"))
-        expected_names=set(expected)-{"kymo_generation_manifest.json"}
-        actual_names=set(actual.get("files",{}))
-        if actual_names!=expected_names: return False,"Generation manifest file ownership differs from the expected output set"
-        for name,data in expected.items():
-            p=gen/name
-            if not p.exists() or hashlib.sha256(p.read_bytes()).digest()!=hashlib.sha256(data).digest(): return False,f"Generated output is stale or modified: {name}"
-            digest=actual.get("files",{}).get(name)
-            if name!="kymo_generation_manifest.json" and digest!=hashlib.sha256(data).hexdigest(): return False,f"Manifest ownership/hash mismatch: {name}"
-        return True,f"Generation {gen.name} matches the selected project and profile"
-    except (OSError,KeyError,ValueError,TypeError,json.JSONDecodeError) as exc: return False,str(exc)
+        expected = _snapshot(project, profile)
+        directory, digest = selected_generation(Path(out_dir))
+        _verify_snapshot(directory, digest)
+        if digest != hashlib.sha256(expected[MANIFEST_NAME]).hexdigest():
+            return False, "Selected generation is stale for this project and profile"
+        return True, f"Generation {directory.name} matches the selected project and profile"
+    except (OSError, ValueError) as exc:
+        return False, str(exc)

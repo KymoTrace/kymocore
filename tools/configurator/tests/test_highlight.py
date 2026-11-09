@@ -50,6 +50,14 @@ class HighlightTests(unittest.TestCase):
         self.assertEqual(self.colour_at(document, 6, 0, background=True),
                          style.CHIPS["live"][0].upper())                                  # + line tint
 
+    def test_comment_markers_inside_strings_and_code_after_comments(self):
+        document = QTextDocument()
+        highlighter = CodeHighlighter(document)
+        document.setPlainText('const char *name = "😀 https://host/*";\n/* real\n*/ static int n;')
+        highlighter.rehighlight()
+        self.assertEqual(self.colour_at(document, 0, 35), style.CHIPS["live"][2].upper())
+        self.assertEqual(self.colour_at(document, 2, 3), style.PRIMARY.upper())
+
 
 if __name__ == "__main__":
     unittest.main()

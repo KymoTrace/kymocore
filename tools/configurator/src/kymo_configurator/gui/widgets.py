@@ -8,6 +8,8 @@ method. Extensions add their own widgets with ``register_widget``.
 from __future__ import annotations
 
 import copy
+from decimal import Decimal
+from html import escape
 from typing import Callable
 
 from PySide6.QtCore import Qt, Signal
@@ -107,7 +109,7 @@ class ChannelEditor(QWidget):
 
     @property
     def rows(self) -> list:
-        channels = self.session.doc.setdefault("channels", [])
+        channels = self.session.doc.get("channels", [])
         return channels if isinstance(channels, list) else []
 
     def refresh(self) -> None:
@@ -120,7 +122,9 @@ class ChannelEditor(QWidget):
                     continue
                 period = channel.get("period_ms", 0)
                 size = 9 + 4 * sum(bool(channel.get(k)) for k in ("x", "z", "timestamp"))
-                rate = f"{1000.0 / period:.1f} /s" if type(period) is int and period > 0 else tr("every cycle")
+                rate = "—"
+                if type(period) is int and 0 <= period <= 2147483647:
+                    rate = f"{1000.0 / period:.1f} /s" if period else tr("every cycle")
                 values = [str(channel.get("id", "")), str(channel.get("name", "")), str(period)]
                 for column, text in enumerate(values):
                     item = self.table.item(row, column)
@@ -143,8 +147,9 @@ class ChannelEditor(QWidget):
                   summary=summary)
         if isinstance(budget, int) and budget > 0:
             traffic = sum((1000.0 / c["period_ms"]) * (9 + 4 * sum(bool(c.get(k)) for k in ("x", "z", "timestamp")))
-                          for c in self.rows if isinstance(c, dict) and type(c.get("period_ms")) is int and c["period_ms"] > 0)
-            text += " " + tr("Link load: {load}% of {budget} bytes/s.", load=f"{traffic / budget * 100:.0f}",
+                          for c in self.rows if isinstance(c, dict) and type(c.get("period_ms")) is int
+                          and 0 < c["period_ms"] <= 2147483647)
+            text += " " + tr("Link load: {load}% of {budget} bytes/s.", load=f"{Decimal(traffic) / budget * 100:.0f}",
                              budget=budget)
         self.estimate.setText(text)
 
@@ -165,20 +170,21 @@ class ChannelEditor(QWidget):
             try:
                 channel[key] = int(item.text())
             except ValueError:
-                pass
+                channel[key] = item.text()
         else:
             return
         self.session.touch()
 
     def _free_id(self):
-        used = {c.get("id") for c in self.rows if isinstance(c, dict)}
+        used = {c["id"] for c in self.rows if isinstance(c, dict) and type(c.get("id")) is int}
         return next((i for i in range(256) if i not in used), None)
 
     def add_channel(self) -> None:
         cid = self._free_id()
         if cid is not None:
-            self.rows.append({"id": cid, "name": tr("Channel {id}", id=cid), "period_ms": 20,
-                              "x": False, "z": False, "timestamp": False})
+            self.session.doc.setdefault("channels", []).append({
+                "id": cid, "name": tr("Channel {id}", id=cid), "period_ms": 20,
+                "x": False, "z": False, "timestamp": False})
             self.session.touch()
 
     def duplicate_channel(self) -> None:
@@ -237,7 +243,7 @@ class RegistryEditor(QWidget):
 
     @property
     def rows(self) -> list:
-        rows = self.session.doc.setdefault(self.group, [])
+        rows = self.session.doc.get(self.group, [])
         return rows if isinstance(rows, list) else []
 
     def refresh(self) -> None:
@@ -251,7 +257,7 @@ class RegistryEditor(QWidget):
                 self.table.setItem(row, 1, QTableWidgetItem(str(entry.get("name", ""))))
                 combo = QComboBox()
                 combo.addItems(self.kinds)
-                combo.setCurrentText(str(entry.get("kind", self.kinds[0])))
+                combo.setCurrentIndex(combo.findText(str(entry.get("kind", ""))))
                 combo.currentTextChanged.connect(lambda text, r=row: self._kind_changed(r, text))
                 self.table.setCellWidget(row, 2, combo)
         finally:
@@ -268,7 +274,7 @@ class RegistryEditor(QWidget):
             try:
                 entry["id"] = int(item.text())
             except ValueError:
-                return
+                entry["id"] = item.text()
         elif item.column() == 1:
             entry["name"] = item.text().strip()
         self.session.touch()
@@ -279,11 +285,12 @@ class RegistryEditor(QWidget):
             self.session.touch()
 
     def add_row(self) -> None:
-        used = {entry.get("id") for entry in self.rows if isinstance(entry, dict)}
+        used = {entry["id"] for entry in self.rows if isinstance(entry, dict) and type(entry.get("id")) is int}
         limit = 65536 if self.group == "symbols" else 4294967295
         ident = next((i for i in range(1, limit) if i not in used), None)
         if ident is not None:
-            self.rows.append({"id": ident, "name": f"{self.group[:-1]}_{ident}", "kind": self.kinds[0]})
+            self.session.doc.setdefault(self.group, []).append(
+                {"id": ident, "name": f"{self.group[:-1]}_{ident}", "kind": self.kinds[0]})
             self.session.touch()
 
     def remove_row(self) -> None:
@@ -360,7 +367,7 @@ class ReviewPanel(QWidget):
         for section in catalog.sections():
             if section.summary and section.is_visible(view):
                 rows.append(f"<tr><td style='padding-right:12px; color:{style.TEXT_SECONDARY}'>{tr(section.title)}</td>"
-                            f"<td>{section.summary(view)}</td></tr>")
+                            f"<td>{escape(section.summary(view))}</td></tr>")
         cells = []
         for name, value in self.session.effective_macros():
             short = name.removeprefix("KYMO_ENABLE_").removeprefix("KYMO_")

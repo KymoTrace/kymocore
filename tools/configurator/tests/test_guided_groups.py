@@ -87,6 +87,14 @@ class GoalSectionTests(unittest.TestCase):
         clock.example_button.click()
         self.assertTrue(clock.example.isVisibleTo(clock))
 
+    def test_trace_tile_preserves_existing_xyz_switches(self):
+        session = ProjectSession()
+        features = session.view().profile["features"]
+        features["x"] = True
+        page = SectionPage(catalog.section("project"), session, guided=True)
+        QTest.mouseClick(tiles(page)[2], Qt.MouseButton.LeftButton)
+        self.assertEqual([features[key] for key in ("x", "z", "timestamp")], [True, False, False])
+
 
 if __name__ == "__main__":
     unittest.main()

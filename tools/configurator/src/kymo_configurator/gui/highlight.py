@@ -49,11 +49,9 @@ class CodeHighlighter(QSyntaxHighlighter):
             (QRegularExpression(rf"\b({'|'.join(TYPES)})\b"), _format(style.PRIMARY_HOVER, italic=True)),
             (QRegularExpression(r"\bKYMO_[A-Z0-9_]+\b"), _format("#C9A7F5")),
             (QRegularExpression(r"\b(0x[0-9A-Fa-f]+|\d+(\.\d+)?)[uUlLfF]*\b"), _format(style.CHIPS["warning"][2])),
-            (QRegularExpression(r'"(\\.|[^"\\])*"'), self.string),
-            (QRegularExpression(r"'(\\.|[^'\\])*'"), self.string),
         ]
-        self.line_comment = QRegularExpression(r"//.*$")
-        self.block_start = QRegularExpression(r"/\*")
+        self.tokens = QRegularExpression(
+            r"""(?<string>"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(?<line>//.*$)|/\*""")
         self.block_end = QRegularExpression(r"\*/")
         self.include_target = QRegularExpression(r'[<"][^>"]*[>"]')
 
@@ -71,67 +69,69 @@ class CodeHighlighter(QSyntaxHighlighter):
     def highlightBlock(self, text: str) -> None:  # noqa: N802 - Qt override
         self.setCurrentBlockState(0)
         self._background = ""
+        length = len(text.encode("utf-16-le")) // 2
         if text.startswith("--- ") and text.endswith(" ---"):
-            self.setFormat(0, len(text), self.header)
+            self.setFormat(0, length, self.header)
         elif self.diff and text.startswith("@@"):
-            self.setFormat(0, len(text), self.comment)
+            self.setFormat(0, length, self.comment)
         else:
             offset = 0
-            if self.diff and text[:1] in ("+", "-") and not text.startswith(("+++", "---")):
+            if self.diff and text[:1] in ("+", "-") and not text.startswith(("+++ ", "--- ")):
                 self._background = style.CHIPS["live" if text[0] == "+" else "danger"][0]
                 tint = QTextCharFormat()
                 tint.setBackground(QColor(self._background))
-                self.setFormat(0, len(text), tint)
+                self.setFormat(0, length, tint)
                 offset = 1
-            self._code(text, offset)
+            self._code(text, offset, length)
 
-    def _code(self, text: str, offset: int) -> None:
+    def _code(self, text: str, offset: int, length: int) -> None:
         code = text[offset:]
         stripped = code.lstrip()
         start = offset + len(code) - len(stripped)
-        if self.previousBlockState() == IN_BLOCK_COMMENT:
-            self._block_comments(text, offset, True)
-        elif stripped.startswith("#"):
+        open_comment = self.previousBlockState() == IN_BLOCK_COMMENT
+        if not open_comment and stripped.startswith("#"):
             # "#include" is a directive, "# include(...)" a CMake/Python comment.
             word = stripped[1:].split(" ", 1)[0].split("(", 1)[0]
             if word in DIRECTIVES:
-                self._mark(start, len(text) - start, self.directive)
+                self._mark(start, length - start, self.directive)
                 match = self.include_target.match(text, start)
                 if word == "include" and match.hasMatch():
                     self._mark(match.capturedStart(), match.capturedLength(), self.string)
-                self._block_comments(text, start, False)
             else:
-                self._mark(start, len(text) - start, self.comment)
-        elif stripped.startswith(";"):
-            self._mark(start, len(text) - start, self.comment)
+                self._mark(start, length - start, self.comment)
+                return
+        elif not open_comment and stripped.startswith(";"):
+            self._mark(start, length - start, self.comment)
+            return
         else:
             for pattern, fmt in self.rules:
                 matches = pattern.globalMatch(text, offset)
                 while matches.hasNext():
                     match = matches.next()
                     self._mark(match.capturedStart(), match.capturedLength(), fmt)
-            match = self.line_comment.match(text, offset)
-            if match.hasMatch():
-                self._mark(match.capturedStart(), len(text) - match.capturedStart(), self.comment)
-            self._block_comments(text, offset, False)
+        self._strings_and_comments(text, offset, length, open_comment)
 
-    def _block_comments(self, text: str, offset: int, open_: bool) -> None:
-        """/* ... */ comments, also across lines."""
-        if open_:
-            begin = offset
-            search_from = offset
-        else:
-            match = self.block_start.match(text, offset)
-            begin = match.capturedStart() if match.hasMatch() else -1
-            search_from = begin + 2
-        while begin >= 0:
+    def _strings_and_comments(self, text: str, offset: int, length: int, open_comment: bool) -> None:
+        while offset <= length:
+            if open_comment:
+                start, search_from = offset, offset
+            else:
+                match = self.tokens.match(text, offset)
+                if not match.hasMatch():
+                    break
+                start, search_from = match.capturedStart(), match.capturedEnd()
+                if match.capturedLength("string") > 0:
+                    self._mark(start, match.capturedLength(), self.string)
+                    offset = search_from
+                    continue
+                if match.capturedLength("line") > 0:
+                    self._mark(start, match.capturedLength(), self.comment)
+                    break
             end = self.block_end.match(text, search_from)
             if not end.hasMatch():
-                self._mark(begin, len(text) - begin, self.comment)
+                self._mark(start, length - start, self.comment)
                 self.setCurrentBlockState(IN_BLOCK_COMMENT)
-                begin = -1
-            else:
-                self._mark(begin, end.capturedEnd() - begin, self.comment)
-                match = self.block_start.match(text, end.capturedEnd())
-                begin = match.capturedStart() if match.hasMatch() else -1
-                search_from = begin + 2
+                break
+            offset = end.capturedEnd()
+            self._mark(start, offset - start, self.comment)
+            open_comment = False
