@@ -52,11 +52,12 @@ def diagnostic_templates() -> set[str]:
 def catalog_texts() -> set[str]:
     found = set()
     for section in catalog.sections():
-        found |= {section.title, section.description, section.guided_title, section.guided_intro}
+        found |= {section.title, section.description, section.guided_title, section.guided_intro,
+                  section.guided_nav}
         for group in section.groups:
             found |= {group.title, group.description, group.guided_description}
             for field in group.fields:
-                found |= {field.label, field.help, field.guided_help, field.requires}
+                found |= {field.label, field.help, field.guided_help, field.requires, field.cost}
                 found |= {label for _, label in field.choices}
     for preset in PRESETS.values():
         found |= {preset.title, preset.question}

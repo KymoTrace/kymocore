@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .model import FEATURES
-from .presets import CUSTOM, PRESETS, apply_preset, matching_preset
+from .presets import CUSTOM, PRESETS, apply_preset, goal_selected, matching_preset
 from .i18n import tr
 from .resolution import resolve_profile
 from .watch_config import WATCH_DEFAULTS, apply_symbol_preset
@@ -131,6 +131,8 @@ class Field:
     """Code the user writes for this binding; ``{name}`` is replaced by the entered name."""
     need: Predicate | None = None
     """True: shown as required, False: shown as optional, None: no mark."""
+    cost: str = ""
+    """Short memory or frame cost shown next to the switch, e.g. '64 B RAM'."""
 
     def value(self, view: View) -> Any:
         return view.get(self.path, self.default)
@@ -164,6 +166,11 @@ class Group:
     visible_when: Predicate | None = None
     guided_description: str = ""
     """Beginner wording shown instead of ``description`` in guided mode."""
+    display: str = ""
+    """'chips': switches render as one row of toggle chips instead of rows."""
+    goal: str = ""
+    """Step-1 goal the group belongs to (see presets.goal_selected); shown as a chip, and guided
+    mode locks the group while that goal is not chosen."""
 
 
 @dataclass(frozen=True)
@@ -177,6 +184,8 @@ class Section:
     """Names of custom widgets rendered below the groups (see GUI widget registry)."""
     guided_title: str = ""
     guided_intro: str = ""
+    guided_nav: str = ""
+    """Short step name in the guided step list (defaults to the title)."""
     diagnostic_prefixes: tuple[str, ...] = ()
     """Diagnostic paths (``{profile}`` is replaced) that belong to this section."""
     summary: Callable[[View], str] | None = None
@@ -275,6 +284,14 @@ def _watch(view: View) -> bool:
     return view.feature("watch")
 
 
+def _values_goal(view: View) -> bool:
+    return view.enabled and goal_selected(view.profile, "values")
+
+
+def _xyz_goal(view: View) -> bool:
+    return goal_selected(view.profile, "xyz")
+
+
 def _watch_symbols_changed(doc: dict[str, Any], profile: str, old: Any, new: Any) -> None:
     """A symbol preset fills in its linker symbols; 'custom' keeps what was entered."""
     apply_symbol_preset(doc, new)
@@ -287,11 +304,12 @@ def _watch_field(key: str, label: str, help_text: str, **extra: Any) -> Field:
 
 
 def _feature(key: str, label: str, help_text: str, macro: str, advanced: bool = False,
-             enabled_when: Predicate | None = _on, guided: str = "") -> Field:
+             enabled_when: Predicate | None = _on, guided: str = "",
+             on_change: Callable[..., None] = _mark_custom, cost: str = "") -> Field:
     return Field(f"features.{key}", (PROFILE, "features", key), label, help_text,
                  target=macro, advanced=advanced, enabled_when=enabled_when,
-                 requires="Enable KymoCore for this profile first.", on_change=_mark_custom,
-                 guided_help=guided)
+                 requires="Enable KymoCore for this profile first.", on_change=on_change,
+                 guided_help=guided, cost=cost)
 
 
 def _binding(key: str, label: str, help_text: str, target: str, advanced: bool = False,
@@ -329,11 +347,24 @@ def _summary_project(view: View) -> str:
     return tr("Profile '{name}': {title}, {state}", name=view.profile_name, title=title, state=state)
 
 
-def _summary_features(view: View) -> str:
-    on = [k for k in ("x", "z", "timestamp", "crc", "crc_table", "decoder", "parameters", "watch", "memory", "cpp")
-          if view.feature(k)]
-    api = tr("Init/Main runtime") if view.feature("runtime") else tr("no runtime")
-    return api + (", " + ", ".join(on) if on else ", " + tr("scalar values only"))
+def _summary_xyz(view: View) -> str:
+    names = {"x": tr("X coordinate"), "z": tr("Z coordinate"), "timestamp": tr("Timestamp")}
+    on = [names[k] for k in ("x", "z", "timestamp") if view.feature(k)]
+    return ", ".join(on) if on else tr("no extra fields")
+
+
+def _summary_watch(view: View) -> str:
+    return str(view.get(("watch", "symbols"), "") or tr("memory range not set"))
+
+
+def _summary_values(view: View) -> str:
+    ways = [name for key, name in (("runtime", tr("fixed rhythm")), ("cpp", tr("sent yourself")))
+            if view.feature(key)]
+    return ", ".join(ways)
+
+
+def _summary_on(view: View) -> str:
+    return tr("on")
 
 
 def _summary_channels(view: View) -> str:
@@ -394,22 +425,21 @@ SECTIONS: list[Section] = [
                       guided_help="Leave this ticked. Untick it only for a build in which KymoCore should "
                                   "disappear completely, e.g. the finished product. Your settings are kept."),
                 Field("profile.preset", (PROFILE, "preset"), "What do you want to do?",
-                      "Choosing a goal sets the matching features in one step. You can change "
-                      "each feature afterwards; the profile then shows as custom.",
+                      "Tick the goals this build serves; they combine freely. Each ticked goal "
+                      "appears as its own section in the sidebar, where you set it up.",
                       kind="preset", default=CUSTOM,
                       choices=tuple((p.key, p.title) for p in PRESETS.values()) + ((CUSTOM, "Custom selection"),),
                       target="KYMO_PROFILE", enabled_when=_on,
                       requires="Enable KymoCore for this profile first.", on_change=_apply_preset,
                       guided_help="Tick everything you want to use; the options combine freely. Hover "
-                                  "over an option for examples. "
-                                  "This sets the matching features for you, and the next steps show "
-                                  "what was chosen."),
+                                  "over an option for examples. Each ticked goal gets its own step "
+                                  "on the left, where you set it up."),
             ), guided_description="A profile is a named set of settings for one firmware build, e.g. "
                                   "'development' with all measurements and 'production' with KymoCore "
                                   "switched off. Most projects need only one. The 'Build profile' selector "
                                   "at the top switches between profiles, 'New profile…' adds one."),
         ),
-        guided_title="What do you want to achieve?",
+        guided_title="What do you want to achieve?", guided_nav="Goal",
         guided_intro="KymoCore sends measurements from your microcontroller to KymoStudio on your PC, "
                      "where they are drawn as live curves. This wizard asks a few questions and then "
                      "writes the matching configuration files for your firmware. Nothing is final: "
@@ -418,25 +448,35 @@ SECTIONS: list[Section] = [
                              "active_profile", "schema_version", "core_config_api_version", "profiles"),
         summary=_summary_project, order=10),
     Section(
-        "telemetry", "Telemetry features",
-        "Which parts of KymoCore are compiled in and which fields a data frame may carry. "
-        "Disabled parts cost no code.",
+        "values", "Values over time",
+        "How your values get to KymoStudio. The signals themselves are listed under 'Channels'.",
         groups=(
-            Group("Programming interface", (
-                _feature("runtime", "Cyclic runtime (Kymo_Init / Kymo_Main)",
+            Group("How values are sent", fields=(
+                _feature("runtime", "Send automatically at a fixed rhythm (Kymo_Init / Kymo_Main)",
                          "KymoCore samples your channels on schedule; recommended for most projects.",
                          "KYMO_ENABLE_RUNTIME",
                          guided="Leave ticked unless you know otherwise. KymoCore then reads your "
                                 "measurements by itself at a fixed rhythm (e.g. every 20 ms) and sends them. "
-                                "Your program only calls Kymo_Init() once and Kymo_Main() in its main loop."),
-                _feature("cpp", "C++ push sender (KymoSender)",
+                                "Your program only calls Kymo_Init() once and Kymo_Main() in its main loop.",
+                         cost="72 B + 4 B per channel RAM"),
+                _feature("cpp", "Send values yourself, whenever you want (KymoSender)",
                          "Send single values whenever your code decides, in addition to or instead of "
                          "the cyclic runtime.", "KYMO_ENABLE_CPP",
                          guided="Tick this only if you want to send a value at a moment you choose, e.g. "
                                 "right after a sensor reading. Needs C++ (Arduino is C++). Not needed "
                                 "for normal cyclic sending."),
-            ), guided_description="How your program hands its values to KymoCore."),
-            Group("Data per sample", (
+            ), guided_description="Two ways your values get to KymoStudio. Most projects need only "
+                                  "the first one."),
+        ),
+        guided_title="How should your values be sent?",
+        diagnostic_prefixes=("profiles.{profile}.features.runtime", "profiles.{profile}.features.cpp"),
+        summary=_summary_values, visible_when=_values_goal, order=20),
+    Section(
+        "xyz", "X/Y or X/Y/Z points",
+        "Which extra fields a sample may carry next to the Y value. Each channel then chooses in "
+        "'Values over time' whether it uses them.",
+        groups=(
+            Group("Extra fields per sample (X, Z, timestamp)", display="chips", fields=(
                 _feature("x", "X coordinate", "Allows channels to send an X value, e.g. position or angle.",
                          "KYMO_ENABLE_X",
                          guided="Tick if a signal is a point instead of a single number, e.g. the X/Y "
@@ -448,47 +488,28 @@ SECTIONS: list[Section] = [
                          "KYMO_ENABLE_TIMESTAMP",
                          guided="Tick if KymoStudio must know exactly when each value was measured, e.g. "
                                 "for precise timing. Without it, KymoStudio uses the arrival time, which is "
-                                "fine for most live curves. Costs 4 extra bytes per value."),
+                                "fine for most live curves. Costs 4 extra bytes per value.",
+                         cost="+4 bytes per value"),
             ), description="Enabling a field allows it; each channel then chooses whether it uses it.",
-               guided_description="By default every measurement is one number, drawn over time. Tick "
-                                  "an extra field only if some of your signals need it; each channel can "
-                                  "then decide in the next step whether it uses it."),
-            Group("Integrity and decoding", (
-                _feature("crc", "CRC checksum on sent frames",
-                         "Detects transmission errors on noisy links. Older receivers require it.",
-                         "KYMO_ENABLE_CRC",
-                         guided="Tick if the connection can corrupt data (long cables, radio, motors "
-                                "nearby). Broken frames are then dropped instead of drawn wrong. Over a "
-                                "short USB cable it is usually not needed."),
-                _feature("crc_table", "CRC lookup tables",
-                         "Computes CRC-8 and the trace CRC-16 with tables: same result, far fewer "
-                         "operations, 256 and 512 bytes of flash.", "KYMO_ENABLE_CRC_TABLE", advanced=True),
-                _feature("decoder", "Frame decoder on the MCU",
-                         "Only needed when the microcontroller itself must read Kymo frames.",
-                         "KYMO_ENABLE_DECODER", advanced=True),
-                _feature("parameters", "Parameters from KymoStudio (back channel)",
-                         "Lets KymoStudio change registered variables at run time; needs the frame decoder.",
-                         "KYMO_ENABLE_PARAMETERS",
-                         guided="Tick if you want to tune values such as controller gains or a setpoint "
-                                "from KymoStudio while measuring. You list them in your code with "
-                                "KYMO_PARAM; the firmware checks every value. Also tick the frame decoder."),
-                _feature("watch", "Live variables from the ELF file",
-                         "Lets KymoStudio sample global variables by address inside the memory ranges "
-                         "you allow; needs the frame decoder.",
-                         "KYMO_ENABLE_WATCH",
-                         guided="Tick if you want to pick variables in KymoStudio from your firmware's "
-                                "ELF file and watch them as curves without adding code for each one. "
-                                "Your firmware lists which memory may be read; nothing is ever written. "
-                                "Also tick the frame decoder."),
-                _feature("memory", "Memory telemetry (stacks and heap)",
-                         "Reports task stack peaks and heap levels as named curves (KymoMemory); "
-                         "your callback reads the values.",
-                         "KYMO_ENABLE_MEMORY",
-                         guided="Tick to watch how full your task stacks and your heap get. You list "
-                                "the tasks and heaps in your code and read their values in one "
-                                "callback; KymoStudio names the curves after them."),
-            )),
-            Group("Live variables", (
+               ),
+        ),
+        diagnostic_prefixes=("profiles.{profile}.features.x", "profiles.{profile}.features.z",
+                             "profiles.{profile}.features.timestamp"),
+        summary=_summary_xyz, visible_when=_xyz_goal, order=25),
+    Section(
+        "parameters", "Adjust values live",
+        "Lets KymoStudio change values in your firmware while it runs, e.g. controller gains or a "
+        "setpoint. Nothing else to set here: the frame decoder is switched on automatically. In your "
+        "code you register each value once with KYMO_PARAM (up to 8 by default, KYMO_MAX_PARAMETERS); "
+        "the firmware checks every value it receives against the limits you give.",
+        diagnostic_prefixes=("profiles.{profile}.features.parameters",),
+        summary=_summary_on, visible_when=lambda v: v.feature("parameters"), order=32),
+    Section(
+        "watch", "Watch variables",
+        "Pick global variables of your firmware in KymoStudio and see them as curves, without code for "
+        "each one. Here you set which memory KymoStudio may read; nothing is ever written.",
+        groups=(
+            Group("Readable memory", fields=(
                 _watch_field("symbols", "Linker symbols",
                              "Fills in the symbols that enclose .data and .bss for common toolchains.",
                              kind="choice", on_change=_watch_symbols_changed,
@@ -517,30 +538,33 @@ SECTIONS: list[Section] = [
                              "Requests below this period are rejected.", kind="int", minimum=1,
                              maximum=60000, target="KYMO_WATCH_MIN_PERIOD_MS", advanced=True),
             ), description="Generates kymo_generated_watch.cpp; call kymo_generated_watch_init() once "
-                           "at start-up.", visible_when=_watch),
+                           "at start-up."),
         ),
-        guided_title="Which extras do you need?",
-        guided_intro="Here you choose which building blocks of KymoCore end up on your "
-                     "microcontroller. Your answer in step 1 has already ticked what you need. "
-                     "Not sure? Leave everything as it is and click Next. Unticked parts use no memory.",
-        diagnostic_prefixes=("profiles.{profile}.features",),
-        summary=_summary_features, visible_when=_on, order=20),
+        diagnostic_prefixes=("profiles.{profile}.features.watch", "watch"),
+        summary=_summary_watch, visible_when=_watch, order=34),
     Section(
         "channels", "Channels",
-        "Each channel is one signal in KymoStudio. It has an ID (0..255), a sampling period and "
-        "the optional fields it sends. KYMO_MAX_CHANNELS is sized automatically.",
+        "Each channel is one signal in KymoStudio with an ID (0..255) and a sampling period; with "
+        "'X/Y or X/Y/Z points' it also chooses its extra fields. KYMO_MAX_CHANNELS is sized automatically.",
         widgets=("channels",),
         guided_title="What do you want to measure?",
         guided_intro="Add one row per signal. The period is how often it is sampled "
-                     "(20 ms = 50 times per second). The estimate below shows the resulting traffic.",
+                     "(20 ms = 50 times per second).",
         diagnostic_prefixes=("channels",),
-        summary=_summary_channels, visible_when=_runtime, order=30),
+        summary=_summary_channels, visible_when=_runtime, order=38),
+    Section(
+        "memory", "Watch memory (stacks and heap)",
+        "Shows how full your task stacks and your heap get, as named curves in KymoStudio. Nothing else "
+        "to set here. In your code you list the tasks and heaps and call KymoMemory_Init with one "
+        "function that reads their current values (up to 8 entries by default, KYMO_MAX_MEMORY_ENTRIES).",
+        diagnostic_prefixes=("profiles.{profile}.features.memory",),
+        summary=_summary_on, visible_when=lambda v: v.feature("memory"), order=36),
     Section(
         "callbacks", "Callbacks & transport",
         "KymoCore never touches hardware itself. You name small functions in your own code; "
         "the generated configuration calls them. Their implementations stay in your project.",
         groups=(
-            Group("Required functions", (
+            Group("Required functions", goal="values", fields=(
                 _binding("clock", "Time function",
                          "Enter the name of your function that returns the milliseconds since start.",
                          "uint32_t clock(void *user)", placeholder="kymo_port_clock_ms", need=_runtime,
@@ -568,7 +592,23 @@ SECTIONS: list[Section] = [
                                   "and enter their names here; the generated files call them. Not written "
                                   "yet? Use the grey suggested names: the 'init-port' command creates a "
                                   "starter file containing exactly these functions."),
-            Group("Transport behaviour", (
+            Group("Transmission safety and decoding", goal="all", fields=(
+                _feature("crc", "CRC checksum on sent frames",
+                         "Detects transmission errors on noisy links. Older receivers require it.",
+                         "KYMO_ENABLE_CRC",
+                         guided="Tick if the connection can corrupt data (long cables, radio, motors "
+                                "nearby). Broken frames are then dropped instead of drawn wrong. Over a "
+                                "short USB cable it is usually not needed.",
+                         cost="+1 byte per frame"),
+                _feature("crc_table", "CRC lookup tables",
+                         "Computes CRC-8 and the trace CRC-16 with tables: same result, far fewer "
+                         "operations, 256 and 512 bytes of flash.", "KYMO_ENABLE_CRC_TABLE", advanced=True,
+                         cost="+768 B flash"),
+                _feature("decoder", "Frame decoder on the MCU",
+                         "Only needed when the microcontroller itself must read Kymo frames.",
+                         "KYMO_ENABLE_DECODER", advanced=True, cost="32 B RAM"),
+            )),
+            Group("Transport behaviour", goal="all", fields=(
                 Field("bindings.write_borrows_buffer", ("bindings", "write_borrows_buffer"),
                       "Driver keeps the bytes after write() returns (DMA/USB)",
                       "Then a busy function is required so KymoCore does not overwrite the frame "
@@ -588,7 +628,7 @@ SECTIONS: list[Section] = [
                          "void service(void *user)", placeholder="kymo_port_service", need=_never,
                          example="void {name}(void *user)\n{\n    wifi_client.poll();\n}"),
             ), description="How the bytes leave your microcontroller."),
-            Group("Extra data for your functions", (
+            Group("Extra data for your functions", goal="values", fields=(
                 _binding("clock_user", "Object for the time function",
                          "Name of a global object that KymoCore passes to your time function as user.",
                          "KymoConfig.clock_user", advanced=True, need=_never, placeholder="my_timer",
@@ -608,7 +648,7 @@ SECTIONS: list[Section] = [
                            "of two serial ports, enter that object's name here and KymoCore passes a "
                            "pointer to it as user. If your functions simply use globals such as Serial, "
                            "leave everything empty."),
-            Group("C++ push sender", (
+            Group("C++ push sender", goal="values", fields=(
                 _binding("cpp_stream", "KymoStream object",
                          "Name of your object derived from KymoStream that the C++ sender writes to.",
                          "KymoStream &", enabled_when=_cpp, requires="Enable the C++ push sender.",
@@ -628,11 +668,12 @@ SECTIONS: list[Section] = [
                       target="KymoSender::begin"),
             ), visible_when=_cpp),
         ),
-        guided_title="How does KymoCore reach your hardware?",
+        guided_title="How does KymoCore reach your hardware?", guided_nav="Hardware",
         guided_intro="KymoCore runs on any microcontroller because it never talks to the hardware "
                      "itself. Instead it calls a few functions from your own program: one for the time, "
                      "one that reads a measurement and one that sends bytes. Here you only enter their names.",
-        diagnostic_prefixes=("bindings",),
+        diagnostic_prefixes=("bindings", "profiles.{profile}.features.crc",
+                             "profiles.{profile}.features.crc_table", "profiles.{profile}.features.decoder"),
         summary=_summary_callbacks, visible_when=lambda v: v.feature("runtime") or v.feature("cpp"),
         order=40),
     Section(
@@ -640,7 +681,7 @@ SECTIONS: list[Section] = [
         "Records function scopes, markers, interrupts and flows with timestamps and sends them "
         "to KymoStudio for timing analysis.",
         groups=(
-            Group("What is recorded", (
+            Group("What is recorded", fields=(
                 Field("trace.enabled", (PROFILE, "trace", "enabled"), "Trace recording",
                       "Compiles the recorder, the KYMO_TRACE_* macros and the transport mux.",
                       guided_help="Leave ticked to record when your functions run. You mark the "
@@ -672,7 +713,7 @@ SECTIONS: list[Section] = [
                       target="KYMO_ENABLE_TRACE_STACK_POINTER", enabled_when=_trace_requested,
                       requires="Enable trace recording first.", on_change=_mark_custom),
             )),
-            Group("Target", (
+            Group("Target", fields=(
                 Field("port.kind", ("port", "kind"), "Target port",
                       "Describes the platform integration. Changing it resets capability verification.",
                       guided_help="Your hardware family. Choose 'Generic' if yours is not listed.",
@@ -699,7 +740,7 @@ SECTIONS: list[Section] = [
                       "Clock synchronized across cores", "Set when all cores read the same counter.",
                       advanced=True, enabled_when=_trace_requested, requires="Enable trace recording first."),
             )),
-            Group("Buffers", (
+            Group("Buffers", fields=(
                 Field("trace.buffer.events_per_core", (PROFILE, "trace", "buffer", "events_per_core"),
                       "Events per core", "Ring size per core; 32 bytes RAM per event.", kind="choice",
                       guided_help="How many events are buffered before they are sent. More events need "
@@ -713,7 +754,7 @@ SECTIONS: list[Section] = [
                 _trace_int(("buffer", "max_isr_nesting"), "Interrupt nesting", "Deepest interrupt nesting.",
                            1, 16, 4, "KYMO_TRACE_MAX_ISR_DEPTH", advanced=True),
             )),
-            Group("Link", (
+            Group("Link", fields=(
                 Field("trace.transport.mode", (PROFILE, "trace", "transport", "mode"), "Link usage",
                       "Shared: telemetry frames and trace events use the same link through the mux.",
                       guided_help="Choose 'Shared' if measurements and trace events go over the same "
@@ -742,7 +783,7 @@ SECTIONS: list[Section] = [
                                   "fill in 'Link busy' below.",
                       enabled_when=_trace_requested, requires="Enable trace recording first."),
             )),
-            Group("Trace functions", (
+            Group("Trace functions", fields=(
                 _trace_binding("clock", "Trace clock", "Returns the free-running tick counter.",
                                "uint64_t clock(void *user)",
                                guided="Name of your function that returns the trace clock count.", need=_trace,
@@ -784,7 +825,7 @@ SECTIONS: list[Section] = [
                      "timeline. It needs a fast clock and a connection to the PC. The lists below give "
                      "your functions (symbols) and tasks (contexts) readable names in KymoStudio.",
         diagnostic_prefixes=("profiles.{profile}.trace", "port", "symbols", "contexts"),
-        summary=_summary_trace, visible_when=_on, guided_when=_trace, order=50),
+        summary=_summary_trace, visible_when=_trace_requested, order=30),
     Section(
         "build", "Build & output",
         "Where the generated, immutable configuration snapshot is written and which build "
@@ -821,7 +862,7 @@ SECTIONS: list[Section] = [
                       minimum=1, maximum=2147483647),
             ), advanced=True),
         ),
-        guided_title="Where should the configuration go?",
+        guided_title="Where should the configuration go?", guided_nav="Output",
         guided_intro="The generator writes a snapshot that your build includes. "
                      "Nothing in your own source files is overwritten.",
         diagnostic_prefixes=("build", "resources"),

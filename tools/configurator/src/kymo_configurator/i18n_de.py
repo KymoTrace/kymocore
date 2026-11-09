@@ -10,13 +10,11 @@ DE: dict[str, str] = {
     # --- window, toolbar, files -------------------------------------------------
     "KymoCore Configurator": "KymoCore-Konfigurator",
     "Project": "Projekt",
-    "&File": "&Datei",
     "&New": "&Neu",
     "&Open…": "Ö&ffnen…",
     "&Save": "&Speichern",
     "Save &as…": "Speichern &unter…",
     "&Quit": "&Beenden",
-    "&View": "&Ansicht",
     "Step by step, only what matters for your goal.": "Schritt für Schritt, nur was für dein Ziel wichtig ist.",
     "All settings at once.": "Alle Einstellungen auf einmal.",
     "Build profile:": "Build-Profil:",
@@ -38,7 +36,6 @@ DE: dict[str, str] = {
     "ready to generate": "bereit zum Erzeugen",
     "{count} problem(s) to fix": "{count} Problem(e) zu beheben",
     "{count} warning(s)": "{count} Warnung(en)",
-    "Profile '{name}': {state}": "Profil '{name}': {state}",
     "Unsaved changes": "Ungespeicherte Änderungen",
     "Save changes before continuing?": "Änderungen vor dem Fortfahren speichern?",
     "Open Kymo project": "Kymo-Projekt öffnen",
@@ -69,7 +66,6 @@ DE: dict[str, str] = {
         "Alle Einstellungen auf einmal, nach Themen gegliedert, mit Live-Status, Prüfungen und einer "
         "Vorschau der erzeugten Dateien. Für alle, die KymoCore kennen.",
     "Open professional mode": "Profi-Modus öffnen",
-    "Open existing project…": "Vorhandenes Projekt öffnen…",
 
     # --- guided and professional frame ----------------------------------------------
     "You can switch to the professional mode at any time; nothing is lost.":
@@ -84,10 +80,7 @@ DE: dict[str, str] = {
         "{count} selten benötigte Einstellung(en) sind hier ausgeblendet und behalten sichere "
         "Voreinstellungen. Der Profi-Modus zeigt sie.",
     "Configuration": "Konfiguration",
-    "✓ ready   ⚠ warning   ✖ needs attention": "✓ bereit   ⚠ Warnung   ✖ braucht Aufmerksamkeit",
     "Technical detail: {target}": "Technisches Detail: {target}",
-    "Affected C macro, configuration field or function signature":
-        "Betroffenes C-Makro, Konfigurationsfeld oder Funktionssignatur",
     "optional": "optional",
 
     # --- step 1: goal and profile -----------------------------------------------------
@@ -128,15 +121,6 @@ DE: dict[str, str] = {
         "Lass das angehakt. Entferne den Haken nur für einen Build, in dem KymoCore komplett verschwinden "
         "soll, z. B. im fertigen Produkt. Deine Einstellungen bleiben erhalten.",
     "What do you want to do?": "Was möchtest du tun?",
-    "Choosing a goal sets the matching features in one step. You can change each feature afterwards; "
-    "the profile then shows as custom.":
-        "Ein Ziel setzt die passenden Funktionen in einem Schritt. Du kannst jede Funktion danach ändern; "
-        "das Profil gilt dann als eigene Auswahl.",
-    "Tick everything you want to use; the options combine freely. Hover over an option for examples. "
-    "This sets the matching features for you, and the next steps show what was chosen.":
-        "Hake alles an, was du nutzen willst; die Optionen lassen sich frei kombinieren. Fahr mit der Maus "
-        "über eine Option, um Beispiele zu sehen. Das setzt die passenden Funktionen für dich, und die "
-        "nächsten Schritte zeigen, was gewählt wurde.",
     "Custom selection": "Eigene Auswahl",
     "Values over time": "Werte über der Zeit",
     "Draw single measurements such as temperature, current or speed as curves over time":
@@ -149,14 +133,11 @@ DE: dict[str, str] = {
     "Execution tracing": "Ablauf-Tracing",
     "Record which functions, interrupts and flows run when (timing analysis)":
         "Aufzeichnen, welche Funktionen, Interrupts und Abläufe wann laufen (Zeitanalyse)",
-    "Always included.": "Immer dabei.",
     "Each sample carries one number, the Y value. KymoStudio draws it over time.\nExample: temperature, "
     "motor current, battery voltage.\nAvailable in every project, also together with the options below.":
         "Jeder Messwert enthält eine Zahl, den Y-Wert. KymoStudio zeichnet ihn über der Zeit.\nBeispiel: "
         "Temperatur, Motorstrom, Akkuspannung.\nIn jedem Projekt verfügbar, auch zusammen mit den Optionen "
         "darunter.",
-    "Curves over time keep working; each channel decides in step 3 which kind it sends.":
-        "Kurven über der Zeit funktionieren weiter; jeder Kanal entscheidet in Schritt 3, was er sendet.",
     "A sample may carry its own X (and Z) next to the Y value, plus the time it was measured.\n"
     "KymoStudio then draws Y over X, or a point in 3D, instead of Y over time.\nExample: pen position of "
     "a plotter, robot arm position, torque over angle.\nCompiles in X, Z and timestamps "
@@ -165,7 +146,29 @@ DE: dict[str, str] = {
         "KymoStudio zeichnet dann Y über X oder einen Punkt in 3D statt Y über der Zeit.\nBeispiel: "
         "Stiftposition eines Plotters, Position eines Roboterarms, Drehmoment über dem Winkel.\nKompiliert "
         "X, Z und Zeitstempel ein (KYMO_ENABLE_X/_Z/_TIMESTAMP).",
-    "Works with or without X/Y points.": "Funktioniert mit und ohne X/Y-Punkte.",
+    "Adjust values live": "Werte live verstellen",
+    "Change controller gains or a setpoint from KymoStudio while measuring.":
+        "Reglerwerte oder einen Sollwert während der Messung aus KymoStudio ändern.",
+    "You list the adjustable values in your code with KYMO_PARAM; the firmware checks every value it "
+    "receives.\nExample: tune a PID controller without flashing again.\nCompiles in "
+    "KYMO_ENABLE_PARAMETERS and the frame decoder.":
+        "Du trägst die verstellbaren Werte im Code mit KYMO_PARAM ein; die Firmware prüft jeden Wert, "
+        "den sie bekommt.\nBeispiel: einen PID-Regler einstellen, ohne neu zu flashen.\nBaut "
+        "KYMO_ENABLE_PARAMETERS und den Frame-Decoder ein.",
+    "Watch variables": "Variablen beobachten",
+    "KymoStudio reads the variable addresses from your firmware's ELF file. Your firmware decides which "
+    "memory may be read; nothing is ever written.\nCompiles in KYMO_ENABLE_WATCH and the frame decoder.":
+        "KymoStudio liest die Adressen der Variablen aus der ELF-Datei deiner Firmware. Deine Firmware "
+        "legt fest, welcher Speicher gelesen werden darf; geschrieben wird nie.\nBaut KYMO_ENABLE_WATCH "
+        "und den Frame-Decoder ein.",
+    "Watch memory (stacks and heap)": "Speicher überwachen (Stacks und Heap)",
+    "See how full your task stacks and your heap get.": "Sehen, wie voll Task-Stacks und Heap werden.",
+    "You list the tasks and heaps in your code and read their values in one callback; KymoStudio names "
+    "the curves after them.\nExample: find out whether a task is close to a stack overflow.\nCompiles "
+    "in KYMO_ENABLE_MEMORY.":
+        "Du listest Tasks und Heaps im Code auf und liest ihre Werte in einem Callback; KymoStudio "
+        "benennt die Kurven danach.\nBeispiel: herausfinden, ob ein Task kurz vor einem Stack-Überlauf "
+        "steht.\nBaut KYMO_ENABLE_MEMORY ein.",
     "Records when your functions, interrupts and data flows run and shows them on a timeline in "
     "KymoStudio.\nExample: find out why a control loop is sometimes late.\nCompiles in the trace "
     "recorder (KYMO_ENABLE_TRACE).":
@@ -175,21 +178,11 @@ DE: dict[str, str] = {
     "Enable KymoCore for this profile first.": "Schalte zuerst KymoCore für dieses Profil ein.",
 
     # --- step 2: telemetry features ---------------------------------------------------
-    "Telemetry features": "Telemetrie-Funktionen",
-    "Which parts of KymoCore are compiled in and which fields a data frame may carry. Disabled parts "
-    "cost no code.":
-        "Welche Teile von KymoCore einkompiliert werden und welche Felder ein Datenframe enthalten darf. "
-        "Abgeschaltete Teile kosten keinen Code.",
-    "Which extras do you need?": "Welche Extras brauchst du?",
-    "Here you choose which building blocks of KymoCore end up on your microcontroller. Your answer in "
-    "step 1 has already ticked what you need. Not sure? Leave everything as it is and click Next. "
-    "Unticked parts use no memory.":
-        "Hier wählst du, welche Bausteine von KymoCore auf deinem Mikrocontroller landen. Deine Antwort in "
-        "Schritt 1 hat schon angehakt, was du brauchst. Unsicher? Lass alles, wie es ist, und klick auf "
-        "Weiter. Nicht angehakte Teile belegen keinen Speicher.",
-    "Programming interface": "Programmierschnittstelle",
-    "How your program hands its values to KymoCore.": "Wie dein Programm seine Werte an KymoCore übergibt.",
-    "Cyclic runtime (Kymo_Init / Kymo_Main)": "Zyklische Laufzeit (Kymo_Init / Kymo_Main)",
+    "How values are sent": "So werden Werte gesendet",
+    "Two ways your values get to KymoStudio. Most projects need only the first one.":
+        "Zwei Wege, wie deine Werte zu KymoStudio kommen. Die meisten Projekte brauchen nur den ersten.",
+    "Send automatically at a fixed rhythm (Kymo_Init / Kymo_Main)":
+        "Automatisch im festen Takt senden (Kymo_Init / Kymo_Main)",
     "KymoCore samples your channels on schedule; recommended for most projects.":
         "KymoCore liest deine Kanäle nach Zeitplan; empfohlen für die meisten Projekte.",
     "Leave ticked unless you know otherwise. KymoCore then reads your measurements by itself at a fixed "
@@ -198,7 +191,8 @@ DE: dict[str, str] = {
         "Lass das angehakt, wenn du es nicht besser weißt. KymoCore liest deine Messwerte dann selbst in "
         "einem festen Takt (z. B. alle 20 ms) und sendet sie. Dein Programm ruft nur einmal Kymo_Init() "
         "und in seiner Hauptschleife Kymo_Main() auf.",
-    "C++ push sender (KymoSender)": "C++-Sender (KymoSender)",
+    "Send values yourself, whenever you want (KymoSender)":
+        "Werte selbst senden, wann du willst (KymoSender)",
     "Send single values whenever your code decides, in addition to or instead of the cyclic runtime.":
         "Einzelne Werte senden, wann immer dein Code es entscheidet, zusätzlich zur oder statt der "
         "zyklischen Laufzeit.",
@@ -207,14 +201,8 @@ DE: dict[str, str] = {
         "Hake das nur an, wenn du einen Wert zu einem selbst gewählten Zeitpunkt senden willst, z. B. "
         "direkt nach dem Lesen eines Sensors. Braucht C++ (Arduino ist C++). Für das normale zyklische "
         "Senden nicht nötig.",
-    "Data per sample": "Daten pro Messwert",
     "Enabling a field allows it; each channel then chooses whether it uses it.":
         "Ein eingeschaltetes Feld ist erlaubt; jeder Kanal entscheidet dann, ob er es nutzt.",
-    "By default every measurement is one number, drawn over time. Tick an extra field only if some of "
-    "your signals need it; each channel can then decide in the next step whether it uses it.":
-        "Normalerweise ist jeder Messwert eine Zahl, die über der Zeit gezeichnet wird. Hake ein "
-        "zusätzliches Feld nur an, wenn einige deiner Signale es brauchen; jeder Kanal kann dann im "
-        "nächsten Schritt entscheiden, ob er es nutzt.",
     "X coordinate": "X-Koordinate",
     "Allows channels to send an X value, e.g. position or angle.":
         "Erlaubt Kanälen, einen X-Wert zu senden, z. B. Position oder Winkel.",
@@ -235,7 +223,6 @@ DE: dict[str, str] = {
         "Hake das an, wenn KymoStudio genau wissen muss, wann jeder Wert gemessen wurde, z. B. für "
         "präzise Zeitmessung. Ohne Zeitstempel nimmt KymoStudio die Ankunftszeit, was für die meisten "
         "Live-Kurven reicht. Kostet 4 zusätzliche Bytes pro Wert.",
-    "Integrity and decoding": "Datensicherheit und Dekodierung",
     "CRC checksum on sent frames": "CRC-Prüfsumme auf gesendeten Frames",
     "Detects transmission errors on noisy links. Older receivers require it.":
         "Erkennt Übertragungsfehler auf gestörten Verbindungen. Ältere Empfänger setzen sie voraus.",
@@ -245,41 +232,13 @@ DE: dict[str, str] = {
         "Kaputte Frames werden dann verworfen statt falsch gezeichnet. Über ein kurzes USB-Kabel ist das "
         "meist nicht nötig.",
     "Frame decoder on the MCU": "Frame-Decoder auf dem Mikrocontroller",
-    "Parameters from KymoStudio (back channel)": "Parameter aus KymoStudio (Rückkanal)",
-    "Lets KymoStudio change registered variables at run time; needs the frame decoder.":
-        "KymoStudio darf angemeldete Variablen zur Laufzeit ändern; braucht den Frame-Decoder.",
-    "Tick if you want to tune values such as controller gains or a setpoint from KymoStudio while measuring. You list them in your code with KYMO_PARAM; the firmware checks every value. Also tick the frame decoder.":
-        "Ankreuzen, wenn du Werte wie Reglerverstärkungen oder einen Sollwert während der Messung aus "
-        "KymoStudio verstellen willst. Du trägst sie im Code mit KYMO_PARAM ein; die Firmware prüft jeden "
-        "Wert. Kreuze auch den Frame-Decoder an.",
-    "The parameter back channel needs the frame decoder": "Der Parameter-Rückkanal braucht den Frame-Decoder",
-    "Live variables from the ELF file": "Live-Variablen aus der ELF-Datei",
-    "Lets KymoStudio sample global variables by address inside the memory ranges you allow; needs the frame decoder.":
-        "KymoStudio darf globale Variablen per Adresse in den von dir freigegebenen Speicherbereichen "
-        "abtasten lassen; braucht den Frame-Decoder.",
-    "Tick if you want to pick variables in KymoStudio from your firmware's ELF file and watch them as curves without adding code for each one. Your firmware lists which memory may be read; nothing is ever written. Also tick the frame decoder.":
-        "Ankreuzen, wenn du in KymoStudio Variablen aus der ELF-Datei deiner Firmware auswählen und als "
-        "Kurven sehen willst, ohne für jede einzelne Code zu schreiben. Deine Firmware legt fest, welcher "
-        "Speicher gelesen werden darf; geschrieben wird nie. Kreuze auch den Frame-Decoder an.",
-    "Live variables need the frame decoder": "Live-Variablen brauchen den Frame-Decoder",
-    "Enable feature decoder as well.": "Aktiviere zusätzlich die Funktion decoder.",
+    "'Adjust values live' needs the frame decoder": "'Werte live verstellen' braucht den Frame-Decoder",
+    "'Watch variables' needs the frame decoder": "'Variablen beobachten' braucht den Frame-Decoder",
+    "Switch on 'Frame decoder on the MCU' as well.": "Schalte zusätzlich 'Frame-Decoder auf dem Mikrocontroller' ein.",
     "Only needed when the microcontroller itself must read Kymo frames.":
         "Nur nötig, wenn der Mikrocontroller selbst Kymo-Frames lesen muss.",
-    "Init/Main runtime": "Init/Main-Laufzeit",
-    "no runtime": "keine Laufzeit",
-    "scalar values only": "nur Einzelwerte",
 
     # --- step 3: channels -------------------------------------------------------------
-    "Channels": "Kanäle",
-    "Each channel is one signal in KymoStudio. It has an ID (0..255), a sampling period and the "
-    "optional fields it sends. KYMO_MAX_CHANNELS is sized automatically.":
-        "Jeder Kanal ist ein Signal in KymoStudio. Er hat eine ID (0..255), eine Abtastperiode und die "
-        "optionalen Felder, die er sendet. KYMO_MAX_CHANNELS wird automatisch bemessen.",
-    "What do you want to measure?": "Was möchtest du messen?",
-    "Add one row per signal. The period is how often it is sampled (20 ms = 50 times per second). The "
-    "estimate below shows the resulting traffic.":
-        "Leg eine Zeile pro Signal an. Die Periode gibt an, wie oft es gelesen wird (20 ms = 50-mal pro "
-        "Sekunde). Die Schätzung darunter zeigt die entstehende Datenmenge.",
     "Name": "Name",
     "Period (ms)": "Periode (ms)",
     "Rate": "Rate",
@@ -741,8 +700,7 @@ DE: dict[str, str] = {
     'Linker symbol at the first readable byte.': 'Linker-Symbol am ersten lesbaren Byte.',
     'Linker symbol just past the last readable byte.': 'Linker-Symbol direkt hinter dem letzten lesbaren Byte.',
     'Linker symbols': 'Linker-Symbole',
-    'Live variables': 'Live-Variablen',
-    'Live variables need at least one readable memory range': 'Live-Variablen brauchen mindestens einen lesbaren Speicherbereich',
+    "'Watch variables' needs at least one readable memory range": "'Variablen beobachten' braucht mindestens einen lesbaren Speicherbereich",
     'Optional, e.g. external RAM.': 'Optional, z. B. externer RAM.',
     'Readable range: end symbol': 'Lesbarer Bereich: Endsymbol',
     'Readable range: start symbol': 'Lesbarer Bereich: Startsymbol',
@@ -763,11 +721,87 @@ DE: dict[str, str] = {
     'Stack pointer': 'Stackzeiger',
     'Puts the stack address into every scope entry and exit (no extra bytes). KymoStudio shows the stack depth per call and per task.': 'Schreibt die Stackadresse in jeden Eintritt und Austritt eines Bereichs (ohne Zusatzbytes). KymoStudio zeigt die Stacktiefe je Aufruf und je Task.',
     "Tick to see how deep each traced function goes into its task's stack. Costs no extra bytes per event.": 'Ankreuzen, um zu sehen, wie tief jede aufgezeichnete Funktion in den Stack ihres Tasks reicht. Kostet keine Zusatzbytes pro Ereignis.',
-    'Memory telemetry (stacks and heap)': 'Speicher-Telemetrie (Stacks und Heap)',
-    'Reports task stack peaks and heap levels as named curves (KymoMemory); your callback reads the values.': 'Meldet Stack-Spitzen der Tasks und den Heap-Stand als benannte Kurven (KymoMemory); dein Callback liest die Werte.',
-    'Tick to watch how full your task stacks and your heap get. You list the tasks and heaps in your code and read their values in one callback; KymoStudio names the curves after them.': 'Ankreuzen, um zu sehen, wie voll Task-Stacks und Heap werden. Du listest Tasks und Heaps in deinem Code und liest ihre Werte in einem Callback; KymoStudio benennt die Kurven danach.',
     'CRC lookup tables': 'CRC-Tabellen',
     'Computes CRC-8 and the trace CRC-16 with tables: same result, far fewer operations, 256 and 512 bytes of flash.': 'Berechnet CRC-8 und die Trace-CRC-16 mit Tabellen: gleiches Ergebnis, viel weniger Rechenschritte, 256 und 512 Byte Flash.',
     'Profile {profile} needs about {used} bytes of RAM for KymoCore, more than the budget of {budget}': 'Profil {profile} braucht für KymoCore etwa {used} Byte RAM, mehr als das Budget von {budget}',
     'Reduce trace events or contexts, or switch off features in this profile.': 'Trace-Ereignisse oder Kontexte verringern oder Funktionen in diesem Profil abschalten.',
+    # --- Studio-style window, start page, inspector --------------------------
+    "5 to 7 steps, depending on the goal": "5 bis 7 Schritte, je nach Ziel",
+    "Check the configuration and write the generated files.": "Konfiguration prüfen und die erzeugten Dateien schreiben.",
+    "Configuration API {version}": "Konfigurations-API {version}",
+    "Diagnostics": "Diagnose",
+    "Estimate for Cortex-M4, without your own buffers and stacks.": "Schätzung für Cortex-M4, ohne eigene Puffer und Stacks.",
+    "Generate": "Erzeugen",
+    "Generated files": "Erzeugte Dateien",
+    "Go to the field": "Zum Feld springen",
+    "KYMOCORE · CONFIGURATION API {version}": "KYMOCORE · KONFIGURATIONS-API {version}",
+    "KymoCore is switched off in this profile.": "KymoCore ist in diesem Profil ausgeschaltet.",
+    "More": "Mehr",
+    "New from template": "Neu aus Vorlage",
+    "No changes against the last generated files.": "Keine Änderungen gegenüber den zuletzt erzeugten Dateien.",
+    "No project opened": "Kein Projekt geöffnet",
+    "No project opened yet. Projects you open or save appear here.": "Noch kein Projekt geöffnet. Projekte, die du öffnest oder speicherst, erscheinen hier.",
+    "Open": "Öffnen",
+    "Preview": "Vorschau",
+    "Problems": "Probleme",
+    "Profile '{name}'": "Profil '{name}'",
+    "RAM estimate": "RAM-Schätzung",
+    "Recently opened": "Zuletzt geöffnet",
+    "SECTION {n} OF {total}": "ABSCHNITT {n} VON {total}",
+    "Save": "Speichern",
+    "Show or hide this group": "Gruppe ein- oder ausklappen",
+    "Shown once the open problems are fixed.": "Erscheint, sobald die offenen Probleme behoben sind.",
+    "What should KymoCore do in your firmware?": "Was soll KymoCore in deiner Firmware tun?",
+    "You can switch at any time; nothing is lost.": "Jederzeit umschaltbar, nichts geht verloren.",
+    "changed": "geändert",
+    "new": "neu",
+    "recommended": "empfohlen",
+    "unchanged": "gleich",
+    "{count} more in 'Review and generate'": "{count} weitere unter 'Prüfen & erzeugen'",
+    "{count} profile(s)": "{count} Profil(e)",
+    "{on} of {total} on": "{on} von {total} an",
+    "● ready   ◆ warning   ■ needs attention": "● bereit   ◆ Hinweis   ■ Fehler",
+    "Trace buffer": "Trace-Puffer",
+    "Multiplexer": "Multiplexer",
+    "Runtime and channels": "Laufzeit und Kanäle",
+    "Return channel": "Rückkanal",
+    'All goals': 'Alle Ziele',
+    'Belongs to this goal from step 1': 'Gehört zu diesem Ziel aus Schritt 1',
+    'Extra fields per sample (X, Z, timestamp)': 'Zusatzfelder pro Messwert (X, Z, Zeitstempel)',
+    "Off: choose '{goal}' in step 1": "Aus: wähle '{goal}' in Schritt 1",
+    'Readable memory': 'Lesbarer Speicher',
+    'Transmission safety and decoding': 'Übertragungssicherheit und Dekodierung',
+    '+1 byte per frame': '+1 Byte je Frame',
+    '+4 bytes per value': '+4 Byte je Wert',
+    '+768 B flash': '+768 B Flash',
+    '32 B RAM': '32 B RAM',
+    '72 B + 4 B per channel RAM': '72 B + 4 B je Kanal RAM',
+    'Goal': 'Ziel',
+    'Hardware': 'Hardware',
+    'RAM estimate: {bytes} B': 'RAM-Schätzung: {bytes} B',
+    'Search settings …': 'Einstellung suchen …',
+    'Send along:': 'Mitsenden:',
+    'Show example': 'Beispiel zeigen',
+    'Hide example': 'Beispiel ausblenden',
+    'A value over X (and Z) instead of over time, e.g. a plotter head position.': 'Ein Wert über X (und Z) statt über der Zeit, z. B. die Position eines Plotterkopfs.',
+    'When functions and interrupts run, as a timeline (timing analysis).': 'Wann Funktionen und Interrupts laufen, als Zeitleiste (Zeitanalyse).',
+    'Global variables from the ELF file as curves, without code for each one.': 'Globale Variablen aus der ELF-Datei als Kurven, ohne Code je Variable.',
+    'Lets KymoStudio change values in your firmware while it runs, e.g. controller gains or a setpoint. Nothing else to set here: the frame decoder is switched on automatically. In your code you register each value once with KYMO_PARAM (up to 8 by default, KYMO_MAX_PARAMETERS); the firmware checks every value it receives against the limits you give.': 'KymoStudio darf Werte in deiner Firmware ändern, während sie läuft, z. B. Reglerverstärkungen oder einen Sollwert. Hier ist sonst nichts einzustellen: Der Frame-Decoder wird automatisch eingeschaltet. In deinem Code meldest du jeden Wert einmal mit KYMO_PARAM an (standardmäßig bis zu 8, KYMO_MAX_PARAMETERS); die Firmware prüft jeden empfangenen Wert gegen die Grenzen, die du angibst.',
+    'Pick global variables of your firmware in KymoStudio and see them as curves, without code for each one. Here you set which memory KymoStudio may read; nothing is ever written.': 'Globale Variablen deiner Firmware in KymoStudio auswählen und als Kurven sehen, ohne Code je Variable. Hier legst du fest, welchen Speicher KymoStudio lesen darf; geschrieben wird nie.',
+    'Shows how full your task stacks and your heap get, as named curves in KymoStudio. Nothing else to set here. In your code you list the tasks and heaps and call KymoMemory_Init with one function that reads their current values (up to 8 entries by default, KYMO_MAX_MEMORY_ENTRIES).': 'Zeigt als benannte Kurven in KymoStudio, wie voll deine Task-Stacks und dein Heap werden. Hier ist sonst nichts einzustellen. In deinem Code listest du Tasks und Heaps auf und rufst KymoMemory_Init mit einer Funktion auf, die ihre aktuellen Werte liest (standardmäßig bis zu 8 Einträge, KYMO_MAX_MEMORY_ENTRIES).',
+    "Which extra fields a sample may carry next to the Y value. Each channel then chooses in 'Values over time' whether it uses them.": "Welche Zusatzfelder ein Messwert neben dem Y-Wert tragen darf. Jeder Kanal entscheidet dann unter 'Werte über der Zeit', ob er sie nutzt.",
+    'memory range not set': 'Speicherbereich nicht gesetzt',
+    'no extra fields': 'keine Zusatzfelder',
+    'on': 'an',
+    'Tick the goals this build serves; they combine freely. Each ticked goal appears as its own section in the sidebar, where you set it up.': 'Hake die Ziele an, die dieser Build erfüllen soll; sie lassen sich frei kombinieren. Jedes angehakte Ziel erscheint links als eigener Abschnitt, in dem du es einstellst.',
+    'Tick everything you want to use; the options combine freely. Hover over an option for examples. Each ticked goal gets its own step on the left, where you set it up.': 'Hake alles an, was du nutzen willst; die Optionen lassen sich frei kombinieren. Fahr mit der Maus über eine Option, um Beispiele zu sehen. Jedes angehakte Ziel bekommt links einen eigenen Schritt, in dem du es einstellst.',
+    'Measurements such as temperature or current as curves over time.': 'Messwerte wie Temperatur oder Strom als Kurven über der Zeit.',
+    "How your values get to KymoStudio. The signals themselves are listed under 'Channels'.": "Wie deine Werte zu KymoStudio kommen. Die Signale selbst legst du unter 'Kanäle' an.",
+    'How should your values be sent?': 'Wie sollen deine Werte gesendet werden?',
+    'Channels': 'Kanäle',
+    "Each channel is one signal in KymoStudio with an ID (0..255) and a sampling period; with 'X/Y or X/Y/Z points' it also chooses its extra fields. KYMO_MAX_CHANNELS is sized automatically.": "Jeder Kanal ist ein Signal in KymoStudio mit einer ID (0..255) und einer Messperiode; mit 'X/Y- oder X/Y/Z-Punkte' wählt er auch seine Zusatzfelder. KYMO_MAX_CHANNELS wird automatisch bemessen.",
+    'What do you want to measure?': 'Was willst du messen?',
+    'Add one row per signal. The period is how often it is sampled (20 ms = 50 times per second).': 'Lege eine Zeile pro Signal an. Die Periode sagt, wie oft gemessen wird (20 ms = 50-mal pro Sekunde).',
+    'fixed rhythm': 'fester Takt',
+    'sent yourself': 'selbst gesendet',
 }

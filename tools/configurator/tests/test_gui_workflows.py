@@ -53,7 +53,7 @@ class GuiWorkflowTests(unittest.TestCase):
         self.assertNotIn("trace", [s.key for s in wizard.step_sections()])
         page = wizard.pages["project"]
         cards = page.editors["profile.preset"]
-        xyz, trace = cards._goals
+        xyz, trace = cards._goals["xyz"], cards._goals["trace"]
         profile = window.session.doc["profiles"]["development"]
         trace.click()
         self.assertEqual(profile["preset"], "custom")
@@ -62,12 +62,13 @@ class GuiWorkflowTests(unittest.TestCase):
         xyz.click()
         self.assertEqual(profile["preset"], "trace")
         self.assertIn("trace", [s.key for s in wizard.step_sections()])
+        self.assertIn("xyz", [s.key for s in wizard.step_sections()])
         trace.click()
         self.assertEqual(profile["preset"], "xyz")
         self.assertFalse(profile["trace"]["enabled"])
         trace.click()
         # Advanced settings stay hidden in guided mode.
-        self.assertNotIn("features.decoder", wizard.pages["telemetry"].editors)
+        self.assertNotIn("features.decoder", wizard.pages["callbacks"].editors)
 
     def test_guided_next_is_blocked_by_errors_of_the_current_step(self):
         window = self.window(GUIDED)
@@ -159,7 +160,7 @@ class GuiWorkflowTests(unittest.TestCase):
     def test_guided_mode_uses_beginner_texts_and_named_profile_copy(self):
         window = self.window(GUIDED)
         crc = field("features.crc")
-        guided_editor = window.guided.pages["telemetry"].editors["features.crc"]
+        guided_editor = window.guided.pages["callbacks"].editors["features.crc"]
         professional_editor = self.editor(window, "features.crc")
         self.assertEqual(guided_editor.help.text(), crc.guided_help)
         self.assertEqual(professional_editor.help.text(), crc.help)

@@ -11,12 +11,15 @@ import copy
 from typing import Callable
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QHBoxLayout, QHeaderView, QLabel,
                                QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit,
                                QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from .. import catalog
 from ..i18n import tr
+from . import style
+from .highlight import CodeHighlighter
 from .session import ProjectSession
 
 WidgetFactory = Callable[[ProjectSession, bool], QWidget]
@@ -51,7 +54,7 @@ def _bool_item(checked: bool, enabled: bool, tooltip: str = "") -> QTableWidgetI
 def _readonly(text: str) -> QTableWidgetItem:
     item = QTableWidgetItem(text)
     item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
-    item.setForeground(Qt.GlobalColor.darkGray)
+    item.setForeground(QColor(style.TEXT_HINT))
     return item
 
 
@@ -291,7 +294,7 @@ class RegistryEditor(QWidget):
 
 
 class ReviewPanel(QWidget):
-    """Summary, effective macros, diagnostics, preview and generation."""
+    """Generated files with their changes, open problems, effective macros and generation."""
 
     navigate = Signal(str)
     """Emitted with a section key when the user opens a diagnostic."""
@@ -299,36 +302,56 @@ class ReviewPanel(QWidget):
     def __init__(self, session: ProjectSession, guided: bool = False):
         super().__init__()
         self.session = session
-        layout = QVBoxLayout(self)
+        self._files: dict[str, tuple[str, list[str]]] = {}
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(14)
+        files = QVBoxLayout()
+        files_title = QLabel(tr("Generated files"))
+        files_title.setObjectName("groupTitle")
+        files.addWidget(files_title)
+        self.file_list = QListWidget()
+        self.file_list.setFixedWidth(250)
+        self.file_list.currentRowChanged.connect(self._show_file)
+        files.addWidget(self.file_list, 1)
+        self.preview_button = QPushButton(tr("Preview generated files"))
+        self.preview_button.clicked.connect(self.show_preview)
+        files.addWidget(self.preview_button)
+        layout.addLayout(files)
+        self.output = QPlainTextEdit()
+        self.output.setReadOnly(True)
+        self.output.setObjectName("preview")
+        self.output.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        self.output.setMinimumHeight(360)
+        self.output.setPlaceholderText(tr("The generated files and their changes appear here."))
+        self._highlighter = CodeHighlighter(self.output.document())
+        layout.addWidget(self.output, 1)
+        side = QVBoxLayout()
+        side.setSpacing(8)
+        problems_title = QLabel(tr("Open problems"))
+        problems_title.setObjectName("groupTitle")
+        side.addWidget(problems_title)
+        self.problems = QListWidget()
+        self.problems.setMaximumHeight(170)
+        self.problems.setWordWrap(True)
+        self.problems.itemActivated.connect(self._open_problem)
+        self.problems.itemDoubleClicked.connect(self._open_problem)
+        side.addWidget(self.problems)
         self.summary = QLabel("")
         self.summary.setObjectName("reviewSummary")
         self.summary.setWordWrap(True)
         self.summary.setTextFormat(Qt.TextFormat.RichText)
-        layout.addWidget(self.summary)
-        problems_title = QLabel(tr("Open problems"))
-        problems_title.setObjectName("groupTitle")
-        layout.addWidget(problems_title)
-        self.problems = QListWidget()
-        self.problems.setMaximumHeight(150)
-        self.problems.itemActivated.connect(self._open_problem)
-        self.problems.itemDoubleClicked.connect(self._open_problem)
-        layout.addWidget(self.problems)
-        buttons = QHBoxLayout()
-        self.preview_button = QPushButton(tr("Preview generated files"))
+        side.addWidget(self.summary)
+        side.addStretch(1)
         self.generate_button = QPushButton(tr("Generate configuration"))
         self.generate_button.setObjectName("primaryButton")
-        self.preview_button.clicked.connect(self.show_preview)
+        self.generate_button.setMinimumHeight(38)
         self.generate_button.clicked.connect(self.generate)
-        buttons.addWidget(self.preview_button)
-        buttons.addStretch(1)
-        buttons.addWidget(self.generate_button)
-        layout.addLayout(buttons)
-        self.output = QPlainTextEdit()
-        self.output.setReadOnly(True)
-        self.output.setObjectName("preview")
-        self.output.setPlaceholderText(tr("The generated files and their changes appear here."))
-        layout.addWidget(self.output, 1)
+        side.addWidget(self.generate_button)
+        holder = QWidget()
+        holder.setFixedWidth(320)
+        holder.setLayout(side)
+        layout.addWidget(holder)
         self.refresh()
 
     def refresh(self) -> None:
@@ -336,24 +359,25 @@ class ReviewPanel(QWidget):
         rows = []
         for section in catalog.sections():
             if section.summary and section.is_visible(view):
-                rows.append(f"<tr><td style='padding-right:18px'><b>{tr(section.title)}</b></td>"
+                rows.append(f"<tr><td style='padding-right:12px; color:{style.TEXT_SECONDARY}'>{tr(section.title)}</td>"
                             f"<td>{section.summary(view)}</td></tr>")
         cells = []
         for name, value in self.session.effective_macros():
+            short = name.removeprefix("KYMO_ENABLE_").removeprefix("KYMO_")
             if name == "KYMO_MAX_CHANNELS":
-                cells.append(f"<td><code>{name} = {value}</code></td>")
+                cells.append(f"<code>{short} = {value}</code>")
             elif value:
-                cells.append(f"<td><span style='color:#1e7a3c'>✓</span> <code>{name}</code></td>")
+                cells.append(f"<span style='color:{style.SUCCESS}'>✓</span> <code>{short}</code>")
             else:
-                cells.append(f"<td style='color:#9aa1ad'>– <code>{name}</code></td>")
-        columns = 3
-        macro_rows = "".join("<tr>" + "".join(cells[i:i + columns]) + "</tr>"
-                             for i in range(0, len(cells), columns))
+                cells.append(f"<span style='color:{style.TEXT_DISABLED}'>– <code>{short}</code></span>")
         self.summary.setText(
-            "<table cellspacing='0' cellpadding='4'>" + "".join(rows) + "</table>"
-            f"<p style='margin-top:14px'><b>{tr('Generated settings')}</b> "
-            f"<span style='color:#5b6472'>({tr('✓ compiled in, – left out')})</span></p>"
-            "<table cellspacing='0' cellpadding='4'>" + macro_rows + "</table>")
+            "<table cellspacing='0' cellpadding='2'>" + "".join(rows) + "</table>"
+            f"<p style='margin-top:10px'><b>{tr('Generated settings')}</b> "
+            f"<span style='color:{style.TEXT_HINT}'>({tr('✓ compiled in, – left out')})</span></p>"
+            + "<table cellspacing='0' cellpadding='2'>"
+            + "".join("<tr>" + "".join(f"<td style='padding-right:10px'>{c}</td>" for c in cells[i:i + 2]) + "</tr>"
+                      for i in range(0, len(cells), 2))
+            + "</table>")
         self.problems.clear()
         for diagnostic in self.session.diagnostics():
             owner = catalog.section_for_path(diagnostic.path, self.session.profile)
@@ -361,11 +385,18 @@ class ReviewPanel(QWidget):
             where = tr(owner.title) if owner else diagnostic.path
             message, suggestion = diagnostic.localized()
             item = QListWidgetItem(f"{prefix} {where}: {message}" + (f" — {suggestion}" if suggestion else ""))
+            item.setForeground(QColor(style.CHIPS["danger" if prefix == "✖" else "warning"][2]))
             item.setData(Qt.ItemDataRole.UserRole, owner.key if owner else "")
             self.problems.addItem(item)
         if not self.session.diagnostics():
             self.problems.addItem(tr("✓ No problems found. The configuration can be generated."))
         self.generate_button.setEnabled(not self.session.errors())
+        if self.isVisible():
+            self.show_preview()
+
+    def showEvent(self, event) -> None:  # noqa: N802 - Qt override
+        super().showEvent(event)
+        self.show_preview()
 
     def _open_problem(self, item: QListWidgetItem) -> None:
         key = item.data(Qt.ItemDataRole.UserRole)
@@ -373,15 +404,39 @@ class ReviewPanel(QWidget):
             self.navigate.emit(key)
 
     def show_preview(self) -> None:
+        """Fill the file list; the selected file shows its diff or content."""
+        current = self.file_list.currentItem().data(Qt.ItemDataRole.UserRole) if self.file_list.currentItem() else ""
+        self.file_list.blockSignals(True)
+        self.file_list.clear()
         if self.session.errors():
+            self._files = {}
+            self.file_list.blockSignals(False)
             self.output.setPlainText(tr("Resolve the open problems first."))
             return
-        lines = []
-        for name, (state, content) in self.session.preview().items():
-            lines.append(f"--- {name} ({state}) ---")
-            lines.extend(content[:80])
-            lines.append("")
-        self.output.setPlainText("\n".join(lines))
+        self._files = self.session.preview()
+        names = {"new": tr("new"), "changed": tr("changed"), "unchanged": tr("unchanged")}
+        colors = {"new": style.SUCCESS, "changed": style.WARNING, "unchanged": style.TEXT_HINT}
+        select = -1
+        for row, (name, (state, _)) in enumerate(self._files.items()):
+            item = QListWidgetItem(f"{name}  ·  {names.get(state, state)}")
+            item.setForeground(QColor(colors.get(state, style.TEXT)))
+            item.setData(Qt.ItemDataRole.UserRole, name)
+            self.file_list.addItem(item)
+            if name == current or (select < 0 and not current and state != "unchanged"):
+                select = row
+        self.file_list.blockSignals(False)
+        self.file_list.setCurrentRow(max(select, 0))
+        self._show_file(max(select, 0))
+
+    def _show_file(self, row: int) -> None:
+        item = self.file_list.item(row)
+        if item is None:
+            return
+        state, content = self._files.get(item.data(Qt.ItemDataRole.UserRole), ("", []))
+        bar = self.output.verticalScrollBar().value()
+        self._highlighter.set_diff(state == "changed")
+        self.output.setPlainText("\n".join(content))
+        self.output.verticalScrollBar().setValue(bar)
 
     def generate(self) -> None:
         try:

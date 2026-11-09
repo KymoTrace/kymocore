@@ -79,14 +79,15 @@ def goals(profile: dict[str, Any]) -> tuple[bool, bool]:
 
 
 def apply_goals(profile: dict[str, Any], xyz: bool, trace: bool) -> None:
-    """Combine the goals freely; live values are always included.
+    """Combine the goals freely; X/Y points send values, so they switch the runtime on.
 
     Only the switches owned by the goals change, so other features chosen by
     hand (for example CRC) are kept. The profile then reports the preset it
     matches, or "custom" (for example tracing without XYZ).
     """
     features = profile.setdefault("features", {})
-    features["runtime"] = True
+    if xyz:
+        features["runtime"] = True
     for key in _XYZ_KEYS:
         features[key] = xyz
     if trace:
@@ -96,6 +97,44 @@ def apply_goals(profile: dict[str, Any], xyz: bool, trace: bool) -> None:
             bindings.setdefault(name, function)
     else:
         profile.setdefault("trace", {}).update(_NO_TRACE)
+    profile["preset"] = matching_preset(profile)
+
+
+GOAL_FEATURES = ("parameters", "watch", "memory")
+"""Features offered as their own goal tiles in guided step 1 (and therefore not again in step 2)."""
+
+
+def values_selected(profile: dict[str, Any]) -> bool:
+    """'Values over time' is chosen while KymoCore sends values (runtime or C++ sender)."""
+    features = profile.get("features", {})
+    return bool(features.get("runtime") or features.get("cpp"))
+
+
+def set_values_goal(profile: dict[str, Any], on: bool) -> None:
+    """Switch 'Values over time'; without it there is nothing to send X/Y points with."""
+    features = profile.setdefault("features", {})
+    if on:
+        features["runtime"] = True
+    else:
+        for key in ("runtime", "cpp") + _XYZ_KEYS:
+            features[key] = False
+    profile["preset"] = matching_preset(profile)
+
+
+def goal_selected(profile: dict[str, Any], goal: str) -> bool:
+    """Whether the step-1 goal is chosen; "all" always is."""
+    xyz, trace = goals(profile)
+    chosen = {"values": values_selected(profile), "xyz": xyz, "trace": trace}
+    chosen.update({key: bool(profile.get("features", {}).get(key)) for key in GOAL_FEATURES})
+    return chosen.get(goal, True)
+
+
+def set_goal_feature(profile: dict[str, Any], key: str, on: bool) -> None:
+    """Switch one goal feature; parameters and live variables need the frame decoder."""
+    features = profile.setdefault("features", {})
+    features[key] = on
+    if on and key in ("parameters", "watch"):
+        features["decoder"] = True
     profile["preset"] = matching_preset(profile)
 
 
