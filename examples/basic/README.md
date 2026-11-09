@@ -9,7 +9,7 @@ the library's buffer. There is no terminal output. Exit code zero means success.
 From the unpacked **library root**:
 
 ```sh
-g++ -std=c++11 -fno-exceptions -fno-rtti -Isrc examples/basic/main.cpp src/kymo_protocol.cpp src/kymo_runtime.cpp src/kymo.cpp -o kymo-basic
+g++ -std=c++11 -fno-exceptions -fno-rtti -Isrc examples/basic/main.cpp src/telemetry/kymo_protocol.cpp src/telemetry/kymo_runtime.cpp -o kymo-basic
 ./kymo-basic
 ```
 
@@ -17,7 +17,7 @@ On Windows, name the output `kymo-basic.exe` and run `.\kymo-basic.exe`.
 The compiler must be on PATH. No other files
 are required. Keep `KYMO_ENABLE_RUNTIME=1`.
 
-For a device, keep the persistent channel/configuration/context storage, replace
+For a device, keep the channel table and context alive (the configuration is copied by Init), replace
 the clock/sample/write callbacks and call Init once, then Main from the cyclic
 task. The complete Arduino/ESP32 application is in the package README. SDK-based
 adapters remain application code; the packaged example itself is portable.

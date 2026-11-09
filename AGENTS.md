@@ -36,9 +36,6 @@ Applies to active first-party C/C++ code, including examples and native tests.
   macros, types, fields and functions; parameter directions and return semantics
   for callable interfaces. Keep the KymoProbe `Doxyfile` inputs current and run Doxygen there after
   header documentation changes. Generated output belongs under `docs/api/`.
-- `legacy/` is archived, excluded from builds, and not production code.
-  `lib/Events` is an independent third-party submodule; do not rewrite it as
-  part of KymoCore style changes.
 - This checkout is the KymoCore development repository. Make library changes here.
 - KymoProbe consumes official release tags through its pinned submodule; do not develop in that consumer checkout.
 - Keep only a few small reference examples under `examples/` here.

@@ -5,6 +5,9 @@
 Diese Anleitung erklärt Einrichtung, Datenweg und Protokoll auf Deutsch. Die
 anschließende API-Referenz beschreibt die technischen Verträge.
 
+Dieser Arbeitsstand dokumentiert auch unveröffentlichte 7.3-Features; siehe
+[Geltungsbereich](README.md#documentation-scope--geltungsbereich).
+
 ## Architektur und Datenweg
 
 ![Aufbau von Messquelle bis KymoStudio](images/architecture.png)
@@ -41,17 +44,20 @@ die die Build-Konfiguration aktiviert. Die Quellen sind nach Aufgaben gegliedert
 | `telemetry/kymo_protocol.h` | DATA-Frame-Codec (`KymoProtocol_*`) | immer |
 | `telemetry/kymo_runtime.h` | `Kymo_Init` / `Kymo_Main` | `KYMO_ENABLE_RUNTIME=1` (Default) |
 | `telemetry/kymo_sender.h` | `KymoSender` + `KymoStream` (C++) | `KYMO_ENABLE_CPP=1` |
+| `control/kymo_param.h` | Parameterempfang und Discovery | `KYMO_ENABLE_PARAMETERS=1` |
+| `control/kymo_watch.h` | Live-Variablen aus dem Firmware-Speicher | `KYMO_ENABLE_WATCH=1` |
+| `telemetry/kymo_memory.h` | Stack- und Heap-Telemetrie | `KYMO_ENABLE_MEMORY=1` |
 | `trace/kymo_instrumentation.h` | `KYMO_TRACE_*`-Makros | immer (Compile-out) |
 | `trace/kymo_trace.h` | `KymoTraceRecorder` | `KYMO_ENABLE_TRACE=1` |
 | `transport/kymo_mux.h` | `KymoMux`: Trace + DATA auf einer Leitung | `KYMO_ENABLE_TRACE=1` |
 | `common/` | Bit-, Byte- und CRC-Helfer | immer |
 
-Jede Funktion, die fehlschlagen kann, liefert `KymoStatus`; `KYMO_OK` (0)
-bedeutet immer Erfolg. Alle Module nutzen `KymoClockFn`, `KymoWriteFn`,
+Operationen mit Statusrückgabe liefern `KymoStatus`; `KYMO_OK` (0) bedeutet
+Erfolg. Encoder und Pull-APIs liefern dagegen dokumentierte Byteanzahlen. Alle Module nutzen `KymoClockFn`, `KymoWriteFn`,
 `KymoBusyFn` und `KymoServiceFn`, sodass ein Transportadapter für Runtime,
 Sender und Mux genügt.
 
-**Das gesamte Paket ist plattformunabhängig.** Keine Datei bindet SDK-,
+**Die Bibliothek unter `src/` ist plattformunabhängig.** Ihre Quellen binden keine SDK-,
 Hersteller- oder Framework-Header ein (kein `Arduino.h`, keine HAL- oder
 RTOS-Header), und kein Zielmakro verändert die API. Hardwarezugriff liegt
 immer in Callbacks der Anwendung; die Arduino-Sketches unter `examples/` sind
@@ -74,8 +80,7 @@ lib_deps =
 Für Uno stattdessen `platform = atmelavr@5.3.0` und `board = uno` setzen.
 Die Library selbst ist weder an diese Boards noch an Arduino gebunden.
 
-Bis zur Veröffentlichung in der Registry direkt von GitHub installieren. Der Tag
-legt die Version fest:
+Alternativ direkt von GitHub installieren. Der Tag legt die Version fest:
 
 ```ini
 lib_deps =
@@ -302,7 +307,7 @@ Teilframes dürfen andere Produzenten keine Bytes in denselben Stream mischen.
 ![Framefelder, Descriptorbits und konkrete Wire-Beispiele](images/protocol.png)
 
 Paketversion 7.2.1, Protokoll v6.2 und **Wire-Version 1** sind unterschiedliche
-Angaben. Der normative Vertrag steht in [PROTOCOL.md](../PROTOCOL.md).
+Angaben. Der normative Vertrag steht in [PROTOCOL.md](PROTOCOL.md).
 
 | Offset | Größe | Inhalt |
 |---|---:|---|
@@ -409,7 +414,7 @@ MCU-Decoder erwartet einen vollständigen Frame; er ist kein Streamassembler.
 
 Classic CAN verwendet eine Kanalzuordnung über Arbitration-ID beziehungsweise
 Adapterkonfiguration und ein konfiguriertes Zahlenformat. Details stehen im
-[Protokollvertrag](../PROTOCOL.md#can). Netzwerkaufbau und Wiederverbindung gehören
+[Protokollvertrag](PROTOCOL.md#can). Netzwerkaufbau und Wiederverbindung gehören
 zum Adapter. Das externe PubSubClient-Beispiel verbindet synchron und ist
 deshalb kein Nachweis für einen harten Echtzeitzyklus.
 
@@ -436,9 +441,10 @@ Die Library liefert Telemetrie; die App übernimmt Empfang und Visualisierung.
    optionale Koordinaten. Ohne X wird kein gemessener X-Wert übertragen.
 4. Zunächst die bekannte Beispielwellenform prüfen, dann Sensoren anbinden.
 
-Das Protokoll überträgt keine Kanalnamen, Einheiten oder Sensorkonfigurationen.
-Diese Zuordnung bleibt bei Anwendung und App. Seit 7.1 lässt der optionale
-Parameter-Rückkanal (`KYMO_ENABLE_PARAMETERS`, siehe [PROTOCOL.md](../PROTOCOL.md))
+DATA-Frames enthalten numerische Kanal-IDs und Werte, keine Namen oder Einheiten.
+Optionale Parameterbeschreibungen und Speichermetadaten liefern Namen; bei
+Live-Variablen stammen sie aus der ELF-Datei der Firmware. Seit 7.1 lässt der optionale
+Parameter-Rückkanal (`KYMO_ENABLE_PARAMETERS`, siehe [PROTOCOL.md](PROTOCOL.md))
 den Host registrierte Parameter schreiben. Seit 7.3 lassen Live-Variablen
 (`KYMO_ENABLE_WATCH`) den Host globale Variablen abtasten, die er aus der ELF-Datei
 gewählt hat, nur in den Speicherbereichen, die die Firmware freigibt; die Firmware
@@ -488,23 +494,24 @@ KymoCore/
   library.json             PlatformIO-Metadaten und Exportumfang
   library.properties       Arduino-Metadaten
   LICENSE                  MIT-Lizenztext
-  CONTRIBUTING.md          Beiträge und Rechteeinräumung
   README.md                Übersicht und Schnellstart (Englisch, README.de.md Deutsch)
-  PROTOCOL.md              Normativer Wire-Vertrag
   CHANGELOG.md             Änderungen und Migration
-  PUBLISHING.md            Release-Vorbereitung für Maintainer
   src/
     KymoCore.h             Der eine Header für Anwendungen
     kymo_config.h          Version, Profil, Schalter und Größen
     kymo_types.h           Statuscodes und gemeinsame Callback-Typen
     telemetry/             Codec, Init/Main-Runtime, C++-Sender
+    control/               Parameter, Live-Variablen, RX-Reassemblierung
     trace/                 Recorder, Trace-Protokoll, Instrumentierung
     transport/             Mux für Trace + DATA auf einer Leitung
     common/                Bit-, Byte- und CRC-Helfer
-  examples/                Portable und Arduino-Referenzbeispiele
+  examples/                Portable, Arduino- und ESP-IDF-Referenzbeispiele
   test/                    Native Tests und Strukturprüfung
   tools/configurator/      Konfigurator: geführter und Profi-Modus
-  docs/                    Anleitung (Englisch/Deutsch) und Bilder
+  docs/                    Dokumentationsübersicht, Anleitungen und Bilder
+    PROTOCOL.md            Normativer Wire-Vertrag
+    CONTRIBUTING.md        Beiträge (Deutsch: CONTRIBUTING.de.md)
+    PUBLISHING.md          Release-Vorbereitung für Maintainer
 ```
 
 Die komplette Host-Suite aus dem Repository-Wurzelverzeichnis starten:
@@ -512,6 +519,7 @@ Die komplette Host-Suite aus dem Repository-Wurzelverzeichnis starten:
 ```sh
 python test/native_test.py
 python tools/test_package.py
+python -m pytest -q tools/configurator/tests
 ```
 
 `native_test.py` baut und startet die Hilfsfunktionen, die Protokoll-Golden-Vectors
@@ -522,7 +530,7 @@ Der Paketcheck baut separate Verbraucher aus dem exportierten Archiv und
 kompiliert das README-Beispiel für Uno und ESP32. Builds ersetzen keine
 Boardtests, Stackmessungen oder Zeitmessungen im Treiber. Eigene Adapter auf
 Zielhardware validieren. Die Paketvorbereitung steht in
-[PUBLISHING.md](../PUBLISHING.md), Änderungen in [CHANGELOG.md](../CHANGELOG.md).
+[PUBLISHING.md](PUBLISHING.md), Änderungen in [CHANGELOG.md](../CHANGELOG.md).
 
 ## Technische API-Referenz
 
@@ -760,7 +768,7 @@ Trace-Anwendungen liegen in KymoProbe und sind nicht Teil dieses Pakets.
 
 ## Kompatibilität und Prüfung
 
-Der [Wire-Vertrag](../PROTOCOL.md) ist **v6.2 / Wire-Version 1** und bleibt mit
+Der [Wire-Vertrag](PROTOCOL.md) ist **v6.2 / Wire-Version 1** und bleibt mit
 KymoCore 7.0 unverändert. CRC ist **standardmäßig deaktiviert**. Descriptor-Bit 0
 markiert NO_CRC; das letzte Byte bleibt als Null-Trailer erhalten, Frames bleiben
 9–21 Bytes lang. Decoder ignorieren den Trailer bei NO_CRC und prüfen CRC-Frames weiterhin.
@@ -807,8 +815,7 @@ All active first-party C/C++ functions have at most one return, as their final
 statement at function-body scope. Void functions may have no return. Error
 paths use initialized status variables and small helpers; no exit macros or
 goto-based substitutes. The source rule is checked automatically by the native
-test runner and hence CI. Archived prototypes and the independent Events
-submodule are outside the active production scope.
+test runner and hence CI.
 
 The independent [common component](../src/common/README.md) provides reusable
 bit/bitset operations, little-endian byte conversion, CRC8, CRC-16 and CRC-32. Constant

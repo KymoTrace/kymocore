@@ -2,6 +2,10 @@
 
 ## Unreleased (7.3.0)
 
+- Documentation: move protocol, contribution rules and publishing instructions into
+  `docs/`; add a documentation index, remove the completed 7.0 structure review
+  and redundant 3D note, and correct outdated build/setup instructions.
+
 - Live variables: `control/kymo_watch.h` lets the host sample global or static
   variables that it picked from the firmware's ELF file (`KYMO_ENABLE_WATCH`, needs
   `KYMO_ENABLE_DECODER`; `KYMO_MAX_WATCHES`, default 8; `KYMO_WATCH_MIN_PERIOD_MS`,
@@ -10,7 +14,7 @@
   answered with WATCH_ACK. `KymoWatch_NextSample` reads one due variable per call with
   exactly its width and returns an ordinary DATA point; an optional reader callback
   locks 8-byte reads or maps addresses on host builds. Protocol: operations
-  0x03..0x06 on the control descriptor `0x60`, see PROTOCOL.md.
+  0x03..0x06 on the control descriptor `0x60`, see [docs/PROTOCOL.md](docs/PROTOCOL.md).
 - Back channel: KymoParam and KymoWatch share the frame reassembly
   (`control/kymo_control_rx.h`) and may be fed the same bytes; each ignores the
   other's control operations. Host requests may now carry up to 16 payload bytes
@@ -182,22 +186,3 @@ and the feature set are unchanged; the API and file layout change. See
 - Alle Quelldateien tragen eine SPDX-Kennung und den Copyright-Vermerk.
 - CONTRIBUTING.md beschreibt die Rechteeinräumung für Beiträge.
 - Keine Änderung an API, Protokoll oder Wire-Format gegenüber 6.1.0.
-
-## 6.1.0 — release candidate, not a publication record
-
-- Portable C++11 implementation with C linkage for C99 callers; compile and
-  link the implementation with the C++ toolchain.
-- Cooperative Init/Main scheduling, static buffers, partial writes and explicit
-  asynchronous transport ownership.
-- Minimal scalar encoder/runtime by default. Independent switches for X, Z,
-  timestamps, CRC, MCU decoding and the C++ push API.
-- Protocol v6.1 keeps wire version 1 and 9–21 byte frames. NO_CRC is the default;
-  older v6.0 receivers require outgoing CRC to be enabled.
-- Arduino/STM32 adapters live in application examples outside the portable core.
-  Direct `Kymo(Serial)` / `begin(Serial)` overloads are removed; use a
-  `KymoStream` adapter. Rebuild all consumers after migration.
-- Publication package includes the MIT license, a portable example, illustrated
-  documentation, KymoStudio links and maintainer publication instructions.
-
-The version was already present in the manifests before publication preparation.
-Verify availability in the intended PlatformIO account before publishing it.

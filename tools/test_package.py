@@ -58,7 +58,7 @@ def check_archive(archive, destination):
     idf = re.search(r'^version: "([^"]+)"$', (LIB / "idf_component.yml").read_text(encoding="utf-8"), re.M)
     assert idf and idf.group(1) == manifest["version"], "idf_component.yml version differs from library.json"
     assert len(manifest["description"]) <= 255
-    required = ["LICENSE", "CONTRIBUTING.md", "CONTRIBUTING.de.md", "CHANGELOG.md", "PUBLISHING.md", "README.md", "README.de.md", "PROTOCOL.md", "docs/GUIDE.md", "docs/GUIDE.de.md",
+    required = ["LICENSE", "docs/CONTRIBUTING.md", "docs/CONTRIBUTING.de.md", "CHANGELOG.md", "docs/PUBLISHING.md", "README.md", "README.de.md", "docs/PROTOCOL.md", "docs/README.md", "docs/GUIDE.md", "docs/GUIDE.de.md",
                 "examples/basic/main.cpp", "examples/basic/README.md",
                 "docs/images/architecture.png", "docs/images/transmission.png",
                 "docs/images/protocol.png"]

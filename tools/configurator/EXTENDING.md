@@ -21,7 +21,12 @@ affected C macro or signature (`target`), the editor kind, limits, whether it is
 routed to a section through `diagnostic_prefixes`, so problems show up at the
 right field, in the navigation status and in the guided step.
 
-## Example: a back channel
+## Example: a custom command extension
+
+This is an illustrative extension, not the built-in parameter/watch back channel.
+`KYMO_ENABLE_BACKCHANNEL` is a placeholder defined by the example, not a Core
+setting. Existing parameters and live variables use `KYMO_ENABLE_PARAMETERS`
+and `KYMO_ENABLE_WATCH`.
 
 ```python
 from kymo_configurator import catalog

@@ -34,7 +34,7 @@ Konfigurationsstände lassen sich ohne Python-Generator und ohne Qt kompilieren.
 Compilerdefinitionen haben Vorrang vor dem Projektheader und den Bibliotheksvorgaben.
 `KYMO_ENABLED=0` schaltet die Instrumentierung aus; anwendungseigene Telemetrieressourcen
 müssen mit den effektiven Feature-Makros geschützt werden. Die Fassade liegt in
-`KymoCore.h` (or `trace/kymo_instrumentation.h`). Ungeschützte direkte API-Aufrufe werden im Off-Build
+`KymoCore.h` (oder `trace/kymo_instrumentation.h`). Ungeschützte direkte API-Aufrufe werden im Off-Build
 bewusst als Übersetzungsfehler erkannt.
 
 Wer Sensoren auswertet, einen Regler einstellt oder einen Motor ansteuert, will
@@ -60,7 +60,7 @@ die Signale live als Kurve, als XY-Bahn oder in 3D.
 |---|---|
 | **Viele Kanäle, eigener Takt** | Bis zu 256 Kanäle, jeder mit eigenem Abtastintervall. Ein Round-Robin-Scheduler entscheidet, wer dran ist. |
 | **Mehr als eine Zahl** | Y, XY oder XYZ pro Messpunkt, optional mit Zeitstempel und CRC-Prüfsumme. |
-| **Kompakt auf der Leitung** | 9–21 Bytes pro Messpunkt, float32, Little Endian. Ein feststehendes, dokumentiertes [Protokoll](PROTOCOL.md). |
+| **Kompakt auf der Leitung** | 9–21 Bytes pro Messpunkt, float32, Little Endian. Ein feststehendes, dokumentiertes [Protokoll](docs/PROTOCOL.md). |
 | **Blockiert nie** | Einmal `Kymo_Init()`, dann zyklisch `Kymo_Main()`. Läuft ohne RTOS, ohne Heap, ohne Exceptions und ohne RTTI. |
 | **Jede Schnittstelle** | UART, USB-CDC, WLAN/TCP, UDP, MQTT, CAN …: Du lieferst einen `write`-Callback, KymoCore liefert die Bytes. |
 | **Langsame Leitungen inklusive** | Teilübertragungen, Rückstau und ausgeliehene DMA-Puffer werden sauber behandelt. |
@@ -208,7 +208,7 @@ KymoCore ist plattformunabhängig. Die größeren Hardwarebeispiele in
 
 ![Aufbau eines Frames](docs/images/protocol.png)
 
-Die vollständige Spezifikation mit Beispielframes steht in [PROTOCOL.md](PROTOCOL.md).
+Die vollständige Spezifikation mit Beispielframes steht in [PROTOCOL.md](docs/PROTOCOL.md).
 
 ## Teil von Kymotrace
 
@@ -220,11 +220,13 @@ Die vollständige Spezifikation mit Beispielframes steht in [PROTOCOL.md](PROTOC
 
 ## Dokumentation
 
+[Alle Dokumente im Überblick](docs/README.md)
+
 - **[Anleitung und API-Referenz](docs/GUIDE.de.md):** Konfiguration, Scheduling, Transporte und Dimensionierung
-- **[Protokoll](PROTOCOL.md):** Byte-Aufbau, CRC, Beispielframes
+- **[Protokoll](docs/PROTOCOL.md):** Byte-Aufbau, CRC, Beispielframes
 - **[Portables Beispiel](examples/basic/README.md):** ohne Hardware auf dem PC ausführbar
 - **[Kleine Referenzbeispiele](examples/README.md):** portables Init/Main und Arduino-Signalbeispiele
-- **[Änderungen](CHANGELOG.md)** · **[Veröffentlichung](PUBLISHING.md)** · **[Mitmachen](CONTRIBUTING.de.md)**
+- **[Änderungen](CHANGELOG.md)** · **[Veröffentlichung](docs/PUBLISHING.md)** · **[Mitmachen](docs/CONTRIBUTING.de.md)**
 
 ## Lizenz
 

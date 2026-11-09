@@ -5,14 +5,17 @@ senders and KymoStudio. The primary format is compact binary. KymoStudio still
 accepts the v5 JSON format so existing firmware does not need to be upgraded
 immediately.
 
-Receiver project: [KymoStudio](https://kymotrace.de/#download).
-See the [illustrated integration guide](README.md) for setup and transport ownership.
+Live-variable and memory operations described for 7.3 belong to the unreleased
+development version; see the [documentation scope](README.md#documentation-scope--geltungsbereich).
 
-![Binary frame and descriptor layout](docs/images/protocol.png)
+Receiver project: [KymoStudio](https://kymotrace.de/#download).
+See the [integration guide](GUIDE.md) for setup and transport ownership.
+
+![Binary frame and descriptor layout](images/protocol.png)
 
 ## Design goals
 
-- 9â€“21 bytes per measurement
+- 9–21 bytes per measurement
 - one write per measurement when the driver accepts a full frame; retries for short writes
 - constant-time frame length calculation
 - no allocation, `snprintf`, JSON library, or float-to-text conversion on MCU
@@ -20,8 +23,9 @@ See the [illustrated integration guide](README.md) for setup and transport owner
 - recovery after dropped or corrupt stream bytes
 - optional CRC protection per measurement, disabled by default
 
-The protocol transports telemetry from a device to KymoStudio. A command or
-configuration protocol in the opposite direction is not part of v6.2.
+The DATA format transports telemetry from a device to KymoStudio. The optional
+parameter back channel and control messages are specified below; they extend the
+available operations without changing the DATA layout.
 
 ## Binary data frame
 
@@ -75,7 +79,7 @@ expect a monotonic device clock and treat a unit change as a clock restart.
 
 ### Numeric rules
 
-- Channel ID is an unsigned byte, 0â€“255.
+- Channel ID is an unsigned byte, 0–255.
 - X, Y, and Z are finite IEEE-754 binary32 values. NaN and infinity are invalid.
 - Timestamp is an unsigned 32-bit count of milliseconds relative to the sender
   start time. It wraps after approximately 49.7 days. With bit 4 it counts
@@ -127,11 +131,11 @@ Size:  9
 Point: id=3, x=1.25, y=-2.5, z=9.0, timestamp=1234 ms
 Bytes: A5 5A 4F 03 00 00 A0 3F 00 00 20 C0 00 00 10 41 D2 04 00 00 00
 Size:  21
-```
 
 Point: id=3, y=-2.5, timestamp=1234567 µs
 Bytes: A5 5A 53 03 00 00 20 C0 87 D6 12 00 00
 Size:  13
+```
 
 CRC enabled (unchanged v6.0 vectors):
 
@@ -169,7 +173,7 @@ Compiler definitions may override the header.
 KymoCore provides a portable C++11 cyclic API. The v6.1 NO_CRC extension keeps
 wire version 1 and all frame sizes. `Kymo_Init(context, config)` validates and copies a configuration;
 `Kymo_Main(context)` schedules samples, encodes frames and resumes short
-writes. See [README.md](README.md) for configuration and transport ownership.
+writes. See [GUIDE.md](GUIDE.md) for configuration and transport ownership.
 
 The optional C++ push sender `KymoSender` remains available:
 
@@ -389,7 +393,7 @@ KymoStudio continues to accept UTF-8 JSON:
 
 Rules:
 
-- `id`: required integer, 0â€“255
+- `id`: required integer, 0–255
 - `value` or `y`: required finite number
 - `x`, `z`: optional finite numbers
 - `timestamp`: optional finite, non-negative seconds

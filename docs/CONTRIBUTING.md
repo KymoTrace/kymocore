@@ -6,7 +6,7 @@ Contributions are welcome: bug reports, suggestions and pull requests.
 
 ## Grant of rights for pull requests
 
-KymoCore is offered under the MIT license (see [LICENSE](LICENSE)). So that the
+KymoCore is offered under the MIT license (see [LICENSE](../LICENSE)). So that the
 project can keep its license choices open for submitted code, a pull request is
 only accepted with the following assurance:
 
@@ -31,6 +31,9 @@ If the English and German versions differ, the German version prevails.
 
 - New source files start with the SPDX line
   `SPDX-License-Identifier: MIT`.
-- The full tests run in the firmware
-  [kymoprobe](https://github.com/KymoTrace/kymoprobe), see
-  [README.md](README.md).
+- Run the native suite with `python test/native_test.py` from the repository root.
+- Check the exported package with `python tools/test_package.py` and the
+  configurator with `python -m pytest -q tools/configurator/tests`.
+- Additional application integration and hardware tests live in
+  [KymoProbe](https://github.com/KymoTrace/kymoprobe). See the
+  [publishing checklist](PUBLISHING.md) and [project overview](../README.md).

@@ -7,7 +7,7 @@ Requests.
 
 ## Rechteeinräumung bei Pull Requests
 
-KymoCore steht unter der MIT-Lizenz (siehe [LICENSE](LICENSE)). Damit das Projekt
+KymoCore steht unter der MIT-Lizenz (siehe [LICENSE](../LICENSE)). Damit das Projekt
 seine Lizenzwahl auch für eingereichten Code offenhalten kann, wird ein Pull Request nur mit folgender
 Zusicherung übernommen:
 
@@ -30,6 +30,10 @@ blockiert Pull Requests ohne diese Bestätigung.
 
 - Neue Quelldateien beginnen mit der SPDX-Zeile
   `SPDX-License-Identifier: MIT`.
-- Die vollständigen Tests laufen in der Firmware
-  [kymoprobe](https://github.com/KymoTrace/kymoprobe), siehe
-  [README.md](README.de.md).
+- Native Tests aus dem Repository-Wurzelverzeichnis mit
+  `python test/native_test.py` ausführen.
+- Das exportierte Paket mit `python tools/test_package.py` und den Konfigurator
+  mit `python -m pytest -q tools/configurator/tests` prüfen.
+- Ergänzende Anwendungsintegration und Hardwaretests liegen in
+  [KymoProbe](https://github.com/KymoTrace/kymoprobe). Siehe
+  [Veröffentlichungscheckliste](PUBLISHING.md) und [Projektübersicht](../README.de.md).

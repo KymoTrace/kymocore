@@ -6,7 +6,7 @@ permissions: {}
 jobs:
   agreement:
     # The owner and bots need no grant; everyone else must tick the box from
-    # .github/pull_request_template.md (see CONTRIBUTING.md).
+    # .github/pull_request_template.md (see docs/CONTRIBUTING.md).
     if: github.event.pull_request.user.login != 'CodeName-666' && github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     steps:

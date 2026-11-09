@@ -59,7 +59,7 @@ Ein aktiviertes Trace-Profil erzeugt kanonische Bodies in `kymo_trace_metadata.j
 
 ## Erweitern
 
-Neue KymoCore-Features (etwa ein künftiger Rückkanal) kommen als ein Katalog-Abschnitt
+Zusätzliche KymoCore-Features kommen als ein Katalog-Abschnitt
 plus optionalem Widget, Validator und Renderer hinzu; beide GUI-Modi übernehmen sie
 automatisch. Siehe [EXTENDING.md](EXTENDING.md). Das JSON-Format beschreibt
 `schema/kymo-project-v2.schema.json`.

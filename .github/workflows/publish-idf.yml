@@ -1,6 +1,6 @@
 name: Publish to the ESP Component Registry
 # Runs for release tags vX.Y.Z; the version comes from idf_component.yml.
-# One-time setup on components.espressif.com: see PUBLISHING.md.
+# One-time setup on components.espressif.com: see docs/PUBLISHING.md.
 on:
   push:
     tags: ['v*']

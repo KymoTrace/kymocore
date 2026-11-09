@@ -5,6 +5,9 @@
 This guide explains setup, data path and protocol. The technical API reference
 at the end describes the detailed contracts.
 
+This checkout also documents unreleased 7.3 features; see the
+[documentation scope](README.md#documentation-scope--geltungsbereich).
+
 ## Architecture and data path
 
 ![From measurement source to KymoStudio](images/architecture.png)
@@ -41,16 +44,19 @@ the build configuration enables. The sources are grouped by task:
 | `telemetry/kymo_protocol.h` | DATA frame codec (`KymoProtocol_*`) | always |
 | `telemetry/kymo_runtime.h` | `Kymo_Init` / `Kymo_Main` | `KYMO_ENABLE_RUNTIME=1` (default) |
 | `telemetry/kymo_sender.h` | `KymoSender` + `KymoStream` (C++) | `KYMO_ENABLE_CPP=1` |
+| `control/kymo_param.h` | Parameter receiver and discovery | `KYMO_ENABLE_PARAMETERS=1` |
+| `control/kymo_watch.h` | Live variables from firmware memory | `KYMO_ENABLE_WATCH=1` |
+| `telemetry/kymo_memory.h` | Stack and heap telemetry | `KYMO_ENABLE_MEMORY=1` |
 | `trace/kymo_instrumentation.h` | `KYMO_TRACE_*` macros | always (compile out) |
 | `trace/kymo_trace.h` | `KymoTraceRecorder` | `KYMO_ENABLE_TRACE=1` |
 | `transport/kymo_mux.h` | `KymoMux`: trace + DATA on one link | `KYMO_ENABLE_TRACE=1` |
 | `common/` | Bit, byte and CRC helpers | always |
 
-Every function that can fail returns `KymoStatus`, where `KYMO_OK` (0) always
-means success. All modules share `KymoClockFn`, `KymoWriteFn`, `KymoBusyFn`
+Status-returning operations use `KymoStatus`, where `KYMO_OK` (0) means
+success. Encoding and pull APIs return byte counts where documented. All modules share `KymoClockFn`, `KymoWriteFn`, `KymoBusyFn`
 and `KymoServiceFn`, so one transport adapter serves runtime, sender and mux.
 
-**The whole package is platform-independent.** No file includes an SDK,
+**The library under `src/` is platform-independent.** No library source includes an SDK,
 vendor or framework header (no `Arduino.h`, HAL or RTOS headers), and no
 target macro changes the API. Hardware access always lives in application
 callbacks; the Arduino sketches under `examples/` are such applications.
@@ -72,8 +78,7 @@ lib_deps =
 For Uno, set `platform = atmelavr@5.3.0` and `board = uno` instead. The library
 itself is tied neither to these boards nor to Arduino.
 
-Until it is published in the registry, install directly from GitHub. The tag
-pins the version:
+Alternatively, install directly from GitHub with a pinned release tag:
 
 ```ini
 lib_deps =
@@ -301,7 +306,7 @@ bytes into the same stream.
 ![Frame fields, descriptor bits and concrete wire examples](images/protocol.png)
 
 Package version 7.2.1, protocol v6.2 and **wire version 1** are different
-things. The normative contract is in [PROTOCOL.md](../PROTOCOL.md).
+things. The normative contract is in [PROTOCOL.md](PROTOCOL.md).
 
 | Offset | Size | Content |
 |---|---:|---|
@@ -407,7 +412,7 @@ optional MCU decoder expects a complete frame; it is not a stream assembler.
 
 Classic CAN uses a channel mapping via arbitration ID or adapter configuration
 and a configured number format. Details are in the
-[protocol contract](../PROTOCOL.md#can). Network setup and reconnection belong
+[protocol contract](PROTOCOL.md#can). Network setup and reconnection belong
 to the adapter. The external PubSubClient example connects synchronously and is
 therefore no proof of a hard real-time cycle.
 
@@ -434,9 +439,10 @@ delivers telemetry; the app handles reception and visualisation.
    optional coordinates. Without X, no measured X value is transmitted.
 4. First check the known example waveform, then connect sensors.
 
-The protocol does not transmit channel names, units or sensor configurations.
-This mapping stays with the application and the app. Since 7.1 the optional
-parameter back channel (`KYMO_ENABLE_PARAMETERS`, see [PROTOCOL.md](../PROTOCOL.md))
+DATA frames contain numeric channel IDs and values, not names or units.
+Optional parameter descriptions and memory metadata provide names; live-variable
+names come from the firmware ELF file. Since 7.1 the optional
+parameter back channel (`KYMO_ENABLE_PARAMETERS`, see [PROTOCOL.md](PROTOCOL.md))
 lets the host write registered parameters. Since 7.3 live variables
 (`KYMO_ENABLE_WATCH`) let the host sample global variables it picked from the ELF
 file, inside the memory ranges the firmware allows; the firmware passes those
@@ -483,23 +489,24 @@ KymoCore/
   library.json             PlatformIO metadata and export scope
   library.properties       Arduino metadata
   LICENSE                  MIT license text
-  CONTRIBUTING.md          Contributions and grant of rights
   README.md                Overview and quick start
-  PROTOCOL.md              Normative wire contract
   CHANGELOG.md             Changes and migration
-  PUBLISHING.md            Release preparation for maintainers
   src/
     KymoCore.h             The one header applications include
     kymo_config.h          Version, profile, switches and sizes
     kymo_types.h           Status codes and shared callback types
     telemetry/             Codec, Init/Main runtime, C++ sender
+    control/               Parameters, live variables, RX reassembly
     trace/                 Recorder, trace protocol, instrumentation
     transport/             Mux for trace + DATA on one link
     common/                Bit, byte and CRC helpers
-  examples/                Portable and Arduino reference examples
+  examples/                Portable, Arduino and ESP-IDF reference examples
   test/                    Native tests and structural check
   tools/configurator/      Configurator: guided and professional mode
-  docs/                    Guide (English/German) and images
+  docs/                    Documentation index, guides and images
+    PROTOCOL.md            Normative wire contract
+    CONTRIBUTING.md        Contributions (German: CONTRIBUTING.de.md)
+    PUBLISHING.md          Release preparation for maintainers
 ```
 
 Run the complete host suite from the repository root:
@@ -507,6 +514,7 @@ Run the complete host suite from the repository root:
 ```sh
 python test/native_test.py
 python tools/test_package.py
+python -m pytest -q tools/configurator/tests
 ```
 
 `native_test.py` builds and runs the common utilities, protocol golden vectors
@@ -517,7 +525,7 @@ check. The package check builds separate consumers from the exported archive
 and compiles the README example for Uno and ESP32. Builds do not replace board
 tests, stack measurements or timing measurements in the driver. Validate your
 own adapters on the target hardware. Package preparation is described in
-[PUBLISHING.md](../PUBLISHING.md) (German), changes in
+[PUBLISHING.md](PUBLISHING.md) (German), changes in
 [CHANGELOG.md](../CHANGELOG.md).
 
 ## Technical API reference
@@ -754,7 +762,7 @@ live in KymoProbe; they are not part of this library package.
 
 ## Compatibility and verification
 
-The [wire contract](../PROTOCOL.md) is **v6.2 / wire version 1** and is
+The [wire contract](PROTOCOL.md) is **v6.2 / wire version 1** and is
 unchanged by KymoCore 7.0. CRC calculation is **disabled by default**.
 Descriptor bit 0 marks NO_CRC; the final byte remains present as a zero
 trailer, keeping frames at 9–21 bytes. Decoders ignore that trailer for NO_CRC
@@ -782,7 +790,7 @@ KymoCore 7.0 changes structure and names, not the wire format or features.
 | `KymoConfig.last_sample_ms` + own array | removed; state lives in `KymoContext` (`KYMO_MAX_CHANNELS`) |
 | `KymoConfig` must outlive the context | copied by `Kymo_Init`; may be local |
 | Positional `KymoConfig` initializer | field order changed; assign fields by name |
-| `KymoProtocol_Encode` / `KymoProtocol_Decode` | `KymoProtocol_Encode` / `KymoProtocol_Decode` (returns `KymoStatus`) |
+| `kymo_encode_data` / `kymo_decode_data` | `KymoProtocol_Encode` / `KymoProtocol_Decode` (decoder returns `KymoStatus`) |
 | `kymo_frame_length` / `kymo_crc8` | `KymoProtocol_FrameLength` / `KymoProtocol_Crc8` |
 | `Kymo`, `kymo.h`, `kymo_stream.h` | `KymoSender`, `telemetry/kymo_sender.h` (includes `KymoStream`) |
 | `send*()` / `flush()` return `bool` | return `KymoStatus` (`KYMO_OK` = accepted/complete) |
@@ -802,8 +810,7 @@ All active first-party C/C++ functions have at most one return, as their final
 statement at function-body scope. Void functions may have no return. Error
 paths use initialized status variables and small helpers; no exit macros or
 goto-based substitutes. The source rule is checked automatically by the native
-test runner and hence CI. Archived prototypes and the independent Events
-submodule are outside the active production scope.
+test runner and hence CI.
 
 The independent [common component](../src/common/README.md) provides reusable
 bit/bitset operations, little-endian byte conversion, CRC8, CRC-16 and CRC-32. Constant

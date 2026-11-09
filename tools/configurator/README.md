@@ -61,8 +61,8 @@ An enabled trace profile emits canonical `kymo_trace_metadata.json` and `kymo_tr
 
 ## Extending
 
-New KymoCore features (for example a future back channel) are added as one catalog
+Additional KymoCore features are added as one catalog
 section plus optional widget, validator and renderer; both GUI modes pick them up
 automatically. See [EXTENDING.md](EXTENDING.md).
 
-See `README.de.md` for German instructions and `schema/kymo-project-v2.schema.json` for the JSON structure.
+See [README.de.md](README.de.md) for German instructions and `schema/kymo-project-v2.schema.json` for the JSON structure.

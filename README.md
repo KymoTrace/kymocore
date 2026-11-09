@@ -61,7 +61,7 @@ instrumentation; unguarded low-level API calls deliberately fail in an off build
 |---|---|
 | **Many channels, own rate** | Up to 256 channels, each with its own sampling interval. A round-robin scheduler decides whose turn it is. |
 | **More than one number** | Y, XY or XYZ per data point, optionally with a timestamp and CRC checksum. |
-| **Compact on the wire** | 9–21 bytes per data point, float32, little endian. A fixed, documented [protocol](PROTOCOL.md). |
+| **Compact on the wire** | 9–21 bytes per data point, float32, little endian. A fixed, documented [protocol](docs/PROTOCOL.md). |
 | **Never blocks** | Call `Kymo_Init()` once, then `Kymo_Main()` cyclically. Runs without RTOS, heap, exceptions or RTTI. |
 | **Any interface** | UART, USB CDC, Wi-Fi/TCP, UDP, MQTT, CAN …: you provide a `write` callback, KymoCore provides the bytes. |
 | **Slow links included** | Partial transfers, backpressure and borrowed DMA buffers are handled cleanly. |
@@ -203,7 +203,7 @@ KymoCore is platform-independent. The larger hardware examples in
 
 ![Frame layout](docs/images/protocol.png)
 
-The complete specification with example frames is in [PROTOCOL.md](PROTOCOL.md).
+The complete specification with example frames is in [PROTOCOL.md](docs/PROTOCOL.md).
 
 ## Part of Kymotrace
 
@@ -215,11 +215,13 @@ The complete specification with example frames is in [PROTOCOL.md](PROTOCOL.md).
 
 ## Documentation
 
+[All documentation](docs/README.md)
+
 - **[Guide and API reference](docs/GUIDE.md):** configuration, scheduling, transports and sizing
-- **[Protocol](PROTOCOL.md):** byte layout, CRC, example frames
+- **[Protocol](docs/PROTOCOL.md):** byte layout, CRC, example frames
 - **[Portable example](examples/basic/README.md):** runs on the PC without hardware
 - **[Small reference examples](examples/README.md):** portable Init/Main and Arduino waveform sketches
-- **[Changelog](CHANGELOG.md)** · **[Publishing](PUBLISHING.md)** (German) · **[Contributing](CONTRIBUTING.md)**
+- **[Changelog](CHANGELOG.md)** · **[Publishing](docs/PUBLISHING.md)** (German) · **[Contributing](docs/CONTRIBUTING.md)**
 
 ## License
 

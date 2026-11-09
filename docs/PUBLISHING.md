@@ -1,4 +1,9 @@
-# KymoCore für PlatformIO veröffentlichen
+# KymoCore veröffentlichen
+
+[Dokumentationsübersicht](README.md) · [Projektübersicht](../README.de.md)
+
+Alle Befehle werden aus dem Repository-Wurzelverzeichnis ausgeführt,
+sofern kein anderes Arbeitsverzeichnis genannt ist.
 
 ## Separate development checkout
 
@@ -14,7 +19,7 @@ Veröffentlichungseinheit ist dieses Repository **kymocore**. In der Firmware
 [kymoprobe](https://github.com/KymoTrace/kymoprobe) ist es als Git-Submodul `lib/KymoCore` eingebunden.
 `library.json` liegt im Paketwurzelverzeichnis. Quellen, Lizenz, README,
 Protokoll, Bilder und portables Beispiel werden explizit exportiert.
-Die bestehenden Hardwarebeispiele bleiben im ECU-Repository.
+Die größeren Hardware- und Transportbeispiele liegen im KymoProbe-Repository.
 
 PlatformIO benötigt ein gültiges Manifest. `headers` und `examples` sind
 zusätzliche optionale Metadaten. Lizenzdatei, Changelog, Bilder und ein
@@ -74,7 +79,7 @@ keine Abhängigkeit der Library oder des Paketchecks.
    Installationsbeispiele und Changelog auf eine neue Version setzen.
 3. Lizenz ist `MIT` (LICENSE), im Manifest ebenso. Vor Veröffentlichung sicherstellen, dass alle Quellen eine
    SPDX-Zeile tragen und für jeden fremden Beitrag die Rechteeinräumung aus
-   CONTRIBUTING.md vorliegt.
+   [Beitragsregeln](CONTRIBUTING.de.md) vorliegt.
 4. Änderungen reviewen, gezielt committen und in diesem Repository pushen.
    Einen Release-Tag `vX.Y.Z` anlegen; die Git-Installation über `lib_deps`
    verwendet ihn. Danach in kymoprobe das Submodul `lib/KymoCore` auf den Tag
@@ -108,16 +113,10 @@ Broker-Verbindungen sind keine Folgen eines erfolgreichen Compile-Tests.
 Der Library Manager liest `library.properties` und indiziert jeden Git-Tag,
 dessen `library.properties`-Version zum Tag passt. Ein eigener Upload entfällt.
 
-- Prüfung: `arduino-lint --library-manager submit --compliance strict` mit
-  absolutem Pfad zum Repository. Der Workflow `registries.yml` führt sie bei
-  jedem Push aus. Stand 6.4.0: 0 Fehler, 1 Warnung (kein `KymoCore.h`).
-- Einmalige Anmeldung: Fork von
-  [arduino/library-registry](https://github.com/arduino/library-registry),
-  in `repositories.txt` die Zeile `https://github.com/KymoTrace/kymocore`
-  ergänzen und einen Pull Request öffnen. Der Registry-Bot prüft automatisch und
-  merged ohne Rückfragen, wenn alles passt; Meldungen erscheinen im Pull Request.
-- Nach der Aufnahme in `registries.yml` `library-manager: update` setzen. Der
-  Name `KymoCore` darf danach nicht mehr geändert werden.
+- Prüfung: `arduino-lint --library-manager update --compliance strict` mit
+  absolutem Pfad zum Repository. Der Workflow
+  `.github/workflows/registries.yml` führt dieselbe Prüfung aus.
+- Den registrierten Namen `KymoCore` beibehalten.
 - Neue Versionen: Version in `library.properties` erhöhen und Tag `vX.Y.Z`
   pushen. Der Index aktualisiert sich innerhalb etwa eines Tages.
 
