@@ -9,6 +9,7 @@
 | Execution tracing / Ablaufverfolgung | [Trace protocol](TRACE_PROTOCOL.md) |
 | Build settings / Compile-out | [Configuration contract](COMPILE_OUT.md) |
 | Small working examples / Kleine Referenzbeispiele | [Examples](../examples/README.md) |
+| Complete integration / Vollständige Integration | [Port, bindings and main loop](../examples/integration/README.md) |
 | Configurator / Konfigurator | [English](../tools/configurator/README.md) · [Deutsch](../tools/configurator/README.de.md) |
 | Extending the configurator / Konfigurator erweitern | [Extension hooks](../tools/configurator/EXTENDING.md) |
 | Contributions / Beiträge | [English](CONTRIBUTING.md) · [Deutsch](CONTRIBUTING.de.md) |

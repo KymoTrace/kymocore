@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 
@@ -63,6 +64,9 @@ def check_archive(archive, destination):
                 "docs/images/architecture.png", "docs/images/transmission.png",
                 "docs/images/protocol.png"]
     required += [str(path.relative_to(LIB)).replace("\\", "/") for path in (LIB / "src").rglob("*") if path.is_file()]
+    required += [str(path.relative_to(LIB)).replace("\\", "/")
+                 for path in (LIB / "examples/integration").rglob("*")
+                 if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"]
     # Every standalone example must survive export, including shared adapters
     # and the immutable generated profiles needed for firmware builds.
     required += [path.relative_to(LIB).as_posix()
@@ -112,6 +116,9 @@ def main():
         "-o", program)
     run(program, cwd=workspace)
     print("Packaged portable example passed", flush=True)
+    run(sys.executable, unpacked / "examples/integration/run.py", "--cxx", compiler,
+        "--out", workspace / "integration", cwd=workspace)
+    print("Packaged integration example passed", flush=True)
     if not args.skip_firmware:
         consumer = workspace / "firmware"
         (consumer / "src").mkdir(parents=True)

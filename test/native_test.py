@@ -96,6 +96,8 @@ def main():
         assert refused.returncode != 0 and "KYMO_ENABLE_WATCH requires" in refused.stderr
         build_and_run(args.cxx, temp, "basic_example", "examples/basic/main.cpp", [],
                       TELEMETRY_SOURCES)
+        run([sys.executable, "examples/integration/run.py", "--check",
+             "--cxx", args.cxx, "--out", temp / "integration"])
     for script in ("test/trace_core_test.py", "test/compile_out_test.py",
                    "test/style_check.py"):
         run([sys.executable, script])
