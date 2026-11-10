@@ -21,32 +21,82 @@ import sys
 EXAMPLE = Path(__file__).resolve().parent
 ROOT = EXAMPLE.parents[1]
 
+# Independent wire expectations: do not import C++ implementation constants.
+SYNC = b"\xa5\x5a"
+DATA_DESCRIPTOR, CONTROL_DESCRIPTOR, TRACE_DESCRIPTOR = 0x40, 0x60, 0x80
+PARAM_LIST, PARAM_DESCRIPTION = 0x01, 0x02
+WATCH_INFO, WATCH_INFO_REPLY, WATCH_SET, WATCH_ACK, MEMORY_INFO = 0x03, 0x04, 0x05, 0x06, 0x07
+SESSION_META, DICTIONARY, TRACE_BATCH, SESSION_END = 0x01, 0x02, 0x03, 0x06
+SCHEMA_VERSION = 1
+RECORD_GENERATION = 1
+TRACE_EVENT_MARK = 3
+TRACE_FRAME_MAX_BYTES = 240
+CRC8_POLYNOMIAL = 0x07
+CRC16_INITIAL = 0xFFFF
+BYTE_BITS = 8
+BYTE_MASK = 0xFF
+BYTE_HIGH_BIT = 0x80
+CRC8_BYTES = 1
+CRC16 = struct.Struct("<H")
+CRC32 = struct.Struct("<I")
+TRACE_HEADER = struct.Struct("<2sBBHHQIH")
+TRACE_BATCH_HEADER = struct.Struct("<BBH")
+TRACE_EVENT = struct.Struct("<QIIIHHBBHI")
+ADMIN_HEADER = struct.Struct("<BBIIII")
+SESSION_END_HEADER = struct.Struct("<BBH")
+SESSION_END_CORE = struct.Struct("<B3xIIIQ")
+DATA_FRAME = struct.Struct("<2sBBfB")
+CONTROL_HEADER = struct.Struct("<2sBB")
+WATCH_SET_REQUEST = struct.Struct("<BBBIBH")
+
+MEASUREMENT_CHANNEL, GAIN_PARAMETER_ID, WATCH_CHANNEL, MEMORY_CHANNEL = 0, 100, 150, 220
+WATCH_SLOT = 0
+WATCH_GAIN_ADDRESS = 0x20000000
+WATCH_TYPE_FLOAT32 = 7
+WATCH_PERIOD_MS = 100
+WATCH_STATUS_OK = 0
+GAIN_INITIAL = 1.0
+GAIN_REQUESTED = 2.5
+GAIN_IN_CORRUPT_FRAME = 9.0
+GAIN_OUTSIDE_ALLOWED_RANGE = 99.0
+MEMORY_FREE_BYTES = 2048
+TRACE_SESSION_ID, TRACE_CONTEXT_ID, TRACE_MARKER_ID = 1, 1, 1
+TRACE_CORE_ID, TRACE_CLOCK_DOMAIN, TRACE_MARKER_DEPTH = 0, 0, 0
+TRACE_CORE_COUNT = 1
+TRACE_CLOCK_HZ = 1000
+MIN_PROGRESS_SAMPLES = 5
+PROCESS_TIMEOUT_SECONDS = 15
+EXIT_TX_CONTRACT_FAILURE = 2
+APP_FRAGMENT_SIZES = (1, 7, 64, 4096)
+
 
 def crc8(data: bytes) -> int:
     value = 0
     for byte in data:
         value ^= byte
-        for _ in range(8):
-            value = ((value << 1) ^ (0x07 if value & 0x80 else 0)) & 0xFF
+        for _ in range(BYTE_BITS):
+            value = ((value << 1) ^ (CRC8_POLYNOMIAL if value & BYTE_HIGH_BIT else 0)) & BYTE_MASK
     return value
 
 
 def control(payload: bytes) -> bytes:
-    body = bytes((0x60, len(payload))) + payload
-    return b"\xa5\x5a" + body + bytes((crc8(body),))
+    body = bytes((CONTROL_DESCRIPTOR, len(payload))) + payload
+    return SYNC + body + bytes((crc8(body),))
 
 
 def parameter(value: float) -> bytes:
-    body = bytes((0x40, 100)) + struct.pack("<f", value)
-    return b"\xa5\x5a" + body + bytes((crc8(body),))
+    body = bytes((DATA_DESCRIPTOR, GAIN_PARAMETER_ID)) + struct.pack("<f", value)
+    return SYNC + body + bytes((crc8(body),))
 
 
 def requests() -> bytes:
-    corrupt = bytearray(parameter(9.0))
-    corrupt[-1] ^= 0xFF
-    return (b"noise" + parameter(2.5) + bytes(corrupt) + parameter(99.0)
-            + control(b"\x01") + control(b"\x03")
-            + control(struct.pack("<BBBIBH", 5, 0, 150, 0x20000000, 7, 100)))
+    corrupt = bytearray(parameter(GAIN_IN_CORRUPT_FRAME))
+    corrupt[-CRC8_BYTES] ^= BYTE_MASK
+    return (b"noise" + parameter(GAIN_REQUESTED) + bytes(corrupt)
+            + parameter(GAIN_OUTSIDE_ALLOWED_RANGE)
+            + control(bytes((PARAM_LIST,))) + control(bytes((WATCH_INFO,)))
+            + control(WATCH_SET_REQUEST.pack(WATCH_SET, WATCH_SLOT, WATCH_CHANNEL,
+                      WATCH_GAIN_ADDRESS, WATCH_TYPE_FLOAT32, WATCH_PERIOD_MS)))
 
 
 def verify(capture: bytes, *, with_requests: bool = True) -> dict[str, int]:
@@ -60,78 +110,97 @@ def verify(capture: bytes, *, with_requests: bool = True) -> dict[str, int]:
     packet_sequences = []
     frame_count = 0
     while offset < len(capture):
-        assert capture[offset:offset + 2] == b"\xa5\x5a", offset
-        descriptor = capture[offset + 2]
-        if descriptor == 0x80:
-            payload_length = struct.unpack_from("<H", capture, offset + 4)[0]
-            length = 24 + payload_length
+        assert capture[offset:offset + len(SYNC)] == SYNC, offset
+        descriptor = capture[offset + len(SYNC)]
+        if descriptor == TRACE_DESCRIPTOR:
+            _, _, kind, payload_length, flags, session, packet, header_crc = TRACE_HEADER.unpack_from(capture, offset)
+            length = TRACE_HEADER.size + payload_length + CRC16.size
             frame = capture[offset:offset + length]
-            assert len(frame) == length <= 240
-            assert binascii.crc_hqx(frame[2:20], 0xFFFF) == int.from_bytes(frame[20:22], "little")
-            assert binascii.crc_hqx(frame[2:-2], 0xFFFF) == int.from_bytes(frame[-2:], "little")
-            assert struct.unpack_from("<Q", frame, 8)[0] == 1
-            packet_sequences.append(struct.unpack_from("<I", frame, 16)[0])
-            kind, payload = frame[3], frame[22:-2]
-            if kind == 3:
-                assert payload[0] == 1 and payload[2:4] == b"\0\0"
-                assert len(payload) == 4 + payload[1] * 32
-                for event_offset in range(4, len(payload), 32):
-                    event = struct.unpack_from("<QIIIHHBBHI", payload, event_offset)
+            assert len(frame) == length <= TRACE_FRAME_MAX_BYTES
+            header_body = frame[len(SYNC):TRACE_HEADER.size - CRC16.size]
+            assert binascii.crc_hqx(header_body, CRC16_INITIAL) == header_crc
+            assert binascii.crc_hqx(frame[len(SYNC):-CRC16.size], CRC16_INITIAL) == CRC16.unpack(frame[-CRC16.size:])[0]
+            assert flags == 0 and session == TRACE_SESSION_ID
+            packet_sequences.append(packet)
+            payload = frame[TRACE_HEADER.size:-CRC16.size]
+            if kind == TRACE_BATCH:
+                schema, count, clock_domain = TRACE_BATCH_HEADER.unpack_from(payload)
+                assert schema == SCHEMA_VERSION and clock_domain == TRACE_CLOCK_DOMAIN
+                assert len(payload) == TRACE_BATCH_HEADER.size + count * TRACE_EVENT.size
+                for event_offset in range(TRACE_BATCH_HEADER.size, len(payload), TRACE_EVENT.size):
+                    event = TRACE_EVENT.unpack_from(payload, event_offset)
                     ticks, seq, context, _, symbol, depth, event_type, core, _, _ = event
-                    assert ticks > 0 and (context, symbol, depth, event_type, core) == (1, 1, 0, 3, 0)
+                    assert ticks > 0
+                    assert (context, symbol, depth, event_type, core) == (
+                        TRACE_CONTEXT_ID, TRACE_MARKER_ID, TRACE_MARKER_DEPTH, TRACE_EVENT_MARK, TRACE_CORE_ID)
                     trace_sequences.append(seq)
             else:
-                assert kind in (1, 2, 6), kind
-                schema, record_kind, generation, transfer, total, fragment_offset = struct.unpack_from("<BBIIII", payload)
-                assert (schema, record_kind, generation) == (1, kind, 1)
+                assert kind in (SESSION_META, DICTIONARY, SESSION_END), kind
+                schema, record_kind, generation, transfer, total, fragment_offset = ADMIN_HEADER.unpack_from(payload)
+                assert (schema, record_kind, generation) == (SCHEMA_VERSION, kind, RECORD_GENERATION)
                 assert transfer > 0
                 record = records.setdefault(kind, bytearray())
                 record_lengths.setdefault(kind, total)
                 assert record_lengths[kind] == total and fragment_offset == len(record)
-                record.extend(payload[18:])
+                record.extend(payload[ADMIN_HEADER.size:])
                 assert len(record) <= total
         else:
-            assert descriptor in (0x40, 0x60), descriptor
-            length = 9 if descriptor == 0x40 else 5 + capture[offset + 3]
+            assert descriptor in (DATA_DESCRIPTOR, CONTROL_DESCRIPTOR), descriptor
+            if descriptor == DATA_DESCRIPTOR:
+                length = DATA_FRAME.size
+            else:
+                _, _, payload_length = CONTROL_HEADER.unpack_from(capture, offset)
+                length = CONTROL_HEADER.size + payload_length + CRC8_BYTES
             frame = capture[offset:offset + length]
             assert len(frame) == length
-            assert crc8(frame[2:-1]) == frame[-1]
-            if descriptor == 0x40:
-                points.setdefault(frame[3], []).append(struct.unpack_from("<f", frame, 4)[0])
+            assert crc8(frame[len(SYNC):-CRC8_BYTES]) == frame[-CRC8_BYTES]
+            if descriptor == DATA_DESCRIPTOR:
+                _, _, channel, value, _ = DATA_FRAME.unpack(frame)
+                points.setdefault(channel, []).append(value)
             else:
-                controls.setdefault(frame[4], []).append(frame[4:-1])
+                payload = frame[CONTROL_HEADER.size:-CRC8_BYTES]
+                controls.setdefault(payload[0], []).append(payload)
         frame_count += 1
         offset += length
     assert packet_sequences == list(range(len(packet_sequences)))
-    assert set(records) == {1, 2, 6}, set(records)
+    assert set(records) == {SESSION_META, DICTIONARY, SESSION_END}, set(records)
     for kind, record in records.items():
         assert len(record) == record_lengths[kind]
-        assert binascii.crc32(record[:-4]) == int.from_bytes(record[-4:], "little")
-    metadata = json.loads(records[1][:-4])
-    dictionary = json.loads(records[2][:-4])
-    for kind, value in ((1, metadata), (2, dictionary)):
-        assert bytes(records[kind][:-4]) == json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
-    assert metadata["dictionary_hash"] == hashlib.sha256(records[2][:-4]).hexdigest()
-    assert metadata["clock"]["frequency_hz"] == "1000"
-    assert dictionary["symbols"][0]["id"] == 1 and dictionary["contexts"][0]["id"] == 1
+        assert binascii.crc32(record[:-CRC32.size]) == CRC32.unpack(record[-CRC32.size:])[0]
+    metadata = json.loads(records[SESSION_META][:-CRC32.size])
+    dictionary = json.loads(records[DICTIONARY][:-CRC32.size])
+    for kind, value in ((SESSION_META, metadata), (DICTIONARY, dictionary)):
+        assert bytes(records[kind][:-CRC32.size]) == json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    assert metadata["dictionary_hash"] == hashlib.sha256(records[DICTIONARY][:-CRC32.size]).hexdigest()
+    assert metadata["clock"]["frequency_hz"] == str(TRACE_CLOCK_HZ)
+    assert metadata["clock"]["clock_domain_id"] == TRACE_CLOCK_DOMAIN
+    assert metadata["core_count"] == TRACE_CORE_COUNT
+    assert dictionary["symbols"][0]["id"] == TRACE_MARKER_ID
+    assert dictionary["contexts"][0]["id"] == TRACE_CONTEXT_ID
+    assert dictionary["generation"] == RECORD_GENERATION
     assert trace_sequences and trace_sequences == list(range(len(trace_sequences)))
-    end = records[6][:-4]
-    assert end[:4] == bytes((1, 1, 0, 0))
-    produced, settled, drops = struct.unpack_from("<III", end, 8)
+    end = records[SESSION_END][:-CRC32.size]
+    assert SESSION_END_HEADER.unpack_from(end) == (SCHEMA_VERSION, TRACE_CORE_COUNT, 0)
+    assert len(end) == SESSION_END_HEADER.size + TRACE_CORE_COUNT * SESSION_END_CORE.size
+    core, produced, settled, drops, _ = SESSION_END_CORE.unpack_from(end, SESSION_END_HEADER.size)
+    assert core == TRACE_CORE_ID
     assert produced == settled == len(trace_sequences) and drops == 0
-    assert len(points.get(0, [])) >= 5, "telemetry starved"
-    assert len(points.get(220, [])) >= 5, "memory starved"
-    assert all(value == 2048.0 for value in points[220])
-    assert 7 in controls and b"demo free" in controls[7][0]
+    assert len(points.get(MEASUREMENT_CHANNEL, [])) >= MIN_PROGRESS_SAMPLES, "telemetry starved"
+    assert len(points.get(MEMORY_CHANNEL, [])) >= MIN_PROGRESS_SAMPLES, "memory starved"
+    assert all(value == MEMORY_FREE_BYTES for value in points[MEMORY_CHANNEL])
+    assert MEMORY_INFO in controls and b"demo free" in controls[MEMORY_INFO][0]
     if with_requests:
-        assert points.get(100) and all(value == 2.5 for value in points[100])
-        assert len(points.get(150, [])) >= 5 and all(value == 2.5 for value in points[150])
-        assert max(points[0]) > 1.0 and max(points[0]) < 2.5
-        assert 2 in controls and b"gain" in controls[2][0]
-        assert 4 in controls and b"\x06\x00\x00" in controls.get(6, [])
+        assert points.get(GAIN_PARAMETER_ID) and all(value == GAIN_REQUESTED for value in points[GAIN_PARAMETER_ID])
+        assert len(points.get(WATCH_CHANNEL, [])) >= MIN_PROGRESS_SAMPLES
+        assert all(value == GAIN_REQUESTED for value in points[WATCH_CHANNEL])
+        assert max(points[MEASUREMENT_CHANNEL]) > GAIN_INITIAL
+        assert max(points[MEASUREMENT_CHANNEL]) < GAIN_REQUESTED
+        assert PARAM_DESCRIPTION in controls and b"gain" in controls[PARAM_DESCRIPTION][0]
+        expected_ack = bytes((WATCH_ACK, WATCH_SLOT, WATCH_STATUS_OK))
+        assert WATCH_INFO_REPLY in controls and expected_ack in controls.get(WATCH_ACK, [])
     else:
-        assert 100 not in points and 150 not in points
-        assert max(points[0]) < 1.0
+        assert GAIN_PARAMETER_ID not in points and WATCH_CHANNEL not in points
+        assert max(points[MEASUREMENT_CHANNEL]) < GAIN_INITIAL
     return {"frames": frame_count, "trace_events": len(trace_sequences), "bytes": len(capture)}
 
 
@@ -161,9 +230,9 @@ def run_case(cxx: str, output: Path, name: str, defines: dict[str, int], *, empt
     binary = build(cxx, directory, defines)
     incoming, outgoing = directory / "requests.bin", directory / "capture.bin"
     incoming.write_bytes(b"" if empty else requests())
-    completed = subprocess.run([str(binary), str(incoming), str(outgoing)], timeout=15)
+    completed = subprocess.run([str(binary), str(incoming), str(outgoing)], timeout=PROCESS_TIMEOUT_SECONDS)
     if defines.get("FAULT"):
-        assert completed.returncode == 2, completed.returncode
+        assert completed.returncode == EXIT_TX_CONTRACT_FAILURE, completed.returncode
         assert outgoing.read_bytes() == b"", "writes continued after a transport fault"
         print(f"{name}: PASS (driver violation stops transmission)", flush=True)
     else:
@@ -184,7 +253,7 @@ def verify_with_app(app: Path, output: Path) -> None:
         if capture_path.parent.name == "driver-fault":
             continue
         wire = capture_path.read_bytes()
-        for chunk_size in (1, 7, 64, 4096):
+        for chunk_size in APP_FRAGMENT_SIZES:
             decoder = ProtocolStreamDecoder()
             store = TraceSessionStore()
             frames = []
@@ -197,10 +266,10 @@ def verify_with_app(app: Path, output: Path) -> None:
                 assert message is not None
                 if isinstance(message, TraceEnvelope):
                     store.ingest(message)
-            session = store.session(1)
+            session = store.session(TRACE_SESSION_ID)
             assert session.complete and not session.gaps, session.gaps
             assert session.dictionary["symbols"][0]["name"] == "main cycle"
-        print(f"KymoStudio {capture_path.parent.name}: PASS (4 fragment sizes, complete trace session)", flush=True)
+        print(f"KymoStudio {capture_path.parent.name}: PASS ({len(APP_FRAGMENT_SIZES)} fragment sizes, complete trace session)", flush=True)
 
 
 def main() -> None:
@@ -221,9 +290,9 @@ def main() -> None:
         for contract in ("tx", "app"):
             directory = output / f"{contract}-contract"
             directory.mkdir(parents=True, exist_ok=True)
-            subprocess.run([str(build(cxx, directory, {}, contract=contract))], check=True, timeout=15)
+            subprocess.run([str(build(cxx, directory, {}, contract=contract))], check=True, timeout=PROCESS_TIMEOUT_SECONDS)
             print(f"{contract} contract: PASS", flush=True)
-        run_case(cxx, output, "copying", {"CHUNK": 240, "HOLD": 0, "STALL": 1})
+        run_case(cxx, output, "copying", {"CHUNK": TRACE_FRAME_MAX_BYTES, "HOLD": 0, "STALL": 1})
         run_case(cxx, output, "one-byte-dma", {"CHUNK": 1, "HOLD": 2, "STALL": 500})
         run_case(cxx, output, "no-requests", {}, empty=True)
         run_case(cxx, output, "driver-fault", {"FAULT": 1})

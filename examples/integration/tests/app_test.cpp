@@ -6,6 +6,9 @@
 #include "kymo_port.h"
 #include <assert.h>
 
+static const uint32_t ACTIVE_TEST_CYCLES = 100u;
+static const uint32_t DRAIN_TEST_DEADLINE_CYCLES = 1000u;
+
 static uint64_t sTicks = 0u;
 static size_t sWrites = 0u;
 
@@ -65,13 +68,13 @@ int main(void)
     assert(exampleAppCycle() == KYMO_BAD_CONFIG);
     assert(exampleAppDrain() == KYMO_BAD_CONFIG);
     assert(exampleAppInit() == KYMO_OK);
-    for (uint32_t cycle = 0u; cycle < 100u; ++cycle) {
+    for (uint32_t cycle = 0u; cycle < ACTIVE_TEST_CYCLES; ++cycle) {
         ++sTicks;
         assert(exampleAppCycle() == KYMO_OK);
     }
     assert(sWrites > 0u);
     assert(exampleAppInit() == KYMO_REJECTED);
-    for (uint32_t cycle = 0u; (cycle < 1000u) && (status == KYMO_BUSY); ++cycle) {
+    for (uint32_t cycle = 0u; (cycle < DRAIN_TEST_DEADLINE_CYCLES) && (status == KYMO_BUSY); ++cycle) {
         ++sTicks;
         status = exampleAppDrain();
         assert(exampleAppCycle() == KYMO_REJECTED);

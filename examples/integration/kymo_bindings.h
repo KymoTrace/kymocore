@@ -9,10 +9,31 @@
 #define EXAMPLE_KYMO_BINDINGS_H
 #include <KymoCore.h>
 
-/** @brief Persistent writable gain table, ID 100, range 0..10.
- * @par Usage KymoParam_Init(&receiver, exampleParameters, 1u).
+/** @brief Number of entries in the persistent parameter table.
+ * @par Usage Array bound; pass KYMO_COUNT_OF(exampleParameters) when initializing.
  */
-extern const KymoParameter exampleParameters[1];
+static const size_t EXAMPLE_PARAMETER_COUNT = 1u;
+/** @brief Stable session identity for this finite replay, not a real boot ID.
+ * @par Usage Used by the recorder; the independent wire test expects this ID.
+ */
+static const uint64_t EXAMPLE_TRACE_SESSION_ID = 1u;
+/** @brief Clock domain described by the canonical session metadata.
+ * @par Usage Keep synchronized with kymo_trace_records.h and its wire test.
+ */
+static const uint16_t EXAMPLE_TRACE_CLOCK_DOMAIN_ID = 0u;
+/** @brief Superloop context declared in the trace dictionary.
+ * @par Usage Pass to KymoTrace_Mark; update the dictionary when changing it.
+ */
+static const uint32_t EXAMPLE_TRACE_CONTEXT_ID = 1u;
+/** @brief Main-cycle marker declared in the trace dictionary.
+ * @par Usage Pass to KymoTrace_Mark; update the dictionary when changing it.
+ */
+static const uint16_t EXAMPLE_TRACE_MARKER_ID = 1u;
+
+/** @brief Persistent writable gain table, ID 100, range 0..10.
+ * @par Usage KymoParam_Init(&receiver, exampleParameters, KYMO_COUNT_OF(exampleParameters)).
+ */
+extern const KymoParameter exampleParameters[EXAMPLE_PARAMETER_COUNT];
 /** @brief Create runtime bindings; write must be supplied by main.
  * @return Zero-initialized configuration with channel, clock and sample bindings.
  * @par Usage Set config.write, then Kymo_Init.

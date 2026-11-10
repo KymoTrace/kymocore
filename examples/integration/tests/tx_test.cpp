@@ -7,13 +7,18 @@
 #include <assert.h>
 #include <string.h>
 
+/* Explicit fixture bytes, split into two physical transfers. */
+static const uint8_t EXPECTED_FRAME[] = { 1u, 2u, 3u, 4u };
+static const size_t TRANSFER_CHUNK_BYTES = 2u;
+static const uint8_t REUSED_BUFFER_BYTE = 99u;
+
 static uint8_t sBusy = 0u;
 static uint8_t sRejectOnce = 1u;
 static uint8_t sViolate = 0u;
 static size_t sWriteCalls = 0u;
 static const uint8_t *sBorrowed = nullptr;
 static size_t sBorrowedLength = 0u;
-static uint8_t sWire[EXAMPLE_TX_CAPACITY + 4u];
+static uint8_t sWire[EXAMPLE_TX_CAPACITY + sizeof(EXPECTED_FRAME)];
 static size_t sWireLength = 0u;
 
 /*******************************************************************************
@@ -37,7 +42,7 @@ size_t examplePortWrite(const uint8_t *bytes, size_t length)
     } else if (sRejectOnce != 0u) {
         sRejectOnce = 0u;
     } else {
-        accepted = (length > 2u) ? 2u : length;
+        accepted = (length > TRANSFER_CHUNK_BYTES) ? TRANSFER_CHUNK_BYTES : length;
         sBorrowed = bytes;
         sBorrowedLength = accepted;
         sBusy = 1u;
@@ -64,39 +69,43 @@ static void releaseTransfer(void)
  ******************************************************************************/
 int main(void)
 {
-    uint8_t original[] = { 1u, 2u, 3u, 4u };
-    const uint8_t expected[] = { 1u, 2u, 3u, 4u };
+    uint8_t original[sizeof(EXPECTED_FRAME)] = {};
     uint8_t maximum[EXAMPLE_TX_CAPACITY] = {};
     size_t calls = 0u;
+    memcpy(original, EXPECTED_FRAME, sizeof(original));
     assert(exampleTxService() == KYMO_IDLE);
-    assert(exampleTxSubmit(nullptr, 4u) == KYMO_BAD_CONFIG);
+    assert(exampleTxSubmit(nullptr, sizeof(original)) == KYMO_BAD_CONFIG);
     assert(exampleTxSubmit(original, 0u) == KYMO_BAD_CONFIG);
     assert(exampleTxSubmit(original, EXAMPLE_TX_CAPACITY + 1u) == KYMO_BAD_CONFIG);
     assert(exampleTxSubmit(original, sizeof(original)) == KYMO_OK);
-    memset(original, 99, sizeof(original));  /* submit must already have copied */
+    memset(original, REUSED_BUFFER_BYTE, sizeof(original));  /* submit already copied */
     sBusy = 1u;
     assert(exampleTxService() == KYMO_BUSY && sWriteCalls == 0u);
     assert(exampleTxSubmit(original, sizeof(original)) == KYMO_BUSY);
     sBusy = 0u;
-    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == 1u);  /* zero write */
-    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == 2u);  /* first half */
-    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == 2u);  /* borrowed */
+    ++calls;
+    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == calls);  /* zero write */
+    ++calls;
+    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == calls);  /* first half */
+    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == calls);  /* borrowed */
     releaseTransfer();
-    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == 3u);  /* final half */
+    ++calls;
+    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == calls);  /* final half */
     assert(exampleTxSubmit(original, sizeof(original)) == KYMO_BUSY);
-    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == 3u);
+    assert(exampleTxService() == KYMO_BUSY && sWriteCalls == calls);
     releaseTransfer();
-    assert(exampleTxService() == KYMO_IDLE && sWriteCalls == 3u);
-    assert(sWireLength == sizeof(expected) && memcmp(sWire, expected, sizeof(expected)) == 0);
+    assert(exampleTxService() == KYMO_IDLE && sWriteCalls == calls);
+    assert(sWireLength == sizeof(EXPECTED_FRAME) &&
+        memcmp(sWire, EXPECTED_FRAME, sizeof(EXPECTED_FRAME)) == 0);
 
     /* Exact maximum capacity works too, without truncation or duplicate writes. */
     assert(exampleTxSubmit(maximum, sizeof(maximum)) == KYMO_OK);
-    for (size_t offset = 0u; offset < sizeof(maximum); offset += 2u) {
+    for (size_t offset = 0u; offset < sizeof(maximum); offset += TRANSFER_CHUNK_BYTES) {
         assert(exampleTxService() == KYMO_BUSY);
         releaseTransfer();
     }
     assert(exampleTxService() == KYMO_IDLE && sWireLength == sizeof(sWire));
-    assert(memcmp(sWire + sizeof(expected), maximum, sizeof(maximum)) == 0);
+    assert(memcmp(sWire + sizeof(EXPECTED_FRAME), maximum, sizeof(maximum)) == 0);
 
     /* A contract violation is permanent, including subsequent submissions. */
     sViolate = 1u;

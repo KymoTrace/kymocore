@@ -4,6 +4,7 @@
  */
 #include "kymo_port.h"
 #include "kymo_port_native.h"
+#include "kymo_tx.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -24,12 +25,15 @@
 #define EXAMPLE_NATIVE_FAULT 0
 #endif
 
+static const size_t RX_FRAGMENT_BYTES = 3u;
+static const uint32_t ZERO_WRITE_INTERVAL = 5u;
+
 static FILE *sInput = nullptr;
 static FILE *sOutput = nullptr;
 static uint64_t sTicks = 0u;
 static const uint8_t *sBorrowed = nullptr;
 static size_t sBorrowedLength = 0u;
-static uint8_t sSaved[240];
+static uint8_t sSaved[EXAMPLE_TX_CAPACITY];
 static uint32_t sHoldCycles = 0u;
 static uint32_t sWrites = 0u;
 static uint8_t sHealthy = 0u;
@@ -84,8 +88,8 @@ size_t examplePortRead(uint8_t *output, size_t capacity)
 {
     size_t length = 0u;
     if ((output != nullptr) && (sInput != nullptr) && (sHealthy != 0u)) {
-        if (capacity > 3u) {
-            capacity = 3u;
+        if (capacity > RX_FRAGMENT_BYTES) {
+            capacity = RX_FRAGMENT_BYTES;
         }
         length = fread(output, 1u, capacity, sInput);
         if (ferror(sInput) != 0) {
@@ -110,7 +114,7 @@ size_t examplePortWrite(const uint8_t *bytes, size_t length)
         accepted = length + 1u;
 #else
         /* Zero acceptance is legal even after busy returned zero. */
-        if ((sWrites % 5u) != 0u) {
+        if ((sWrites % ZERO_WRITE_INTERVAL) != 0u) {
             accepted = length;
             if (accepted > EXAMPLE_NATIVE_CHUNK) {
                 accepted = EXAMPLE_NATIVE_CHUNK;

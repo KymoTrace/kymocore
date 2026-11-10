@@ -9,14 +9,26 @@
 #include "kymo_tx.h"
 #include "kymo_trace_records.h"
 
+/** @brief Fixed round-robin sources; Count defines the wrap point. */
+enum class SendSource : uint8_t {
+    Telemetry, ParameterReadback, ParameterDescription, WatchReply,
+    WatchSample, MemoryInfo, MemorySample, Trace, Count
+};
+/** @brief Startup records accepted by the mux so far. */
+enum class MetadataStage : uint8_t { Session, Dictionary, Complete };
+
+static const size_t RX_BUDGET_BYTES = 16u;
+static const uint32_t TRACE_MARKER_PERIOD_CYCLES = 200u;
+static const uint32_t TRACE_RECORD_GENERATION = 1u;
+
 static KymoContext sTelemetry;
 static KymoParamReceiver sParameters;
 static KymoWatch sWatch;
 static KymoMemory sMemory;
 static KymoTraceRecorder sRecorder;
 static KymoMux sMux;
-static uint8_t sSource = 0u;
-static uint8_t sMetadataStage = 0u;
+static SendSource sSource = SendSource::Telemetry;
+static MetadataStage sMetadataStage = MetadataStage::Session;
 static uint8_t sInitAttempted = 0u;
 static uint8_t sReady = 0u;
 static uint8_t sDraining = 0u;
@@ -93,15 +105,16 @@ static void encodeSample(KymoStatus status, const KymoDataPoint *point)
 static void queueTraceMetadata(void)
 {
     KymoStatus status = KYMO_BUSY;
-    if (sMetadataStage == 0u) {
+    if (sMetadataStage == MetadataStage::Session) {
         status = KymoMux_QueueAdmin(&sMux, KYMO_TRACE_PAYLOAD_SESSION_META,
-            1u, exampleTraceMetadata, sizeof(exampleTraceMetadata) - 1u);
-    } else if (sMetadataStage == 1u) {
+            TRACE_RECORD_GENERATION, exampleTraceMetadata, sizeof(exampleTraceMetadata) - 1u);
+    } else if (sMetadataStage == MetadataStage::Dictionary) {
         status = KymoMux_QueueAdmin(&sMux, KYMO_TRACE_PAYLOAD_DICTIONARY,
-            1u, exampleTraceDictionary, sizeof(exampleTraceDictionary) - 1u);
+            TRACE_RECORD_GENERATION, exampleTraceDictionary, sizeof(exampleTraceDictionary) - 1u);
     }
     if (status == KYMO_OK) {
-        ++sMetadataStage;
+        sMetadataStage = (sMetadataStage == MetadataStage::Session) ?
+            MetadataStage::Dictionary : MetadataStage::Complete;
     }
     checkStatus(status);
 }
@@ -118,31 +131,31 @@ static void produceOneFrame(void)
     KymoStatus status = KYMO_IDLE;
     uint32_t nowMs = examplePortClockMs(nullptr);
     switch (sSource) {
-    case 0u:
+    case SendSource::Telemetry:
         checkStatus(Kymo_Main(&sTelemetry));
         break;
-    case 1u:
+    case SendSource::ParameterReadback:
         status = KymoParam_NextReadback(&sParameters, &point);
         encodeSample(status, &point);
         break;
-    case 2u:
+    case SendSource::ParameterDescription:
         length = KymoParam_NextDescription(&sParameters, reply, sizeof(reply));
         break;
-    case 3u:
+    case SendSource::WatchReply:
         length = KymoWatch_NextReply(&sWatch, reply, sizeof(reply));
         break;
-    case 4u:
+    case SendSource::WatchSample:
         status = KymoWatch_NextSample(&sWatch, nowMs, &point);
         encodeSample(status, &point);
         break;
-    case 5u:
+    case SendSource::MemoryInfo:
         length = KymoMemory_NextInfo(&sMemory, nowMs, reply, sizeof(reply));
         break;
-    case 6u:
+    case SendSource::MemorySample:
         status = KymoMemory_NextSample(&sMemory, nowMs, &point);
         encodeSample(status, &point);
         break;
-    case 7u:
+    case SendSource::Trace:
         queueTraceMetadata();
         if (sError == KYMO_OK) {
             checkStatus(KymoMux_Service(&sMux));
@@ -155,7 +168,8 @@ static void produceOneFrame(void)
     if (length != 0u) {
         checkStatus(exampleTxSubmit(reply, length));
     }
-    sSource = (uint8_t)((sSource + 1u) % 8u);
+    sSource = static_cast<SendSource>((static_cast<uint8_t>(sSource) + 1u) %
+        static_cast<uint8_t>(SendSource::Count));
 }
 
 /** @brief Wire each existing module explicitly; initialization failures stop main. */
@@ -177,7 +191,7 @@ static KymoStatus initializeModules(void)
     mux.write = copyFrame;
     status = Kymo_Init(&sTelemetry, &telemetry);
     if (status == KYMO_OK) {
-        status = KymoParam_Init(&sParameters, exampleParameters, 1u);
+        status = KymoParam_Init(&sParameters, exampleParameters, KYMO_COUNT_OF(exampleParameters));
     }
     if (status == KYMO_OK) {
         status = KymoWatch_Init(&sWatch, &watch);
@@ -214,7 +228,7 @@ KymoStatus exampleAppInit(void)
 KymoStatus exampleAppCycle(void)
 {
     KymoStatus status = KYMO_BAD_CONFIG;
-    uint8_t input[16] = {};
+    uint8_t input[RX_BUDGET_BYTES] = {};
     size_t received = 0u;
     if (sReady != 0u) {
         status = KYMO_REJECTED;
@@ -223,8 +237,9 @@ KymoStatus exampleAppCycle(void)
                 received = examplePortRead(input, sizeof(input));
                 (void)KymoParam_Feed(&sParameters, input, received);
                 (void)KymoWatch_Feed(&sWatch, input, received);
-                if ((sMetadataStage == 2u) && ((sCycle % 200u) == 0u)) {
-                    KymoTrace_Mark(&sRecorder, 1u, 1u, sCycle);
+                if ((sMetadataStage == MetadataStage::Complete) &&
+                    ((sCycle % TRACE_MARKER_PERIOD_CYCLES) == 0u)) {
+                    KymoTrace_Mark(&sRecorder, EXAMPLE_TRACE_CONTEXT_ID, EXAMPLE_TRACE_MARKER_ID, sCycle);
                 }
                 status = exampleTxService();
                 checkStatus(status);
@@ -252,8 +267,8 @@ KymoStatus exampleAppDrain(void)
             checkStatus(status);
             if ((status == KYMO_IDLE) && (sError == KYMO_OK)) {
                 queueTraceMetadata();
-                if ((sMetadataStage == 2u) && (sEndQueued == 0u)) {
-                    status = KymoMux_QueueSessionEnd(&sMux, 1u);
+                if ((sMetadataStage == MetadataStage::Complete) && (sEndQueued == 0u)) {
+                    status = KymoMux_QueueSessionEnd(&sMux, TRACE_RECORD_GENERATION);
                     checkStatus(status);
                     sEndQueued = (uint8_t)(status == KYMO_OK);
                 }

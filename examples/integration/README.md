@@ -30,6 +30,14 @@ Die Bindings besitzen langlebige Tabellen. `kymo_app.cpp` kopiert deren
 Konfigurationen und ergänzt die Transportverbindung. Keine Bindings-Datei
 enthält UART-, Arduino- oder RTOS-Aufrufe.
 
+Fachwerte stehen als benannte Konstanten bei ihrer Zuständigkeit: Kanäle,
+Grenzen und Messperioden in den Bindings, Empfangsbudget und Quellenzustände
+in der Anwendung, Simulationsfristen im nativen Einstieg. Größen werden aus
+Tabellen oder vorhandenen Kapazitätskonstanten abgeleitet. `run.py` verwendet
+unabhängige benannte Protokollwerte und Wire-Strukturen statt fester Byte-Offsets.
+Trace-IDs müssen weiterhin zum kanonischen JSON-Dictionary passen; die Tests
+prüfen diesen Zusammenhang. Die Zahlen in diesen JSON-Daten sind Protokolldaten.
+
 `kymo_app` ist die feste Anwendung dieses Beispiels, keine neue konfigurierbare
 Library-Fassade. Sie kennt weder Dateien noch Simulationsfristen. `kymo_tx`
 kennt keine Parameter, Watch-Slots oder Trace-Scheduler, sondern nur Frames
