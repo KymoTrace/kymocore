@@ -50,6 +50,7 @@ die die Build-Konfiguration aktiviert. Die Quellen sind nach Aufgaben gegliedert
 | `trace/kymo_instrumentation.h` | `KYMO_TRACE_*`-Makros | immer (Compile-out) |
 | `trace/kymo_trace.h` | `KymoTraceRecorder` | `KYMO_ENABLE_TRACE=1` |
 | `transport/kymo_mux.h` | `KymoMux`: Trace + DATA auf einer Leitung | `KYMO_ENABLE_TRACE=1` |
+| `transport/kymo_tx.h` | `KymoTx`: gemeinsamer Frame-Versand | `KYMO_ENABLE_TX=1` |
 | `common/` | Bit-, Byte- und CRC-Helfer | immer |
 
 Operationen mit Statusrückgabe liefern `KymoStatus`; `KYMO_OK` (0) bedeutet
@@ -225,6 +226,7 @@ build_flags =
 | `KYMO_ENABLED` | 1 | 0 kompiliert die gesamte Library heraus |
 | `KYMO_ENABLE_RUNTIME` | 1 | Init/Main-Scheduler |
 | `KYMO_ENABLE_CPP` | 0 | C++-Push-Sender `KymoSender` |
+| `KYMO_ENABLE_TX` | 0 | Gemeinsamer Sendepuffer mit Teilübertragungen |
 | `KYMO_ENABLE_X` | Profil | Optionale X-Koordinate |
 | `KYMO_ENABLE_Z` | Profil | Optionale Z-Koordinate, unabhängig von X |
 | `KYMO_ENABLE_TIMESTAMP` | Profil | Zeitstempel auf dem Draht |
@@ -827,3 +829,24 @@ faster than compiler-inlined functions.
 The C decoder commits to the output structure only after complete validation;
 invalid input leaves it unchanged. These conventions improve consistency and
 reviewability, but do not constitute a safety-standard compliance claim.
+
+## Gemeinsamer Frame-Versand
+
+Mit `KYMO_ENABLE_TX=1` stellt die Library `KymoTx` bereit. Ein nullinitialisierter
+Kontext und ein langlebiger Puffer gehören der Anwendung. `KymoTx_Init` kopiert
+Pufferadresse, Kapazität, `write`, optional `busy` und `transport_user` aus
+`KymoTxConfig`. `write` verwendet `size_t` für Längen; bestehende Runtime-Callbacks
+behalten ihre bisherige Signatur.
+
+`KymoTx_Submit` kopiert einen vollständigen Frame oder meldet `KYMO_BUSY`, ohne
+Bytes zu übernehmen. `KymoTx_Service` versucht höchstens einen Schreibzugriff pro
+Aufruf und hält den Puffer bis zur Freigabe durch den Treiber. Ohne `busy` muss der
+Treiber vor Rückkehr kopieren. `KYMO_IDLE` bedeutet freien Speicher, nicht eine
+geprüfte Verbindung. Neuinitialisierung eines bereits initialisierten Senders wird
+abgelehnt; ein Treiberfehler stoppt ihn dauerhaft. Für einen Neustart muss die
+Anwendung zuerst den Treiber stilllegen und sämtliche geliehenen Zeiger freigeben,
+dann den Kontext nullinitialisieren. Aufrufe müssen serialisiert sein.
+
+Das [Integrationsbeispiel](../examples/integration/README.md) zeigt die vollständige
+Port-Anbindung. RX, Quellenreihenfolge und Modulinitialisierung bleiben dort in der
+Anwendung. Die Library gibt keine feste Puffergröße vor und implementiert keinen Endpoint.

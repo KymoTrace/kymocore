@@ -2,6 +2,13 @@
 
 ## Unreleased (7.3.0)
 
+- Shared transport: move the integration example's frame sender into the optional
+  C-compatible `KymoTx` module (`KYMO_ENABLE_TX=1`, off by default). Caller-owned
+  contexts and buffers support independent transports, partial writes, backpressure
+  and borrowed-buffer completion without heap allocation. Init refuses to reset an
+  existing sender; driver contract violations latch a fault. The example now uses
+  this library module; module scheduling remains in the application, without an Endpoint.
+
 - Documentation: move protocol, contribution rules and publishing instructions into
   `docs/`; add a documentation index, remove the completed 7.0 structure review
   and redundant 3D note, and correct outdated build/setup instructions.

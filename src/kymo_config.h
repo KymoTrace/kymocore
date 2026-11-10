@@ -18,6 +18,7 @@
  * | Profile               | KYMO_PROFILE                | MINIMAL | Preset defaults for the switches below  |
  * | 1. Telemetry API      | KYMO_ENABLE_RUNTIME         | 1       | Cyclic Kymo_Init/Kymo_Main (recommended)|
  * |                       | KYMO_ENABLE_CPP             | 0       | Optional C++ push sender (KymoSender)   |
+ * | Shared transport      | KYMO_ENABLE_TX              | 0       | Single-frame copy and partial writes   |
  * | 2. Telemetry payload  | KYMO_ENABLE_X               | 0       | X coordinate per sample                 |
  * |                       | KYMO_ENABLE_Z               | 0       | Z coordinate per sample                 |
  * |                       | KYMO_ENABLE_TIMESTAMP       | 0       | Timestamp per sample                    |
@@ -122,6 +123,14 @@
 /** @brief Compile the optional C++ push sender; defaults to disabled. */
 #ifndef KYMO_ENABLE_CPP
 #define KYMO_ENABLE_CPP 0
+#endif
+
+/** @brief Enable the shared single-frame transport sender; disabled by default.
+ * @details Independent of runtime and trace; storage is supplied by the caller.
+ * @par Usage Set KYMO_ENABLE_TX=1 for all application and library sources.
+ */
+#ifndef KYMO_ENABLE_TX
+#define KYMO_ENABLE_TX 0
 #endif
 
 /* ---- 2. Telemetry payload ----------------------------------------------- */
@@ -320,6 +329,7 @@
 
 #if !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLED) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_RUNTIME) || \
+    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TX) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CPP) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_X) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_Z) || \
@@ -414,6 +424,11 @@
 
 /** @brief Effective cooperative runtime gate. */
 #define KYMO_EFFECTIVE_RUNTIME (KYMO_ENABLED && KYMO_ENABLE_RUNTIME)
+
+/** @brief Effective shared transport gate, respecting the global switch.
+ * @par Usage Gate code that uses KymoTx with this macro.
+ */
+#define KYMO_EFFECTIVE_TX (KYMO_ENABLED && KYMO_ENABLE_TX)
 
 /** @brief Effective optional C++ sender gate. */
 #define KYMO_EFFECTIVE_CPP (KYMO_ENABLED && KYMO_ENABLE_CPP)

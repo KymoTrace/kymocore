@@ -18,6 +18,7 @@
  * | control/kymo_watch.h             | KymoWatch (live variables)     | KYMO_ENABLE_WATCH=1   |
  * | trace/kymo_instrumentation.h     | KYMO_TRACE_* macros            | always (compile-out)  |
  * | trace/kymo_trace.h               | KymoTraceRecorder              | KYMO_ENABLE_TRACE=1   |
+ * | transport/kymo_tx.h              | KymoTx (shared frame sender)   | KYMO_ENABLE_TX=1      |
  * | transport/kymo_mux.h             | KymoMux (trace + DATA link)    | KYMO_ENABLE_TRACE=1   |
  *
  * The library is platform-independent: no SDK, vendor or framework headers are
@@ -36,6 +37,7 @@
 
 #include "kymo_config.h"
 #include "kymo_types.h"
+#include "transport/kymo_tx.h"
 #include "telemetry/kymo_protocol.h"
 #include "telemetry/kymo_runtime.h"
 #include "control/kymo_param.h"

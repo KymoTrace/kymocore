@@ -12,7 +12,7 @@ import re
 import subprocess
 import tempfile
 
-FEATURES = ('RUNTIME', 'X', 'Z', 'TIMESTAMP', 'CRC', 'DECODER', 'CPP',
+FEATURES = ('RUNTIME', 'TX', 'X', 'Z', 'TIMESTAMP', 'CRC', 'DECODER', 'CPP',
             'PARAMETERS', 'WATCH', 'MEMORY', 'TRACE', 'TRACE_ISR', 'TRACE_SCHEDULER',
             'TRACE_FLOW', 'TRACE_STACK_POINTER')
 BOOLEAN_MACROS = ('KYMO_ENABLED', 'KYMO_ENABLE_CRC_TABLE') + tuple('KYMO_ENABLE_' + key for key in FEATURES) + tuple(

@@ -4,7 +4,7 @@
  */
 #include "kymo_port.h"
 #include "kymo_port_native.h"
-#include "kymo_tx.h"
+#include "kymo_user_config.h"
 #include <stdio.h>
 #include <string.h>
 

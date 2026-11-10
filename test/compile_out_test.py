@@ -56,7 +56,7 @@ int main(void) {
              "-DKYMO_ENABLED=0", "-Isrc", str(cpp_off), "-o", str(temp / "off-cpp")])
         run([str(temp / "off-cpp")])
 
-        off_flags = ["-DKYMO_ENABLED=0", "-DKYMO_ENABLE_RUNTIME=1", "-DKYMO_ENABLE_X=1",
+        off_flags = ["-DKYMO_ENABLE_TX=1", "-DKYMO_ENABLED=0", "-DKYMO_ENABLE_RUNTIME=1", "-DKYMO_ENABLE_X=1",
                      "-DKYMO_ENABLE_Z=1", "-DKYMO_ENABLE_TIMESTAMP=1", "-DKYMO_ENABLE_CRC=1",
                      "-DKYMO_ENABLE_DECODER=1", "-DKYMO_ENABLE_CPP=1", "-DKYMO_ENABLE_TRACE=1",
                      "-DKYMO_ENABLE_TRACE_ISR=1", "-DKYMO_ENABLE_TRACE_SCHEDULER=1",
@@ -75,18 +75,19 @@ int main(void) {
 
         project_config = temp / "project_config.h"
         project_config.write_text(
-            "#ifndef KYMO_ENABLE_RUNTIME\n#define KYMO_ENABLE_RUNTIME 0\n#endif\n",
+            "#ifndef KYMO_ENABLE_RUNTIME\n#define KYMO_ENABLE_RUNTIME 0\n#endif\n"
+            "#ifndef KYMO_ENABLE_TX\n#define KYMO_ENABLE_TX 0\n#endif\n",
             encoding="utf-8",
         )
         config_probe = temp / "config_probe.c"
         config_probe.write_text(r'''#include "kymo_config.h"
-#if KYMO_ENABLED != 1 || KYMO_ENABLE_RUNTIME != 1 || KYMO_EFFECTIVE_RUNTIME != 1
+#if KYMO_ENABLED != 1 || KYMO_ENABLE_RUNTIME != 1 || KYMO_EFFECTIVE_RUNTIME != 1 || !KYMO_EFFECTIVE_TX
 #error "compiler definitions must override project configuration"
 #endif
 int main(void) { return 0; }
 ''', encoding="utf-8")
         include_macro = '-DKYMO_USER_CONFIG_HEADER="project_config.h"'
-        run([args.cc, "-std=c99", "-Werror", "-DKYMO_ENABLE_RUNTIME=1", include_macro,
+        run([args.cc, "-std=c99", "-Werror", "-DKYMO_ENABLE_RUNTIME=1", "-DKYMO_ENABLE_TX=1", include_macro,
              "-I", str(temp), "-Isrc", str(config_probe), "-o", str(temp / "config-probe")])
         run([str(temp / "config-probe")])
 
@@ -106,6 +107,17 @@ int main(void) { return 0; }
         )
         run([args.cc, "-std=c99", "-Werror=implicit-function-declaration", "-DKYMO_ENABLED=0",
              "-DKYMO_ENABLE_RUNTIME=1", "-Isrc", str(direct_runtime), "-o", str(temp / "direct-runtime")], 1)
+        direct_tx = temp / "direct-tx.c"
+        direct_tx.write_text('#include <KymoCore.h>\n'
+                             'int main(void) { return KymoTx_Service(0); }\n', encoding="utf-8")
+        for flags in ([], ["-DKYMO_ENABLE_TX=0"], ["-DKYMO_ENABLED=0", "-DKYMO_ENABLE_TX=1"]):
+            run([args.cc, "-std=c99", "-Werror=implicit-function-declaration", *flags,
+                 "-Isrc", "-c", str(direct_tx), "-o", str(temp / "direct-tx.o")], 1)
+        run([args.cxx, "-std=c++11", "-O0", "-Isrc", "-c", "src/transport/kymo_tx.cpp",
+             "-o", str(temp / "tx-off.o")])
+        symbols = subprocess.run([NM, "-g", str(temp / "tx-off.o")], check=True,
+                                 capture_output=True, text=True)
+        assert "kymotx" not in symbols.stdout.lower(), symbols.stdout
         direct_cpp = temp / "direct-cpp.cpp"
         direct_cpp.write_text(
             '#include "telemetry/kymo_sender.h"\nint main() { KymoSender sender; return (int)sender.flush(); }\n',
@@ -172,7 +184,7 @@ int main() {
             if proc.returncode == 0:
                 raise AssertionError(f"invalid KYMO_ENABLED token accepted: {bad!r}")
 
-        boolean_flags = ("KYMO_ENABLED", "KYMO_ENABLE_RUNTIME", "KYMO_ENABLE_X", "KYMO_ENABLE_Z",
+        boolean_flags = ("KYMO_ENABLE_TX", "KYMO_ENABLED", "KYMO_ENABLE_RUNTIME", "KYMO_ENABLE_X", "KYMO_ENABLE_Z",
                          "KYMO_ENABLE_TIMESTAMP", "KYMO_ENABLE_CRC", "KYMO_ENABLE_DECODER",
                          "KYMO_ENABLE_CPP", "KYMO_ENABLE_TRACE", "KYMO_ENABLE_TRACE_ISR",
                          "KYMO_ENABLE_TRACE_SCHEDULER", "KYMO_ENABLE_TRACE_FLOW")
@@ -218,7 +230,7 @@ int main() {
             if preprocess(["-DKYMO_PROFILE=" + bad_profile], "").returncode == 0:
                 raise AssertionError(f"invalid KYMO_PROFILE accepted: {bad_profile!r}")
         profile_checks = (
-            ([], "#if KYMO_ENABLE_X || KYMO_ENABLE_TRACE\n#error minimal\n#endif\n"),
+            ([], "#if KYMO_ENABLE_TX || KYMO_ENABLE_X || KYMO_ENABLE_TRACE\n#error minimal\n#endif\n"),
             (["-DKYMO_PROFILE=KYMO_PROFILE_XYZ"],
              "#if !KYMO_ENABLE_X || !KYMO_ENABLE_Z || !KYMO_ENABLE_TIMESTAMP || KYMO_ENABLE_TRACE\n#error xyz\n#endif\n"),
             (["-DKYMO_PROFILE=KYMO_PROFILE_TRACE"],

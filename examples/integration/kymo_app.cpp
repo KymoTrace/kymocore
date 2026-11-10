@@ -6,7 +6,7 @@
 #include "kymo_app.h"
 #include "kymo_bindings.h"
 #include "kymo_port.h"
-#include "kymo_tx.h"
+#include <transport/kymo_tx.h>
 #include "kymo_trace_records.h"
 
 /** @brief Fixed round-robin sources; Count defines the wrap point. */
@@ -21,6 +21,8 @@ static const size_t RX_BUDGET_BYTES = 16u;
 static const uint32_t TRACE_MARKER_PERIOD_CYCLES = 200u;
 static const uint32_t TRACE_RECORD_GENERATION = 1u;
 
+static KymoTx sTx;
+static uint8_t sTxBuffer[EXAMPLE_TX_CAPACITY];
 static KymoContext sTelemetry;
 static KymoParamReceiver sParameters;
 static KymoWatch sWatch;
@@ -60,7 +62,7 @@ static void checkStatus(KymoStatus status)
 static size_t copyFrame(void *user, const uint8_t *bytes, size_t length)
 {
     size_t accepted = 0u;
-    KymoStatus status = exampleTxSubmit(bytes, length);
+    KymoStatus status = KymoTx_Submit(&sTx, bytes, length);
     (void)user;
     checkStatus(status);
     if (status == KYMO_OK) {
@@ -93,7 +95,7 @@ static void encodeSample(KymoStatus status, const KymoDataPoint *point)
         if (length == 0u) {
             sError = KYMO_BAD_SAMPLE;
         } else {
-            checkStatus(exampleTxSubmit(frame, length));
+            checkStatus(KymoTx_Submit(&sTx, frame, length));
         }
     }
 }
@@ -166,10 +168,28 @@ static void produceOneFrame(void)
         break;
     }
     if (length != 0u) {
-        checkStatus(exampleTxSubmit(reply, length));
+        checkStatus(KymoTx_Submit(&sTx, reply, length));
     }
     sSource = static_cast<SendSource>((static_cast<uint8_t>(sSource) + 1u) %
         static_cast<uint8_t>(SendSource::Count));
+}
+
+/*******************************************************************************
+ * writePort
+ ******************************************************************************/
+static size_t writePort(void *user, const uint8_t *bytes, size_t length)
+{
+    (void)user;
+    return examplePortWrite(bytes, length);
+}
+
+/*******************************************************************************
+ * portBusy
+ ******************************************************************************/
+static uint8_t portBusy(void *user)
+{
+    (void)user;
+    return examplePortBusy();
 }
 
 /** @brief Wire each existing module explicitly; initialization failures stop main. */
@@ -178,6 +198,7 @@ static void produceOneFrame(void)
  ******************************************************************************/
 static KymoStatus initializeModules(void)
 {
+    KymoTxConfig tx = {};
     KymoConfig telemetry = exampleTelemetryBindings();
     KymoWatchConfig watch = exampleWatchBindings();
     KymoMemoryConfig memory = exampleMemoryBindings();
@@ -189,7 +210,14 @@ static KymoStatus initializeModules(void)
      * application buffer can be borrowed by the physical port. */
     mux.recorder = &sRecorder;
     mux.write = copyFrame;
-    status = Kymo_Init(&sTelemetry, &telemetry);
+    tx.buffer = sTxBuffer;
+    tx.capacity = sizeof(sTxBuffer);
+    tx.write = writePort;
+    tx.busy = portBusy;
+    status = KymoTx_Init(&sTx, &tx);
+    if (status == KYMO_OK) {
+        status = Kymo_Init(&sTelemetry, &telemetry);
+    }
     if (status == KYMO_OK) {
         status = KymoParam_Init(&sParameters, exampleParameters, KYMO_COUNT_OF(exampleParameters));
     }
@@ -241,7 +269,7 @@ KymoStatus exampleAppCycle(void)
                     ((sCycle % TRACE_MARKER_PERIOD_CYCLES) == 0u)) {
                     KymoTrace_Mark(&sRecorder, EXAMPLE_TRACE_CONTEXT_ID, EXAMPLE_TRACE_MARKER_ID, sCycle);
                 }
-                status = exampleTxService();
+                status = KymoTx_Service(&sTx);
                 checkStatus(status);
                 if ((status == KYMO_IDLE) && (sError == KYMO_OK)) {
                     produceOneFrame();
@@ -263,7 +291,7 @@ KymoStatus exampleAppDrain(void)
     if (sReady != 0u) {
         sDraining = 1u;
         if ((sError == KYMO_OK) && (sDrained == 0u)) {
-            status = exampleTxService();
+            status = KymoTx_Service(&sTx);
             checkStatus(status);
             if ((status == KYMO_IDLE) && (sError == KYMO_OK)) {
                 queueTraceMetadata();

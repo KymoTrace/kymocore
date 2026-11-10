@@ -18,6 +18,6 @@ endif()
 
 add_library(kymo_core STATIC ${KYMO_CORE_SOURCES})
 target_link_libraries(kymo_core PUBLIC example_config)
-add_executable(kymo_integration main_native.cpp kymo_app.cpp kymo_tx.cpp
+add_executable(kymo_integration main_native.cpp kymo_app.cpp
     kymo_bindings.cpp kymo_port_native.cpp)
 target_link_libraries(kymo_integration PRIVATE kymo_core)

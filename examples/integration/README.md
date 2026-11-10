@@ -2,8 +2,8 @@
 
 Dieses Beispiel verbindet **Runtime, Parameter, Watch, Memory und Trace** über
 die vorhandenen C-kompatiblen KymoCore-Schnittstellen. Die Modulverknüpfung nutzt
-C++11 und statischen Speicher, ohne Exceptions oder RTTI. Es gibt keine neue Endpoint-Schnittstelle
-und keine Änderungen an der Library.
+C++11 und statischen Speicher, ohne Exceptions oder RTTI. Die gemeinsame Sendelogik kommt aus dem optionalen Library-Modul `KymoTx`.
+Es gibt keine Endpoint-Schnittstelle.
 
 Der mitgelieferte **native Port ist eine Simulation auf dem Rechner**: Er liest
 Anfragen aus einer Datei, schreibt den binären Datenstrom in eine zweite Datei
@@ -17,7 +17,7 @@ kein Echtzeit-Treiber. Messwerte und Speichertelemetrie sind synthetisch.
 |---|---|
 | [main_native.cpp](main_native.cpp) | Dateipfade, 5000 Simulationszyklen und Abschlussfrist auf dem Rechner |
 | [kymo_app.cpp](kymo_app.cpp) / [Header](kymo_app.h) | Explizite Modulinitialisierung, Empfang, Quellenreihenfolge und Trace-Abschluss |
-| [kymo_tx.cpp](kymo_tx.cpp) / [Header](kymo_tx.h) | Ein Sendepuffer, Teilübertragungen, Rückstau und DMA-Pufferfreigabe |
+| [KymoTx](../../src/transport/kymo_tx.h) (Library) | Ein Sendepuffer, Teilübertragungen, Rückstau und DMA-Pufferfreigabe |
 | [kymo_bindings.cpp](kymo_bindings.cpp) / [Header](kymo_bindings.h) | Kanäle, Parameter, Messfunktionen, Watch-Bereiche, Memory- und Trace-Bindings |
 | [kymo_port_native.cpp](kymo_port_native.cpp) / [Port-Vertrag](kymo_port.h) | Uhr, Lesen, Schreiben, Pufferfreigabe und Plattformstart |
 | [kymo_port_native.h](kymo_port_native.h) | Dateistart/-ende ausschließlich für das native Startprogramm |
@@ -39,9 +39,12 @@ Trace-IDs müssen weiterhin zum kanonischen JSON-Dictionary passen; die Tests
 prüfen diesen Zusammenhang. Die Zahlen in diesen JSON-Daten sind Protokolldaten.
 
 `kymo_app` ist die feste Anwendung dieses Beispiels, keine neue konfigurierbare
-Library-Fassade. Sie kennt weder Dateien noch Simulationsfristen. `kymo_tx`
-kennt keine Parameter, Watch-Slots oder Trace-Scheduler, sondern nur Frames
-und den Port-Vertrag. Beide bleiben ausschließlich im Beispielverzeichnis.
+Library-Fassade. Sie kennt weder Dateien noch Simulationsfristen. `KymoTx`
+kennt keine Parameter, Watch-Slots oder Trace-Scheduler, sondern nur Bytes und
+Transport-Callbacks. Die Anwendung stellt Kontext, Puffer und Port-Anbindung bereit.
+Der Sender ist mit `KYMO_ENABLE_TX=1` projektweit aktiviert und funktioniert auch
+ohne Runtime oder Trace. Im Beispiel ist der Puffer über `EXAMPLE_TX_CAPACITY`
+auf 240 Byte festgelegt; die Library nimmt seine Größe aus `KymoTxConfig.capacity`.
 
 ## Starten
 
@@ -121,9 +124,9 @@ Anfragen in Fragmenten von höchstens drei Bytes an beide vorhandenen Feed-APIs.
 1. `main_native.cpp` öffnet Dateien und ruft einmal `exampleAppInit()` auf.
 2. Pro Zyklus führt der Host `examplePortService()` und `exampleAppCycle()` aus.
 3. Der Anwendungszyklus gibt höchstens 16 Empfangsbytes an Parameter und Watch
-   und lässt `exampleTxService()` höchstens einen Schreibversuch ausführen.
+   und lässt `KymoTx_Service(&sTx)` höchstens einen Schreibversuch ausführen.
 4. Nur bei `KYMO_IDLE` bekommt eine Quelle ihren nächsten Turn. Ein vollständiger
-   Frame wird mit `exampleTxSubmit()` übergeben und vor Rückkehr kopiert.
+   Frame wird mit `KymoTx_Submit(&sTx, bytes, length)` übergeben und vor Rückkehr kopiert.
 
 Der Sender meldet `KYMO_BUSY`, solange ein Frame wartet oder der Port seinen
 Puffer noch besitzt. `exampleAppCycle()` behandelt diesen Rückstau als normalen
@@ -159,7 +162,7 @@ aller verpassten Samples und keine Zusage verlustfreier Trace-Aufzeichnung.
 
 Das native Startprogramm beendet nach 5000 simulierten Zyklen die Produktion.
 Mit wiederholtem Port-Service und `exampleAppDrain()` werden bereits gepufferte Daten und
-Trace werden ausgeleitet, dann `KymoMux_QueueSessionEnd` gesendet. Die zusätzliche
+Trace ausgeleitet, dann `KymoMux_QueueSessionEnd` gesendet. Die zusätzliche
 Abschlussfrist ist eine Host-Testgrenze, keine Freigabe für einen noch von DMA
 verwendeten Puffer. Unbegrenzte Live-Verbindungen und Wiederverbindung sind
 nicht Teil dieses endlichen Replay-Beispiels.
@@ -180,7 +183,7 @@ sind außerdem Session-ID und Taktangaben an die tatsächliche Laufzeit anzupass
    danach `examplePortService()` und `exampleAppCycle()` aus genau einer
    Superloop oder Task aufrufen und Statuswerte behandeln. Zum geordneten Ende
    nur noch Port-Service und `exampleAppDrain()` ausführen, bis `KYMO_IDLE`
-   erreicht ist. `kymo_app.cpp`, `kymo_tx.cpp` und die Bindings bleiben unabhängig
+   erreicht ist. `kymo_app.cpp` und die Bindings bleiben unabhängig
    vom nativen Startprogramm. RTOS-/ISR-Aufrufe brauchen zusätzliche geprüfte
    Synchronisierung; dieses Beispiel verwendet keine parallelen Hooks.
 
@@ -197,6 +200,10 @@ Session-Abschluss und Fortschritt aller aktiv angefragten Quellen.
 Ein zusätzlicher [Sendertest](tests/tx_test.cpp) kontrolliert die Submit-Grenzen,
 Kopiersemantik, Null-Annahmen, verzögerte Freigabe des letzten Bytes und den
 dauerhaften Stopp nach einem Treiberfehler direkt mit einem kontrollierten Port.
+Er prüft auch ungültige Initialisierung, abgelehnte Neuinitialisierung, unabhängige
+Sender, kopierende Treiber ohne Busy-Callback und Puffer größer als 255 Byte.
+Die native Gesamtsuite baut diesen Test zusätzlich nur mit TX ohne Runtime/Trace
+und prüft einen C99-Aufrufer gegen die C++11-Library.
 Der [Anwendungstest](tests/app_test.cpp) baut den Anwendungsablauf mit einem
 zweiten Port ohne Dateifunktionen und ohne nativen Programmeinstieg. Er prüft
 auch Initialisierung, Abschluss und die Ablehnung eines erneuten Starts.

@@ -50,6 +50,7 @@ the build configuration enables. The sources are grouped by task:
 | `trace/kymo_instrumentation.h` | `KYMO_TRACE_*` macros | always (compile out) |
 | `trace/kymo_trace.h` | `KymoTraceRecorder` | `KYMO_ENABLE_TRACE=1` |
 | `transport/kymo_mux.h` | `KymoMux`: trace + DATA on one link | `KYMO_ENABLE_TRACE=1` |
+| `transport/kymo_tx.h` | `KymoTx`: shared frame sender | `KYMO_ENABLE_TX=1` |
 | `common/` | Bit, byte and CRC helpers | always |
 
 Status-returning operations use `KymoStatus`, where `KYMO_OK` (0) means
@@ -223,6 +224,7 @@ build_flags =
 | `KYMO_ENABLED` | 1 | 0 compiles the whole library out |
 | `KYMO_ENABLE_RUNTIME` | 1 | Init/Main scheduler |
 | `KYMO_ENABLE_CPP` | 0 | C++ push sender `KymoSender` |
+| `KYMO_ENABLE_TX` | 0 | Shared frame buffer with partial writes |
 | `KYMO_ENABLE_X` | profile | Optional X coordinate |
 | `KYMO_ENABLE_Z` | profile | Optional Z coordinate, independent of X |
 | `KYMO_ENABLE_TIMESTAMP` | profile | Timestamp on the wire |
@@ -822,3 +824,22 @@ faster than compiler-inlined functions.
 The C decoder commits to the output structure only after complete validation;
 invalid input leaves it unchanged. These conventions improve consistency and
 reviewability, but do not constitute a safety-standard compliance claim.
+
+## Shared frame transport
+
+Enable `KYMO_ENABLE_TX=1` for `KymoTx`. The application owns a zero-initialized
+context and a persistent buffer. `KymoTx_Init` copies the buffer address, capacity,
+`write`, optional `busy` and `transport_user` from `KymoTxConfig`. The write callback
+uses `size_t` lengths; existing runtime callback signatures remain unchanged.
+
+`KymoTx_Submit` copies a complete frame or returns `KYMO_BUSY` without consuming
+bytes. `KymoTx_Service` attempts at most one write per call and retains storage
+until the driver releases it. Without `busy`, the driver must copy before returning.
+`KYMO_IDLE` means free storage, not a healthy connection. Reinitialization is refused;
+a driver violation permanently faults the sender. To restart, first quiesce the
+driver and release all borrowed pointers, then zero-initialize the context. Calls
+must be serialized.
+
+The [integration example](../examples/integration/README.md) shows complete port
+wiring. RX, source scheduling and module initialization stay in the application.
+The library imposes no fixed buffer capacity and implements no Endpoint.

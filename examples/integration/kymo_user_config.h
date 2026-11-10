@@ -7,6 +7,15 @@
 #ifndef EXAMPLE_KYMO_USER_CONFIG_H
 #define EXAMPLE_KYMO_USER_CONFIG_H
 
+/** @brief Capacity of this application's shared frame storage, in bytes.
+ * @par Usage Size both the application buffer and the native borrow snapshot.
+ */
+#define EXAMPLE_TX_CAPACITY 240u
+
+/** @brief Enable KymoCore's shared frame sender. */
+#ifndef KYMO_ENABLE_TX
+#define KYMO_ENABLE_TX 1
+#endif
 /** @brief Enable CRC-protected telemetry. */
 #ifndef KYMO_ENABLE_CRC
 #define KYMO_ENABLE_CRC 1

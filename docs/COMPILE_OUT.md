@@ -6,6 +6,13 @@ the optional header named by `KYMO_USER_CONFIG_HEADER`, then the selected
 setting so a build profile can override it. Pass the include token as a quoted
 macro value, for example `-DKYMO_USER_CONFIG_HEADER=\"kymo_user_config.h\"`.
 
+`KYMO_ENABLE_TX` defaults to `0` in every profile. Set it to `1` to use
+`KymoTx_Init`, `KymoTx_Submit` and `KymoTx_Service`. The sender requires no other
+feature and uses a caller-owned buffer with a runtime capacity. With TX disabled,
+its implementation and callable declarations are absent. The global switch also
+overrides TX. The configurator build audit checks TX consistency across sources;
+the configurator UI does not yet generate shared-sender wiring.
+
 `KYMO_ENABLED` defaults to `1`. Set it to `0` to remove the library
 implementations and callable low-level API declarations during preprocessing.
 The setting does not remove application statements or objects that were written

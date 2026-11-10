@@ -80,10 +80,18 @@ def main():
                                         "-DKYMO_MAX_MEMORY_ENTRIES=32"])):
             build_and_run(args.cxx, temp, f"memory_{index}", "test/memory_test.cpp",
                           flags, TELEMETRY_SOURCES + ["src/telemetry/kymo_memory.cpp"])
+        build_and_run(args.cxx, temp, "tx_minimal", "examples/integration/tests/tx_test.cpp",
+                      ["-DKYMO_ENABLE_TX=1", "-DKYMO_ENABLE_RUNTIME=0"],
+                      ["src/transport/kymo_tx.cpp"])
+        run([args.cc, "-std=c99", *WARNINGS, "-DKYMO_ENABLE_TX=1", "-Isrc",
+             "-c", "test/tx_c_test.c", "-o", temp / "tx-c.o"])
+        run([args.cxx, "-std=c++11", *WARNINGS, "-DKYMO_ENABLE_TX=1", "-Isrc",
+             temp / "tx-c.o", "src/transport/kymo_tx.cpp", "-o", temp / "tx-c"])
+        run([temp / "tx-c"])
         probe = temp / "entry.c"
         probe.write_text("#include <KymoCore.h>\nint main(void) { return 0; }\n",
                          encoding="utf-8")
-        for flags in PROFILES + (PARAMETERS, WATCH, PARAMETERS + WATCH[1:], ["-DKYMO_ENABLE_MEMORY=1"]):
+        for flags in PROFILES + (PARAMETERS, WATCH, PARAMETERS + WATCH[1:], ["-DKYMO_ENABLE_MEMORY=1"], ["-DKYMO_ENABLE_TX=1"]):
             run([args.cc, "-std=c99", *WARNINGS, *flags, "-Isrc", "-c", probe,
                  "-o", temp / "entry.o"])
         refused = subprocess.run([args.cc, "-std=c99", "-DKYMO_ENABLE_PARAMETERS=1", "-Isrc",
