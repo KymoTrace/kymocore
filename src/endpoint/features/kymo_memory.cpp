@@ -31,7 +31,7 @@ static KymoStatus produceMemory(void *user, uint8_t source, uint32_t now, uint8_
     } else if (draining == 0u) {
         KymoDataPoint point = {};
         status = KymoMemory_NextSample(&feature->memory, now, &point);
-        status = kymoEndpointSample(feature->binding.endpoint, status, &point);
+        status = kymoEndpointSample(feature->binding.endpoint, status, &point, now);
     }
     return status;
 }

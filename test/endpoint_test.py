@@ -33,7 +33,7 @@ def main():
 
     with tempfile.TemporaryDirectory(prefix="kymo-endpoint-") as directory:
         temp = Path(directory)
-        profiles = {**FEATURES, "xy": ["-DKYMO_ENABLE_X=1"], "all": ALL,
+        profiles = {**FEATURES, "xy": ["-DKYMO_ENABLE_X=1"], "all": ALL, "timed": ALL + ["-DKYMO_ENABLE_TIMESTAMP=1"],
                     "trace-hooks": FEATURES["trace"] + ["-DKYMO_ENABLE_TRACE_ISR=1",
                         "-DKYMO_ENABLE_TRACE_SCHEDULER=1", "-DKYMO_ENABLE_TRACE_FLOW=1"]}
         for name, flags in profiles.items():

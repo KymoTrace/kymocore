@@ -120,11 +120,17 @@ size_t kymoEndpointCopy(void *user, const uint8_t *bytes, size_t length)
  * kymoEndpointSample
  ******************************************************************************/
 KymoStatus kymoEndpointSample(KymoEndpoint *endpoint, KymoStatus status,
-    const KymoDataPoint *point)
+    const KymoDataPoint *point, uint32_t now)
 {
     uint8_t frame[KYMO_FRAME_MAX_SIZE] = {};
+    (void)now;
     if (status == KYMO_OK) {
-        size_t length = KymoProtocol_Encode(point, frame, sizeof(frame));
+        KymoDataPoint timed = *point;
+#if KYMO_EFFECTIVE_TIMESTAMP
+        timed.flags = (uint8_t)(timed.flags | KYMO_FLAG_TIMESTAMP);
+        timed.timestamp_ms = now;
+#endif
+        size_t length = KymoProtocol_Encode(&timed, frame, sizeof(frame));
         if (length == 0u) {
             status = KYMO_BAD_SAMPLE;
         } else if (kymoEndpointCopy(endpoint, frame, length) != length) {

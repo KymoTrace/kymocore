@@ -30,7 +30,7 @@ static KymoStatus produceWatch(void *user, uint8_t source, uint32_t now, uint8_t
     } else if (draining == 0u) {
         KymoDataPoint point = {};
         status = KymoWatch_NextSample(&feature->watch, now, &point);
-        status = kymoEndpointSample(feature->binding.endpoint, status, &point);
+        status = kymoEndpointSample(feature->binding.endpoint, status, &point, now);
     }
     return status;
 }

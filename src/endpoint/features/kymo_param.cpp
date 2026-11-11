@@ -25,7 +25,7 @@ static KymoStatus produceParameters(void *user, uint8_t source, uint32_t now, ui
     if (source == 0u) {
         KymoDataPoint point = {};
         status = KymoParam_NextReadback(&feature->receiver, &point);
-        status = kymoEndpointSample(feature->binding.endpoint, status, &point);
+        status = kymoEndpointSample(feature->binding.endpoint, status, &point, now);
     } else {
         uint8_t frame[KYMO_PARAM_FRAME_MAX_SIZE] = {};
         size_t length = KymoParam_NextDescription(&feature->receiver, frame, sizeof(frame));

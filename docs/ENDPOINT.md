@@ -195,3 +195,7 @@ gets a turn between refreshes. Stop finishes an active pair and drains events an
 session end, without scheduling another refresh. This can consume link bandwidth
 and delay events while metadata is transferred; size buffers/rates accordingly.
 A KymoStudio connection request is not part of this release.
+
+With `KYMO_ENABLE_TIMESTAMP=1`, Param readbacks, Watch samples and Memory samples
+carry the Endpoint cycle's millisecond clock. This preserves device sample time
+under transport backpressure. Plot keeps its per-channel timestamp flags.

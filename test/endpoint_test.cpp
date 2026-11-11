@@ -9,6 +9,7 @@
 #include <endpoint/features/kymo_memory.h>
 #include <endpoint/features/kymo_trace.h>
 #include <common/embedded_bytes.h>
+#include <endpoint/detail/kymo_internal.h>
 #include <common/embedded_crc.h>
 #include <assert.h>
 #include <string.h>
@@ -648,10 +649,35 @@ static void testMetadataRepeat(uint32_t period, uint8_t borrow)
 }
 #endif
 /*******************************************************************************
+ * testControlSampleTime
+ ******************************************************************************/
+static void testControlSampleTime(void)
+{
+    Fixture fixture = {};
+    KymoEndpointConfig config = baseConfig(&fixture);
+    KymoDataPoint point = {};
+    const uint32_t SAMPLE_TIME_MS = 123456u;
+    point.id = WATCH_CHANNEL;
+    point.value = 1.25f;
+    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
+    assert(kymoEndpointSample(&fixture.endpoint, KYMO_IDLE, &point, SAMPLE_TIME_MS) == KYMO_IDLE);
+    assert(fixture.endpoint.tx.length == 0u);
+    assert(kymoEndpointSample(&fixture.endpoint, KYMO_OK, &point, SAMPLE_TIME_MS) == KYMO_OK);
+#if KYMO_EFFECTIVE_TIMESTAMP
+    assert((fixture.storage[2] & KYMO_FLAG_TIMESTAMP) != 0u);
+    const size_t TIMESTAMP_OFFSET = 8u;
+    assert(emb_read_u32_le(fixture.storage + TIMESTAMP_OFFSET) == SAMPLE_TIME_MS);
+#else
+    assert((fixture.storage[2] & KYMO_FLAG_TIMESTAMP) == 0u);
+#endif
+    assert(point.flags == 0u); /* The caller's point remains unchanged. */
+}
+/*******************************************************************************
  * main
  ******************************************************************************/
 int main(void)
 {
+    testControlSampleTime();
     testSetupErrors();
 #if KYMO_EFFECTIVE_TRACE
     testMetadataRepeat(0u, 0u);

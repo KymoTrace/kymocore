@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.3.2 — 2026-11-11
+
+- Preserve device timestamps for Endpoint Param, Watch and Memory DATA output
+  when KYMO_ENABLE_TIMESTAMP is enabled. The timestamp is taken from the same
+  Endpoint cycle that acquired the value, not from a later physical write.
+- Cover timestamp-enabled and disabled output without mutating the acquired point.
+
 ## 7.3.1 — 2026-11-11
 
 - Add optional Endpoint Trace metadata/dictionary repetition for receivers that

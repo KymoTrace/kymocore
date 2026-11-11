@@ -51,9 +51,10 @@ size_t kymoEndpointCopy(void *user, const uint8_t *bytes, size_t length);
  * @param[in,out] endpoint Non-NULL base with free TX during a source turn.
  * @param[in] status Acquisition result; only OK triggers encoding.
  * @param[in] point Acquired point, required on OK.
+ * @param[in] now Endpoint cycle clock in milliseconds; included when timestamps are enabled.
  * @return Acquisition status, OK, BAD_SAMPLE or a terminal TX error.
  * @par Usage Shared private Param/Watch/Memory adapter. */
 KymoStatus kymoEndpointSample(KymoEndpoint *endpoint, KymoStatus status,
-    const KymoDataPoint *point);
+    const KymoDataPoint *point, uint32_t now);
 #endif
 #endif
