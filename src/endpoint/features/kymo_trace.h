@@ -25,6 +25,7 @@ typedef struct {
     size_t dictionary_length; /**< Dictionary bytes, excluding string terminator. */
     uint32_t generation; /**< Record generation; nonzero. */
     uint32_t health_period_ticks; /**< Optional health interval; zero disables it. */
+    uint32_t metadata_period_ticks; /**< Repeat metadata and dictionary after this many recorder ticks; zero sends only at startup. Interval starts after the previous pair completes. */
 } KymoEndpointTraceConfig;
 /** @brief Persistent Trace context; exposed solely for static allocation.
  * @details Internal fields are read-only; never move/reinitialize a bound feature.
@@ -36,6 +37,9 @@ typedef struct {
     KymoEndpointTraceConfig config; /**< Copied trace configuration. */
     uint8_t metadata_stage; /**< Internal metadata progress. */
     uint8_t end_queued; /**< Session end submitted exactly once. */
+    uint8_t metadata_ready; /**< Startup metadata completed; remains true during periodic refresh. */
+    uint8_t repeat_armed; /**< One normal trace turn must follow each metadata pair before repeating. */
+    uint64_t metadata_completed_ticks; /**< Recorder clock at completion of the last metadata pair. */
 } KymoEndpointTrace;
 /** @brief Initialize and register Trace completely, without physical I/O.
  * @details One instance per feature type per Endpoint. Failed setup latches a
@@ -60,7 +64,8 @@ KymoStatus KymoEndpointTrace_Init(KymoEndpoint *endpoint, KymoEndpointTrace *fea
 KymoTraceRecorder *KymoEndpointTrace_Recorder(KymoEndpointTrace *feature);
 /** @brief Check that session metadata and dictionary have been handed to TX.
  * @param[in] feature Trace context; NULL is allowed.
- * @return Nonzero when initialized, running and metadata is queued completely.
+ * @details Remains ready during periodic refresh; stop/fault clears readiness.
+ * @return Nonzero when running after the startup metadata pair was queued.
  * @par Usage Optional diagnostic; recording may begin before metadata completes. */
 uint8_t KymoEndpointTrace_IsReady(const KymoEndpointTrace *feature);
 #ifdef __cplusplus

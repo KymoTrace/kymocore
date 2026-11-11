@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.3.1 — 2026-11-11
+
+- Add optional Endpoint Trace metadata/dictionary repetition for receivers that
+  connect after startup. `metadata_period_ticks = 0` retains startup-only behavior.
+- Keep readiness stable during refresh, allow normal event servicing between
+  refreshes, and finish an active transfer on stop without starting another.
+- Test fragmented refresh with copying and borrowed transports, CRC integrity,
+  event progress, default behavior and finite shutdown.
+
 ## 7.3.0 - 2026-11-11
 
 - Modular integration: optional `KYMO_ENABLE_ENDPOINT=1` (requires TX) coordinates

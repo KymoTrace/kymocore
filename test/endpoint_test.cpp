@@ -571,12 +571,93 @@ static void testChannelCollision(uint8_t watchFirst)
 }
 #endif
 #endif
+#if KYMO_EFFECTIVE_TRACE
+/*******************************************************************************
+ * testMetadataRepeat
+ ******************************************************************************/
+static void testMetadataRepeat(uint32_t period, uint8_t borrow)
+{
+    Fixture fixture = {};
+    KymoEndpointConfig base = baseConfig(&fixture);
+    KymoEndpointTraceConfig config = {};
+    static const uint8_t largeRecord[500] = { '{', '}' };
+    fixture.borrow = borrow;
+    config.recorder.clock_ticks = clockTicks;
+    config.recorder.user = &fixture;
+    config.recorder.session_id = 1u;
+    config.metadata = largeRecord;
+    config.metadata_length = sizeof(largeRecord);
+    config.dictionary = largeRecord;
+    config.dictionary_length = sizeof(largeRecord);
+    config.generation = 1u;
+    config.metadata_period_ticks = period;
+    assert(KymoEndpoint_Init(&fixture.endpoint, &base) == KYMO_OK);
+    assert(KymoEndpointTrace_Init(&fixture.endpoint, &fixture.trace, &config) == KYMO_OK);
+    uint8_t wasReady = 0u;
+    uint32_t pairs = 0u;
+    uint8_t previousStage = 0u;
+    const uint32_t limit = borrow != 0u ? 6000u : 300u;
+    for (uint32_t cycle = 0u; cycle < limit; ++cycle) {
+        if ((cycle % 100u) == 0u) {
+            KYMO_ENDPOINT_TRACE_MARK(&fixture.trace, 1u, 1u, cycle);
+        }
+        (void)runCycle(&fixture);
+        releaseBorrow(&fixture);
+        uint8_t ready = KymoEndpointTrace_IsReady(&fixture.trace);
+        assert(wasReady == 0u || ready != 0u);
+        wasReady = ready;
+        if (fixture.trace.metadata_stage == 2u && previousStage != 2u) {
+            ++pairs;
+        }
+        previousStage = fixture.trace.metadata_stage;
+    }
+    assert(wasReady != 0u);
+    assert(period == 0u ? pairs == 1u : pairs >= 2u);
+    /* Stop during the next refresh: finite drain, no new repetition. */
+    if (period != 0u) {
+        uint32_t wait = 0u;
+        while ((fixture.trace.metadata_stage == 2u) && (wait < DRAIN_LIMIT)) {
+            (void)runCycle(&fixture);
+            releaseBorrow(&fixture);
+            ++wait;
+        }
+        assert(wait < DRAIN_LIMIT);
+    }
+    assert(KymoEndpoint_RequestStop(&fixture.endpoint) == KYMO_OK);
+    for (uint32_t cycle = 0u; cycle < DRAIN_LIMIT && fixture.endpoint.phase != KYMO_ENDPOINT_STOPPED; ++cycle) {
+        (void)runCycle(&fixture);
+        releaseBorrow(&fixture);
+    }
+    assert(fixture.endpoint.phase == KYMO_ENDPOINT_STOPPED);
+    assert(KymoEndpointTrace_IsReady(&fixture.trace) == 0u);
+    size_t offset = 0u;
+    size_t events = 0u;
+    uint8_t lastKind = 0u;
+    while (offset < fixture.wire_length) {
+        const uint8_t *frame = fixture.wire + offset;
+        assert(fixture.wire_length - offset >= KYMO_TRACE_ENVELOPE_SIZE);
+        size_t length = KYMO_TRACE_ENVELOPE_SIZE + (emb_read_u32_le(frame + 4u) & UINT32_C(0xffff));
+        assert(length <= fixture.wire_length - offset);
+        assert(KymoTrace_Crc16(frame + 2u, length - 4u) ==
+            (uint16_t)(frame[length - 2u] | ((uint16_t)frame[length - 1u] << 8u)));
+        lastKind = frame[3];
+        if (lastKind == KYMO_TRACE_PAYLOAD_BATCH) { ++events; }
+        offset += length;
+    }
+    assert(events > 0u && lastKind == KYMO_TRACE_PAYLOAD_SESSION_END);
+}
+#endif
 /*******************************************************************************
  * main
  ******************************************************************************/
 int main(void)
 {
     testSetupErrors();
+#if KYMO_EFFECTIVE_TRACE
+    testMetadataRepeat(0u, 0u);
+    testMetadataRepeat(20u, 0u);
+    testMetadataRepeat(1u, 1u);
+#endif
 #if KYMO_EFFECTIVE_RUNTIME
     testPlotConfigurationAndRecovery();
 #if KYMO_EFFECTIVE_WATCH

@@ -182,3 +182,16 @@ kann zusätzlich KymoStudio gegen die erzeugten Captures ausführen.
 Der Konfigurator-Build-Audit erkennt widersprüchliche Endpoint-Schalter.
 Konfigurator-UI und Generator erzeugen weiterhin die bisherige Low-Level-
 Integration; Endpoint-Code wird nach diesem Beispiel eingerichtet.
+
+### Optional Trace metadata repetition
+
+Set `KymoEndpointTraceConfig.metadata_period_ticks` to a recorder-clock interval
+(e.g. 5,000,000 ticks for five seconds with a 1 MHz clock). Zero, the default,
+sends session metadata and the dictionary only at startup. The interval starts
+when the previous pair has been handed to the shared transmitter. Data is sent
+in bounded fragments with backpressure; no periodic copies are accumulated.
+Readiness stays true after startup during later refreshes. Normal trace servicing
+gets a turn between refreshes. Stop finishes an active pair and drains events and
+session end, without scheduling another refresh. This can consume link bandwidth
+and delay events while metadata is transferred; size buffers/rates accordingly.
+A KymoStudio connection request is not part of this release.

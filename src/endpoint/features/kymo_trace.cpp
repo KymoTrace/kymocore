@@ -37,6 +37,12 @@ static KymoStatus produceMetadata(KymoEndpointTrace *feature, uint8_t draining)
             ++feature->metadata_stage;
             if ((feature->metadata_stage == METADATA_COMPLETE) && (draining == 0u)) {
                 feature->mux.config.health_period_ticks = feature->config.health_period_ticks;
+                feature->metadata_ready = 1u;
+                feature->repeat_armed = 0u;
+                if (feature->config.metadata_period_ticks != 0u) {
+                    feature->metadata_completed_ticks = feature->config.recorder.clock_ticks(
+                        feature->config.recorder.user);
+                }
             }
         }
     }
@@ -52,6 +58,15 @@ static KymoStatus produceTrace(void *user, uint8_t source, uint32_t now, uint8_t
     KymoStatus status = KYMO_OK;
     (void)source;
     (void)now;
+    if ((draining == 0u) && (feature->metadata_stage == METADATA_COMPLETE) &&
+        (feature->repeat_armed != 0u) && (feature->config.metadata_period_ticks != 0u) &&
+        (feature->mux.pending == 0u) && (feature->mux.admin_pending == 0u)) {
+        uint64_t ticks = feature->config.recorder.clock_ticks(feature->config.recorder.user);
+        if ((ticks - feature->metadata_completed_ticks) >= feature->config.metadata_period_ticks) {
+            feature->metadata_stage = SESSION_METADATA;
+            feature->mux.config.health_period_ticks = 0u;
+        }
+    }
     if (feature->metadata_stage != METADATA_COMPLETE) {
         status = produceMetadata(feature, draining);
     } else {
@@ -63,6 +78,7 @@ static KymoStatus produceTrace(void *user, uint8_t source, uint32_t now, uint8_t
         }
         if ((status == KYMO_OK) || (status == KYMO_BUSY)) {
             status = KymoMux_Service(&feature->mux);
+            feature->repeat_armed = 1u;
             if ((draining != 0u) && (feature->end_queued == 0u) && (status == KYMO_IDLE)) {
                 status = KYMO_BUSY;
             }
@@ -127,7 +143,7 @@ uint8_t KymoEndpointTrace_IsReady(const KymoEndpointTrace *feature)
 {
     uint8_t ready = 0u;
     if ((feature != nullptr) && (feature->binding.endpoint != nullptr)) {
-        ready = (uint8_t)((feature->metadata_stage == METADATA_COMPLETE) &&
+        ready = (uint8_t)((feature->metadata_ready != 0u) &&
             (feature->binding.endpoint->phase == KYMO_ENDPOINT_RUNNING));
     }
     return ready;
