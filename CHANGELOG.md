@@ -1,13 +1,27 @@
 # Changelog
 
-## Unreleased (7.3.0)
+## 7.3.0 - 2026-11-11
+
+- Modular integration: optional `KYMO_ENABLE_ENDPOINT=1` (requires TX) coordinates
+  bounded RX, fair source turns and the shared sender through Init/Main. Separate
+  `kymo_plot.h`, `kymo_param.h`, `kymo_watch.h`, `kymo_memory.h` and `kymo_trace.h`
+  provide feature-only configs and Init functions. Static caller-owned contexts,
+  channel collision checks, frozen setup, trace metadata ordering and finite stop
+  are included. Existing low-level APIs remain usable independently. The complete
+  integration example now separates common Init, individual features and native
+  simulation. See [the Endpoint guide](docs/ENDPOINT.md).
+- Watch adds an optional restricted channel interval; ordinary `KymoWatch_Init`
+  keeps the full interval. Its state adds two fields, using
+  existing alignment padding where available; rebuild all callers. Mux adds admin-only startup processing.
+- Configurator build audit detects inconsistent Endpoint switches. Generator/UI
+  Endpoint wiring is not part of this library change.
 
 - Shared transport: move the integration example's frame sender into the optional
   C-compatible `KymoTx` module (`KYMO_ENABLE_TX=1`, off by default). Caller-owned
   contexts and buffers support independent transports, partial writes, backpressure
   and borrowed-buffer completion without heap allocation. Init refuses to reset an
   existing sender; driver contract violations latch a fault. The example now uses
-  this library module; module scheduling remains in the application, without an Endpoint.
+  this library module; the optional Endpoint also builds on it.
 
 - Documentation: move protocol, contribution rules and publishing instructions into
   `docs/`; add a documentation index, remove the completed 7.0 structure review

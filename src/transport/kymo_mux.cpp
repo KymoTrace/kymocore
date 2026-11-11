@@ -444,6 +444,32 @@ KymoStatus KymoMux_Service(KymoMux *mux)
 }
 
 /*******************************************************************************
+ * KymoMux_ServiceAdmin
+ ******************************************************************************/
+KymoStatus KymoMux_ServiceAdmin(KymoMux *mux)
+{
+    KymoStatus result = KYMO_BAD_CONFIG;
+    if ((mux != NULL) && (mux->initialized != 0u)) {
+        if (mux->fault != 0u) {
+            result = KYMO_IO_ERROR;
+        } else if ((mux->pending != 0u) && (mux->pending_kind != LANE_ADMIN)) {
+            result = KYMO_REJECTED;
+        } else if (transportBusy(mux) != 0u) {
+            result = KYMO_BUSY;
+        } else if (mux->pending != 0u) {
+            result = writePending(mux);
+        } else if ((mux->admin_pending != 0u) && (prepareAdmin(mux) != 0u)) {
+            mux->pending = 1u;
+            mux->frame_offset = 0u;
+            result = writePending(mux);
+        } else {
+            result = KYMO_IDLE;
+        }
+    }
+    return result;
+}
+
+/*******************************************************************************
  * KymoMuxDataSlot_Init
  ******************************************************************************/
 KymoStatus KymoMuxDataSlot_Init(KymoMuxDataSlot *slot)

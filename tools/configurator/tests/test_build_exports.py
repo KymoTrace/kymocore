@@ -68,7 +68,7 @@ int main(void) {
                 objects = []
                 for source in [*sorted((CORE / 'src').rglob('*.cpp')),
                                snapshot / 'kymo_generated_config.cpp']:
-                    target = build / (source.stem + '.o')
+                    target = build / (str(len(objects)) + '-' + source.stem + '.o')
                     self.run_command(self.cxx, '-std=c++11', *selected, '-c', str(source), '-o', str(target))
                     objects.append(str(target))
                 client_obj = build / 'client.o'

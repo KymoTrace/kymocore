@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 7.2.1" src="https://img.shields.io/badge/version-7.2.1-7C5CFF">
+  <img alt="Version 7.3.0" src="https://img.shields.io/badge/version-7.3.0-7C5CFF">
   <img alt="Lizenz MIT" src="https://img.shields.io/badge/Lizenz-MIT-15123A">
   <img alt="C++11 mit C-API" src="https://img.shields.io/badge/C%2B%2B11-C--API-A78BFA">
   <img alt="Plattformen" src="https://img.shields.io/badge/Arduino%20%C2%B7%20ESP32%20%C2%B7%20STM32-PlatformIO-FDE047">
@@ -67,6 +67,11 @@ die Signale live als Kurve, als XY-Bahn oder in 3D.
 | **Nur was du brauchst** | X, Z, Zeitstempel, CRC, Decoder und C++-API lassen sich zur Compile-Zeit einzeln zuschalten. Standard ist minimal. |
 | **C und C++** | C++11-Kern mit C-kompatibler API, auch aus C99-Projekten nutzbar. |
 
+Der optionale [Endpoint](docs/ENDPOINT.md) verbindet getrennte Plot-, Parameter-,
+Watch-, Memory- und Trace-Module über einen zyklischen Main-Aufruf. Jedes Feature
+hat seine eigene Konfiguration und seinen eigenen Header. Siehe das
+[vollständige Integrationsbeispiel](examples/integration/README.md).
+
 ## Wofür man es einsetzt
 
 - **Regelungstechnik:** Soll-, Ist- und Stellgröße eines PID-Reglers live vergleichen und die Parameter einstellen.
@@ -94,7 +99,7 @@ In der `platformio.ini` deines Projekts eintragen:
 
 ```ini
 lib_deps =
-    codename666/KymoCore @ 7.2.1
+    codename666/KymoCore @ 7.3.0
 ```
 
 ### Vollständiges Beispiel für Arduino und ESP32

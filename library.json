@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
   "name": "KymoCore",
-  "version": "7.2.1",
-  "description": "Portable heap-free C++11 telemetry and opt-in execution tracing behind one header: XYZ/time samples, profiles, bounded recorder, transport mux, compile-out controls and a configurator. Hardware-neutral callbacks for Arduino, ESP32, STM32 and more.",
+  "version": "7.3.0",
+  "description": "Portable heap-free C++11 telemetry with a C API, optional modular Endpoint, shared transport, live variables, parameters, memory metrics and execution tracing. Hardware-neutral callbacks for Arduino, ESP32, STM32 and more.",
   "keywords": [
     "kymotrace",
     "telemetry",
@@ -63,6 +63,7 @@
       "examples",
       "docs/images",
       "docs/README.md",
+      "docs/ENDPOINT.md",
       "docs/GUIDE.md",
       "docs/GUIDE.de.md",
       "docs/TRACE_PROTOCOL.md",

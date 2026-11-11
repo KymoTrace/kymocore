@@ -3,6 +3,8 @@
  * @brief File startup, simulated runtime and bounded shutdown of the host demo.
  */
 #include "kymo_app.h"
+#include "kymo_init.h"
+#include "features/kymo_trace.h"
 #include "kymo_port.h"
 #include "kymo_port_native.h"
 
@@ -31,17 +33,19 @@ int main(int argc, char **argv)
         (exampleNativeOpen(argv[REQUEST_FILE_ARGUMENT], argv[CAPTURE_FILE_ARGUMENT]) != 0u)) {
         status = exampleAppInit();
         for (uint32_t cycle = 0u; (cycle < SIMULATION_CYCLES) &&
-             (status == KYMO_OK) && (examplePortHealthy() != 0u); ++cycle) {
-            examplePortService();
-            status = exampleAppCycle();
+             ((status == KYMO_OK) || (status == KYMO_BUSY) || (status == KYMO_IDLE)) &&
+             (examplePortHealthy() != 0u); ++cycle) {
+            exampleTraceCycle(cycle);
+            status = KymoApp_Main();
         }
-        if ((status == KYMO_OK) && (examplePortHealthy() != 0u)) {
-            status = KYMO_BUSY;
+        if (((status == KYMO_OK) || (status == KYMO_BUSY) || (status == KYMO_IDLE)) &&
+            (examplePortHealthy() != 0u)) {
+            status = KymoApp_RequestStop();
+            status = (status == KYMO_OK) ? KYMO_BUSY : status;
             /* A host-test deadline is never permission to reuse DMA storage. */
             for (uint32_t cycle = 0u; (cycle < DRAIN_DEADLINE_CYCLES) &&
                  (status == KYMO_BUSY) && (examplePortHealthy() != 0u); ++cycle) {
-                examplePortService();
-                status = exampleAppDrain();
+                status = KymoApp_Main();
             }
         }
         result = (status == KYMO_IO_ERROR) ? EXIT_TX_CONTRACT_FAILURE :

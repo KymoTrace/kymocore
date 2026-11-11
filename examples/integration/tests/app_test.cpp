@@ -3,6 +3,7 @@
  * @brief Run the application with a different port, without files/native startup.
  */
 #include "kymo_app.h"
+#include "kymo_init.h"
 #include "kymo_port.h"
 #include <assert.h>
 
@@ -59,29 +60,37 @@ uint64_t examplePortClockTicks(void *user)
 }
 
 /*******************************************************************************
+ * examplePortService
+ ******************************************************************************/
+void examplePortService(void)
+{
+    ++sTicks;
+}
+
+/*******************************************************************************
  * main
  ******************************************************************************/
 int main(void)
 {
     KymoStatus status = KYMO_BUSY;
     size_t writes = 0u;
-    assert(exampleAppCycle() == KYMO_BAD_CONFIG);
-    assert(exampleAppDrain() == KYMO_BAD_CONFIG);
+    assert(KymoApp_Main() == KYMO_BAD_CONFIG);
+    assert(KymoApp_RequestStop() == KYMO_BAD_CONFIG);
     assert(exampleAppInit() == KYMO_OK);
     for (uint32_t cycle = 0u; cycle < ACTIVE_TEST_CYCLES; ++cycle) {
-        ++sTicks;
-        assert(exampleAppCycle() == KYMO_OK);
+        status = KymoApp_Main();
+        assert(status == KYMO_OK || status == KYMO_BUSY || status == KYMO_IDLE);
     }
     assert(sWrites > 0u);
     assert(exampleAppInit() == KYMO_REJECTED);
+    assert(KymoApp_RequestStop() == KYMO_OK);
+    status = KYMO_BUSY;
     for (uint32_t cycle = 0u; (cycle < DRAIN_TEST_DEADLINE_CYCLES) && (status == KYMO_BUSY); ++cycle) {
-        ++sTicks;
-        status = exampleAppDrain();
-        assert(exampleAppCycle() == KYMO_REJECTED);
+        status = KymoApp_Main();
     }
     assert(status == KYMO_IDLE);
     writes = sWrites;
-    assert(exampleAppDrain() == KYMO_IDLE && sWrites == writes);
+    assert(KymoApp_Main() == KYMO_IDLE && sWrites == writes);
     assert(exampleAppInit() == KYMO_REJECTED);
     return 0;
 }

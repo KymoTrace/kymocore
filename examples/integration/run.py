@@ -210,10 +210,11 @@ def build(cxx: str, directory: Path, defines: dict[str, int], *, contract: str |
         sources = [EXAMPLE / "tests/tx_test.cpp", ROOT / "src/transport/kymo_tx.cpp"]
     elif contract == "app":
         sources = [EXAMPLE / name for name in
-                   ("tests/app_test.cpp", "kymo_app.cpp", "kymo_bindings.cpp")]
+                   ("tests/app_test.cpp", "kymo_app.cpp", "kymo_init.cpp", "demo_values.cpp")]
+        sources.extend(sorted((EXAMPLE / "features").glob("*.cpp")))
         sources.extend(sorted((ROOT / "src").rglob("*.cpp")))
     else:
-        sources = [*sorted(EXAMPLE.glob("*.cpp")), *sorted((ROOT / "src").rglob("*.cpp"))]
+        sources = [*sorted(EXAMPLE.glob("*.cpp")), *sorted((EXAMPLE / "features").glob("*.cpp")), *sorted((ROOT / "src").rglob("*.cpp"))]
     subprocess.run([
         cxx, "-std=c++11", "-Wall", "-Wextra", "-Werror", "-pedantic",
         "-fno-exceptions", "-fno-rtti", "-O1", "-I" + str(ROOT / "src"),

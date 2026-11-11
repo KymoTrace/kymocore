@@ -56,14 +56,14 @@ int main(void) {
              "-DKYMO_ENABLED=0", "-Isrc", str(cpp_off), "-o", str(temp / "off-cpp")])
         run([str(temp / "off-cpp")])
 
-        off_flags = ["-DKYMO_ENABLE_TX=1", "-DKYMO_ENABLED=0", "-DKYMO_ENABLE_RUNTIME=1", "-DKYMO_ENABLE_X=1",
+        off_flags = ["-DKYMO_ENABLE_ENDPOINT=1", "-DKYMO_ENABLE_TX=1", "-DKYMO_ENABLED=0", "-DKYMO_ENABLE_RUNTIME=1", "-DKYMO_ENABLE_X=1",
                      "-DKYMO_ENABLE_Z=1", "-DKYMO_ENABLE_TIMESTAMP=1", "-DKYMO_ENABLE_CRC=1",
                      "-DKYMO_ENABLE_DECODER=1", "-DKYMO_ENABLE_CPP=1", "-DKYMO_ENABLE_TRACE=1",
                      "-DKYMO_ENABLE_TRACE_ISR=1", "-DKYMO_ENABLE_TRACE_SCHEDULER=1",
                      "-DKYMO_ENABLE_TRACE_FLOW=1"]
         objects = []
         for source_path in sorted((ROOT / "src").rglob("*.cpp")):
-            obj = temp / (source_path.stem + ".o")
+            obj = temp / (str(len(objects)) + "-" + source_path.stem + ".o")
             run([args.cxx, "-std=c++11", "-O0", *off_flags, "-Isrc", "-c",
                  str(source_path), "-o", str(obj)])
             objects.append(obj)
@@ -184,7 +184,7 @@ int main() {
             if proc.returncode == 0:
                 raise AssertionError(f"invalid KYMO_ENABLED token accepted: {bad!r}")
 
-        boolean_flags = ("KYMO_ENABLE_TX", "KYMO_ENABLED", "KYMO_ENABLE_RUNTIME", "KYMO_ENABLE_X", "KYMO_ENABLE_Z",
+        boolean_flags = ("KYMO_ENABLE_ENDPOINT", "KYMO_ENABLE_TX", "KYMO_ENABLED", "KYMO_ENABLE_RUNTIME", "KYMO_ENABLE_X", "KYMO_ENABLE_Z",
                          "KYMO_ENABLE_TIMESTAMP", "KYMO_ENABLE_CRC", "KYMO_ENABLE_DECODER",
                          "KYMO_ENABLE_CPP", "KYMO_ENABLE_TRACE", "KYMO_ENABLE_TRACE_ISR",
                          "KYMO_ENABLE_TRACE_SCHEDULER", "KYMO_ENABLE_TRACE_FLOW")

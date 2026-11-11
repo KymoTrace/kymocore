@@ -28,6 +28,8 @@ def main():
         env = os.environ.copy()
         env["PATH"] = str(tool_bin) + os.pathsep + env.get("PATH", "")
         for test_name, source, flags, extra_sources in (
+            ("trace_admin_test", "test/trace_admin_test.cpp",
+             ["-DKYMO_ENABLE_TRACE=1"], TRACE_SOURCES + [MUX_SOURCE]),
             ("trace_core_test", "test/trace_core_test.cpp",
              TRACE_FLAGS + ["-DKYMO_TRACE_MAX_DEPTH=2"], TRACE_SOURCES),
             ("trace_mux_test", "test/trace_mux_test.cpp",

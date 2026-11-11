@@ -12,6 +12,10 @@
  */
 #define EXAMPLE_TX_CAPACITY 240u
 
+/** @brief Enable the shared feature coordinator. */
+#ifndef KYMO_ENABLE_ENDPOINT
+#define KYMO_ENABLE_ENDPOINT 1
+#endif
 /** @brief Enable KymoCore's shared frame sender. */
 #ifndef KYMO_ENABLE_TX
 #define KYMO_ENABLE_TX 1

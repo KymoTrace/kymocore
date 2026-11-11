@@ -11,10 +11,10 @@ then call `Kymo_Init` once and `Kymo_Main` cyclically.
 | [simple analog](arduino/simple_analog_example/README.md) | Two Arduino UART waveform channels | `pio run -d examples/arduino/simple_analog_example -e uno` |
 | [multi sensor](arduino/multi_sensor_example/README.md) | Independently scheduled Y/XY/XYZ channels | `pio run -d examples/arduino/multi_sensor_example -e uno` |
 | [ESP-IDF UART](esp_idf/uart_telemetry/README.md) | Native ESP-IDF UART without Arduino | See its README |
-| [Complete integration](integration/README.md) | Runtime, parameters, watch, memory and trace with separate port/bindings | `python examples/integration/run.py --check` |
+| [Complete integration](integration/README.md) | Separate feature modules and a shared Endpoint | `python examples/integration/run.py --check` |
 
-The integration reference shows explicit application wiring and tests it with a
-native simulated port. It adds no Endpoint API and requires no board or SDK.
+The integration reference uses separate feature modules and the optional Endpoint
+for shared RX/TX processing. Its native simulated port needs no board or SDK.
 
 Replace synthetic samples with sensor acquisition. UART uses 115200 baud/8N1;
 configure KymoStudio accordingly. PlatformIO uses the local repository library

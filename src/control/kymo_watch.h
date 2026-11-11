@@ -264,6 +264,10 @@ typedef struct {
     uint8_t info_due;
     /** @brief 1 after a successful KymoWatch_Init. */
     uint8_t ready;
+    /** @brief Inclusive allowed channel range; default Init permits all IDs. */
+    uint8_t first_channel;
+    /** @brief Last allowed channel; restricted Init reserves a project range. */
+    uint8_t last_channel;
     /** @brief Slot where the next acknowledgement search starts. */
     size_t ack_cursor;
     /** @brief Slot where the next sample search starts (round robin). */
@@ -292,6 +296,20 @@ typedef struct {
  * Call once during start-up, before the first KymoWatch_Feed.
  */
 KymoStatus KymoWatch_Init(KymoWatch *watch, const KymoWatchConfig *config);
+
+/** @brief Initialize Watch with an inclusive allowed DATA-channel range.
+ * @details Requests outside this range receive OUT_OF_RANGE before any slot is
+ * activated. Period-zero stop requests remain valid. Ordinary Init permits all
+ * channels; this entry point is useful when several features share a stream.
+ * @param[out] watch State to initialize; NULL is invalid.
+ * @param[in] config Normal Watch configuration.
+ * @param[in] first_channel First allowed channel.
+ * @param[in] last_channel Last allowed channel; must not precede first_channel.
+ * @return OK or BAD_CONFIG. Failure leaves a non-NULL watch uninitialized.
+ * @par Usage Reserve the same channel range in the coordinating application.
+ */
+KymoStatus KymoWatch_InitRestricted(KymoWatch *watch, const KymoWatchConfig *config,
+    uint8_t first_channel, uint8_t last_channel);
 
 /**
  * @brief Consume received bytes and handle every complete live-variable request.

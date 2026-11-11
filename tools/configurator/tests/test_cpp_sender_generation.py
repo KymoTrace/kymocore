@@ -84,7 +84,7 @@ int main() {
         ]
         objects = []
         for source_path in sorted((CORE / "src").rglob("*.cpp")) + [snapshot / "kymo_generated_config.cpp"]:
-            obj = root / (source_path.stem + ".o")
+            obj = root / (str(len(objects)) + "-" + source_path.stem + ".o")
             self.run_command(self.cxx, *flags, "-c", str(source_path), "-o", str(obj))
             objects.append(str(obj))
         client_obj = root / "main.o"
@@ -123,7 +123,7 @@ int main() {
                      "-I" + str(snapshot), '-DKYMO_USER_CONFIG_HEADER="kymo_user_config.h"']
             objects = []
             for source_path in sorted((CORE / "src").rglob("*.cpp")) + [snapshot / "kymo_generated_config.cpp"]:
-                obj = root / (source_path.stem + ".o")
+                obj = root / (str(len(objects)) + "-" + source_path.stem + ".o")
                 self.run_command(self.cxx, *flags, "-c", str(source_path), "-o", str(obj))
                 objects.append(str(obj))
             client_obj = root / "off.o"

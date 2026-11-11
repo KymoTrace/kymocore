@@ -106,7 +106,7 @@ def main():
                       TELEMETRY_SOURCES)
         run([sys.executable, "examples/integration/run.py", "--check",
              "--cxx", args.cxx, "--out", temp / "integration"])
-    for script in ("test/trace_core_test.py", "test/compile_out_test.py",
+    for script in ("test/endpoint_test.py", "test/trace_core_test.py", "test/compile_out_test.py",
                    "test/style_check.py"):
         run([sys.executable, script])
     print("KymoCore native suite: PASS")

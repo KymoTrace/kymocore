@@ -18,6 +18,7 @@ endif()
 
 add_library(kymo_core STATIC ${KYMO_CORE_SOURCES})
 target_link_libraries(kymo_core PUBLIC example_config)
-add_executable(kymo_integration main_native.cpp kymo_app.cpp
-    kymo_bindings.cpp kymo_port_native.cpp)
+file(GLOB EXAMPLE_FEATURES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/features/*.cpp")
+add_executable(kymo_integration main_native.cpp kymo_app.cpp kymo_init.cpp
+    demo_values.cpp kymo_port_native.cpp ${EXAMPLE_FEATURES})
 target_link_libraries(kymo_integration PRIVATE kymo_core)

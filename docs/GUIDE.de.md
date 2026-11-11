@@ -75,7 +75,7 @@ board = esp32dev
 framework = arduino
 monitor_speed = 115200
 lib_deps =
-    codename666/KymoCore @ 7.2.1
+    codename666/KymoCore @ 7.3.0
 ```
 
 Für Uno stattdessen `platform = atmelavr@5.3.0` und `board = uno` setzen.
@@ -85,20 +85,20 @@ Alternativ direkt von GitHub installieren. Der Tag legt die Version fest:
 
 ```ini
 lib_deps =
-    https://github.com/KymoTrace/kymocore.git#v7.2.1
+    https://github.com/KymoTrace/kymocore.git#v7.3.0
 ```
 
 Alternativ aus diesem Repository ein Paket bauen:
 
 ```sh
-pio pkg pack . -o KymoCore-7.2.1.tar.gz
+pio pkg pack . -o KymoCore-7.3.0.tar.gz
 ```
 
 Das Archiv in das eigene Projekt kopieren und dort eintragen:
 
 ```ini
 lib_deps =
-    file://KymoCore-7.2.1.tar.gz
+    file://KymoCore-7.3.0.tar.gz
 ```
 
 Alternativ den vollständigen Library-Ordner nach `lib/KymoCore` des eigenen
@@ -308,7 +308,7 @@ Teilframes dürfen andere Produzenten keine Bytes in denselben Stream mischen.
 
 ![Framefelder, Descriptorbits und konkrete Wire-Beispiele](images/protocol.png)
 
-Paketversion 7.2.1, Protokoll v6.2 und **Wire-Version 1** sind unterschiedliche
+Paketversion 7.3.0, Protokoll v6.2 und **Wire-Version 1** sind unterschiedliche
 Angaben. Der normative Vertrag steht in [PROTOCOL.md](PROTOCOL.md).
 
 | Offset | Größe | Inhalt |
@@ -848,5 +848,12 @@ Anwendung zuerst den Treiber stilllegen und sämtliche geliehenen Zeiger freigeb
 dann den Kontext nullinitialisieren. Aufrufe müssen serialisiert sein.
 
 Das [Integrationsbeispiel](../examples/integration/README.md) zeigt die vollständige
-Port-Anbindung. RX, Quellenreihenfolge und Modulinitialisierung bleiben dort in der
-Anwendung. Die Library gibt keine feste Puffergröße vor und implementiert keinen Endpoint.
+Port-Anbindung mit Endpoint. Bei alleiniger Verwendung von KymoTx bleiben RX,
+Quellenreihenfolge und Modulinitialisierung in der Anwendung. Die Library gibt keine feste Puffergröße vor. Der optionale [Endpoint](ENDPOINT.md)
+übernimmt auf Wunsch die gemeinsame Verarbeitung der Features.
+
+## Modulare Integration
+
+[Endpoint und getrennte Feature-Header](ENDPOINT.md) beschreiben den gemeinsamen
+Init/Main-Einstieg. Das [vollständige Beispiel](../examples/integration/README.md)
+zeigt die getrennten Projektdateien und den nativen Test-Port.

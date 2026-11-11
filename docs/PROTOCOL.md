@@ -315,7 +315,7 @@ All multi-byte fields are little-endian. Types: 1 u8, 2 i8, 3 u16, 4 i16,
 5 u32, 6 i32, 7 f32, 8 f64, 9 bool (one byte, nonzero = 1).
 
 ACK status: 0 accepted, 1 slot out of range, 2 not completely inside an allowed
-range, 3 address not aligned to the type size, 4 unknown type, 5 period below
+range (or channel outside an optionally restricted interval), 3 address not aligned to the type size, 4 unknown type, 5 period below
 `min_period_ms`. A rejected WATCH_SET leaves the slot stopped.
 
 Samples are ordinary DATA frames on the requested `channel`, with the device

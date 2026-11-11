@@ -5,6 +5,7 @@
 | Topic / Thema | Document / Dokument |
 |---|---|
 | Integration and API / Integration und API | [English](GUIDE.md) · [Deutsch](GUIDE.de.md) |
+| Modular Init/Main / Modulare Integration | [Endpoint and feature modules](ENDPOINT.md) |
 | DATA, parameters, live variables and memory / Daten und Rückkanal | [Protocol](PROTOCOL.md) |
 | Execution tracing / Ablaufverfolgung | [Trace protocol](TRACE_PROTOCOL.md) |
 | Build settings / Compile-out | [Configuration contract](COMPILE_OUT.md) |
@@ -18,11 +19,12 @@
 
 ## Documentation scope / Geltungsbereich
 
-The guides describe this checkout. Features assigned to **Unreleased (7.3.0)**
-in the changelog are development features, not part of the pinned 7.2.1 release.
-Use the documentation shipped with a release when integrating that version.
+The guides describe KymoCore **7.3.0**, including the optional Endpoint and
+separate feature modules. Use the documentation shipped with the version you
+integrate. A local version bump or package build does not publish that version;
+the release steps are documented in [PUBLISHING.md](PUBLISHING.md).
 
-Die Anleitungen beschreiben diesen Arbeitsstand. Im Changelog unter
-**Unreleased (7.3.0)** aufgeführte Features sind Entwicklungsstand und nicht
-Bestandteil des fest angegebenen Releases 7.2.1. Für eine veröffentlichte Version
-gilt die mitgelieferte Dokumentation.
+Die Anleitungen beschreiben KymoCore **7.3.0**, einschließlich Endpoint und
+getrennter Feature-Module. Für eine andere Version gilt deren mitgelieferte
+Dokumentation. Versionsanhebung und Paketbau veröffentlichen noch nichts;
+der Ablauf steht in [PUBLISHING.md](PUBLISHING.md).

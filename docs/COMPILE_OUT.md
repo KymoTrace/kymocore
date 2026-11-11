@@ -13,6 +13,17 @@ its implementation and callable declarations are absent. The global switch also
 overrides TX. The configurator build audit checks TX consistency across sources;
 the configurator UI does not yet generate shared-sender wiring.
 
+`KYMO_ENABLE_ENDPOINT` defaults to `0` and requires `KYMO_ENABLE_TX=1` when
+KymoCore is enabled. The base API is in `endpoint/kymo_endpoint.h`; feature APIs
+are in `endpoint/features/kymo_<feature>.h`. Each needs its original module flag
+as well. Plot uses RUNTIME; Param/Watch retain their DECODER dependency. There is
+no automatic feature enabling or aggregate feature configuration. All sources
+must use the same switches; the build audit checks Endpoint consistency too.
+The configurator UI/generator still generates the existing low-level integration;
+configure Endpoint integration manually using the [guide](ENDPOINT.md).
+`KYMO_ENABLED=0` removes Endpoint implementations and callable declarations.
+`KYMO_ENDPOINT_TRACE_*` macros discard all arguments when their feature is off.
+
 `KYMO_ENABLED` defaults to `1`. Set it to `0` to remove the library
 implementations and callable low-level API declarations during preprocessing.
 The setting does not remove application statements or objects that were written

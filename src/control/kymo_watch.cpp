@@ -45,11 +45,31 @@ KymoStatus KymoWatch_Init(KymoWatch *watch, const KymoWatchConfig *config)
         *watch = KymoWatch();
         if ((config != nullptr) && config_valid(config)) {
             watch->config = *config;
+            watch->last_channel = UINT8_MAX;
             watch->ready = 1u;
             result = KYMO_OK;
         }
     }
     return result;
+}
+
+/*******************************************************************************
+ * KymoWatch_InitRestricted
+ ******************************************************************************/
+KymoStatus KymoWatch_InitRestricted(KymoWatch *watch, const KymoWatchConfig *config,
+    uint8_t first_channel, uint8_t last_channel)
+{
+    KymoStatus status = KymoWatch_Init(watch, config);
+    if (status == KYMO_OK) {
+        if (first_channel > last_channel) {
+            watch->ready = 0u;
+            status = KYMO_BAD_CONFIG;
+        } else {
+            watch->first_channel = first_channel;
+            watch->last_channel = last_channel;
+        }
+    }
+    return status;
 }
 
 /*******************************************************************************
@@ -148,8 +168,9 @@ static void apply_set(KymoWatch *watch, const uint8_t *payload)
         watch->bad_slot_pending = 1u;
         ++watch->rejected;
     } else {
-        const uint8_t status = (period_ms == 0u) ? KYMO_WATCH_STATUS_ACCEPTED
-                                                 : check_request(watch, address, type, period_ms);
+        const uint8_t status = (period_ms == 0u) ? KYMO_WATCH_STATUS_ACCEPTED :
+            ((payload[2] < watch->first_channel) || (payload[2] > watch->last_channel)) ?
+                KYMO_WATCH_STATUS_OUT_OF_RANGE : check_request(watch, address, type, period_ms);
         KymoWatchSlot *target = &watch->slots[slot];
         *target = KymoWatchSlot();
         if ((status == KYMO_WATCH_STATUS_ACCEPTED) && (period_ms != 0u)) {

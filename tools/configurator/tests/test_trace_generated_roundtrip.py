@@ -138,7 +138,7 @@ int main()
                 snapshot / "kymo_generated_config.cpp"
             ]
             for source_path in sources:
-                object_path = root / (source_path.stem + ".o")
+                object_path = root / (str(len(objects)) + "-" + source_path.stem + ".o")
                 self.run_command(self.cxx, *flags, "-c", str(source_path),
                                  "-o", str(object_path))
                 objects.append(str(object_path))

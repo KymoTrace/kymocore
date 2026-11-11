@@ -1,50 +1,39 @@
-# Vollständiges Integrationsbeispiel / Complete integration example
+# Modulare Integration mit Endpoint
 
-Dieses Beispiel verbindet **Runtime, Parameter, Watch, Memory und Trace** über
-die vorhandenen C-kompatiblen KymoCore-Schnittstellen. Die Modulverknüpfung nutzt
-C++11 und statischen Speicher, ohne Exceptions oder RTTI. Die gemeinsame Sendelogik kommt aus dem optionalen Library-Modul `KymoTx`.
-Es gibt keine Endpoint-Schnittstelle.
+Dieses Beispiel verbindet **Plot, Parameter, Watch, Memory und Trace** mit dem
+optionalen KymoCore-Endpoint. Jedes Feature hat eine eigene Datei mit seinem
+Namen und enthält nur seine Konfiguration, Bindings und Initialisierung.
+Die gemeinsame Basis stellt Port, Puffer und Endpoint bereit. Danach genügt
+`KymoApp_Main()` für Empfang, Verarbeitung und Versand.
 
-Der mitgelieferte **native Port ist eine Simulation auf dem Rechner**: Er liest
-Anfragen aus einer Datei, schreibt den binären Datenstrom in eine zweite Datei
-und simuliert Uhr, Rückstau, Teilübertragungen und verzögerte Pufferfreigabe.
-Damit lässt sich die Zusammenschaltung ohne Board prüfen. Datei-I/O selbst ist
-kein Echtzeit-Treiber. Messwerte und Speichertelemetrie sind synthetisch.
+## Einstieg und Dateien
 
-## Dateien und Zuständigkeiten
+Beginne mit [kymo_app.cpp](kymo_app.cpp): Dort stehen ausschließlich die
+Initialisierung der Basis und die ausgewählten Feature-Initialisierungen.
+Alle Rückgabewerte werden geprüft. Die Configs werden nach Namen befüllt;
+referenzierte Tabellen, Puffer und Callback-Kontexte bleiben dauerhaft gültig.
 
-| Datei | Hier wird angepasst |
+| Datei | Zuständigkeit |
 |---|---|
-| [main_native.cpp](main_native.cpp) | Dateipfade, 5000 Simulationszyklen und Abschlussfrist auf dem Rechner |
-| [kymo_app.cpp](kymo_app.cpp) / [Header](kymo_app.h) | Explizite Modulinitialisierung, Empfang, Quellenreihenfolge und Trace-Abschluss |
-| [KymoTx](../../src/transport/kymo_tx.h) (Library) | Ein Sendepuffer, Teilübertragungen, Rückstau und DMA-Pufferfreigabe |
-| [kymo_bindings.cpp](kymo_bindings.cpp) / [Header](kymo_bindings.h) | Kanäle, Parameter, Messfunktionen, Watch-Bereiche, Memory- und Trace-Bindings |
-| [kymo_port_native.cpp](kymo_port_native.cpp) / [Port-Vertrag](kymo_port.h) | Uhr, Lesen, Schreiben, Pufferfreigabe und Plattformstart |
-| [kymo_port_native.h](kymo_port_native.h) | Dateistart/-ende ausschließlich für das native Startprogramm |
-| [kymo_user_config.h](kymo_user_config.h) | Projektweite Feature-Schalter und Speichergrenzen |
-| [kymo_trace_records.h](kymo_trace_records.h) | Trace-Metadaten und Symbolnamen für dieses feste Beispiel |
-| [run.py](run.py) | Bauen, Host-Anfragen erzeugen und tatsächlichen Datenstrom prüfen |
-| [CMakeLists.txt](CMakeLists.txt) | Alternativer Build ohne Python im Buildprozess |
+| [kymo_init.h](kymo_init.h) / [CPP](kymo_init.cpp) | Gemeinsames Init, Main und optionaler Stop; statischer Endpoint und Puffer |
+| [features/kymo_plot.h](features/kymo_plot.h) / [CPP](features/kymo_plot.cpp) | Messkanäle, Perioden und Sample-Callback |
+| [features/kymo_param.h](features/kymo_param.h) / [CPP](features/kymo_param.cpp) | Parameter, Grenzen und Zielvariablen |
+| [features/kymo_watch.h](features/kymo_watch.h) / [CPP](features/kymo_watch.cpp) | Lesbare Adressen, Reader und reservierte Watch-Kanäle |
+| [features/kymo_memory.h](features/kymo_memory.h) / [CPP](features/kymo_memory.cpp) | Speicherwerte, Namen und Abtastraten |
+| [features/kymo_trace.h](features/kymo_trace.h) / [CPP](features/kymo_trace.cpp) | Recorder, Metadaten, Dictionary und Instrumentierung |
+| [demo_values.h](demo_values.h) / [CPP](demo_values.cpp) | Gemeinsam verwendete Anwendungsvariable `exampleGain` |
+| [kymo_port.h](kymo_port.h) | Plattformunabhängiger Port-Vertrag |
+| [kymo_port_native.cpp](kymo_port_native.cpp) | Simulierte Uhr, RX/TX, Teilübertragungen und Pufferfreigabe |
+| [main_native.cpp](main_native.cpp) | Dateien öffnen, Simulationsdauer und Abschlussfrist |
+| [kymo_user_config.h](kymo_user_config.h) | Einheitliche Build-Schalter und Speichergrenzen |
+| [kymo_trace_records.h](kymo_trace_records.h) | Statische Trace-Metadaten und Symbolnamen |
+| [run.py](run.py) / [CMakeLists.txt](CMakeLists.txt) | Native Buildwege und Prüfungen |
 
-Die Bindings besitzen langlebige Tabellen. `kymo_app.cpp` kopiert deren
-Konfigurationen und ergänzt die Transportverbindung. Keine Bindings-Datei
-enthält UART-, Arduino- oder RTOS-Aufrufe.
-
-Fachwerte stehen als benannte Konstanten bei ihrer Zuständigkeit: Kanäle,
-Grenzen und Messperioden in den Bindings, Empfangsbudget und Quellenzustände
-in der Anwendung, Simulationsfristen im nativen Einstieg. Größen werden aus
-Tabellen oder vorhandenen Kapazitätskonstanten abgeleitet. `run.py` verwendet
-unabhängige benannte Protokollwerte und Wire-Strukturen statt fester Byte-Offsets.
-Trace-IDs müssen weiterhin zum kanonischen JSON-Dictionary passen; die Tests
-prüfen diesen Zusammenhang. Die Zahlen in diesen JSON-Daten sind Protokolldaten.
-
-`kymo_app` ist die feste Anwendung dieses Beispiels, keine neue konfigurierbare
-Library-Fassade. Sie kennt weder Dateien noch Simulationsfristen. `KymoTx`
-kennt keine Parameter, Watch-Slots oder Trace-Scheduler, sondern nur Bytes und
-Transport-Callbacks. Die Anwendung stellt Kontext, Puffer und Port-Anbindung bereit.
-Der Sender ist mit `KYMO_ENABLE_TX=1` projektweit aktiviert und funktioniert auch
-ohne Runtime oder Trace. Im Beispiel ist der Puffer über `EXAMPLE_TX_CAPACITY`
-auf 240 Byte festgelegt; die Library nimmt seine Größe aus `KymoTxConfig.capacity`.
+Die Projektdateien kapseln statische Instanzen und Anwendungswerte. Die eigentliche
+Koordination liegt in [der Library](../../src/endpoint/kymo_endpoint.h), die
+Feature-Adapter in `src/endpoint/features/`. Keiner der Feature-Header bindet
+die anderen Feature-Fassaden ein. Es gibt keine Dateien mit `_setup` im Namen.
+Details zur Library-Schnittstelle stehen im [Endpoint-Leitfaden](../../docs/ENDPOINT.md).
 
 ## Starten
 
@@ -97,124 +86,95 @@ auch für die Library. Ein `#define` nur in einer Anwendungsdatei wäre dafür u
 Das Beispiel benötigt alle fünf aktivierten Module; es ist kein Test aller
 beliebigen Feature-Kombinationen.
 
-## Was das Beispiel zeigt
+## Beispieldaten
 
-| Funktion | Bindung / beobachtbares Ergebnis |
+| Feature | Konfiguration |
 |---|---|
-| Runtime | Kanal **0**, Sägezahn alle 50 ms, skaliert mit `gain` |
-| Parameter | ID **100**, `gain` im Bereich 0..10, Beschreibung und Rücklesewert |
-| Watch | Slot 0, Kanal **150**, virtuelle Adresse `0x20000000`, Float32 |
-| Memory | Kanal **220**, 2048 freie Bytes als ausdrücklich synthetischer Wert |
-| Trace | Kontext 1, Marker 1 (`main cycle`), Uhr mit 1000 Hz |
+| Plot | Kanal 0, Sägezahn alle 50 ms, skaliert mit `exampleGain` |
+| Parameter | ID 100, Gain im Bereich 0..10 |
+| Watch | Slot 0, Kanal 150, virtuelle Adresse `0x20000000`, Float32 |
+| Memory | Kanal 220, synthetisch 2048 freie von 4096 Bytes |
+| Trace | Session 1, Kontext 1, Marker 1, Uhr mit 1000 Hz |
 
-IDs sind bewusst getrennt. Ein reales Projekt muss auch die vom Host wählbaren
-Watch-Kanäle gegen seine eigene Kanalbelegung abstimmen. Die Watch-Adresse ist
-eine feste Abbildung im Reader und **kein gekürzter 64-Bit-Hostzeiger**.
-Der Watch-Build-ID ist unbekannt; für echte ELF-basierte Variablenwahl muss der
-Port die passenden Adressen, zulässigen Bereiche und den echten Build-ID liefern.
+Kanäle, Raten und Grenzen stehen als benannte Konstanten beim jeweiligen Feature.
+Der Endpoint prüft Überschneidungen. Watch reserviert hier ausschließlich Kanal
+150 und lehnt andere Kanäle mit `OUT_OF_RANGE` ab. Die Adresse ist eine feste
+Abbildung im Reader, kein gekürzter Hostzeiger. Ein Board-Port benötigt seine
+wirklichen Speicherbereiche und einen passenden Build-ID.
 
-Der Runner schreibt `gain=2.5`, fordert die Parameterbeschreibung und
-Watch-Informationen an und startet die Live-Variable. Zusätzlich sendet er
-einen beschädigten CRC-Frame sowie einen Parameterwert außerhalb des Bereichs.
-Beide dürfen den gültigen Wert nicht überschreiben. Der Port liefert die
-Anfragen in Fragmenten von höchstens drei Bytes an beide vorhandenen Feed-APIs.
+## Ablauf
 
-## Ablauf und gemeinsamer Versand
+1. Der native Einstieg öffnet die Dateien und ruft `exampleAppInit()` auf.
+2. Die Anwendung initialisiert Basis und ausgewählte Features jeweils einmal.
+3. Der Einstieg ruft zyklisch `KymoApp_Main()` auf. Der Endpoint bedient dabei
+   selbst den Port-Service, liest höchstens das RX-Budget und bearbeitet TX.
+4. Bei freiem Sender erhält eine Quelle ihren Turn. Trace-Metadaten und
+   Dictionary werden vor den Trace-Ereignissen übertragen.
+5. Zum Abschluss wird `KymoApp_RequestStop()` aufgerufen; danach läuft derselbe
+   Main-Aufruf bis `KYMO_IDLE`. Neue RX-Anfragen und Messungen werden gestoppt;
+   gepufferte Daten und Trace einschließlich Session-End werden ausgeleitet.
 
-1. `main_native.cpp` öffnet Dateien und ruft einmal `exampleAppInit()` auf.
-2. Pro Zyklus führt der Host `examplePortService()` und `exampleAppCycle()` aus.
-3. Der Anwendungszyklus gibt höchstens 16 Empfangsbytes an Parameter und Watch
-   und lässt `KymoTx_Service(&sTx)` höchstens einen Schreibversuch ausführen.
-4. Nur bei `KYMO_IDLE` bekommt eine Quelle ihren nächsten Turn. Ein vollständiger
-   Frame wird mit `KymoTx_Submit(&sTx, bytes, length)` übergeben und vor Rückkehr kopiert.
+`KYMO_BUSY` ist normaler Rückstau; `KYMO_OK` bedeutet Arbeit und `KYMO_IDLE`
+aktuell keine Arbeit beziehungsweise abgeschlossenen Stop. Ein ungültiger
+Messwert kann `KYMO_BAD_SAMPLE` liefern, ohne andere Features zu stoppen.
+Initialisierungs- und Transportfehler müssen behandelt werden.
 
-Der Sender meldet `KYMO_BUSY`, solange ein Frame wartet oder der Port seinen
-Puffer noch besitzt. `exampleAppCycle()` behandelt diesen Rückstau als normalen
-Zyklus und liefert `KYMO_OK`; echte Fehler werden gespeichert und zurückgegeben.
-`exampleAppDrain()` beendet die Produktion und liefert bis zum vollständigen
-Abschluss `KYMO_BUSY`, danach `KYMO_IDLE`. Ein erneutes Init oder ein Cycle nach
-Beginn des Abschlusses wird abgelehnt und setzt keine Puffer zurück.
+Der Endpoint verwendet den vorhandenen `KymoTx`: Ein zusätzlicher, statischer
+240-Byte-Puffer enthält jeweils eine vollständige Frame-Kopie. Pro Main gibt es
+höchstens einen physischen Schreibversuch. `busy` schützt ausgeliehene Bytes auch
+nach Annahme des letzten Bytes; fremde Quellen können keine Bytes dazwischen
+senden. `write` darf Teilmengen oder null annehmen, aber niemals mehr als angeboten.
+Unter Rückstau entstehen spätere Messungen und gegebenenfalls Trace-Verluste;
+es gibt keine Zusage verlustfreier Aufzeichnung.
 
-Die acht Quellen rotieren: Runtime, Parameterrücklesewert, Parameterbeschreibung,
-Watch-Antwort, Watch-Messwert, Memory-Beschreibung, Memory-Messwert und Trace-Mux.
-Eine leere Quelle kostet nur einen Turn. Der Mux verwaltet seine Trace- und
-Admin-Frames weiterhin selbst. DATA und Control werden daneben als ihre
-üblichen Frames gesendet; es ist ein gemischter Datenstrom, keine neue Verpackung.
+Der native Port simuliert einen Treiber auf dem Rechner. Datei-I/O ist kein
+Echtzeit-Treiber. Die Abschlussfrist im Test gibt einen DMA-Puffer nicht frei.
+Es gibt keinen automatischen Neustart oder Reconnect. Trace-Session, Metadaten
+und Dictionary sind feste Demo-Werte. Änderungen an Symbolen erfordern einen
+angepassten Dictionary-Hash; Hardware benötigt passende Session- und Taktangaben.
 
-**Bewusster Einfachheitskompromiss:** Die Anwendung hat einen zusätzlichen
-**240-Byte-Sendepuffer**. Runtime und Mux kopieren jeweils einen vollständigen
-Frame hinein und dürfen ihren eigenen Speicher danach sofort wiederverwenden.
-Control-Antworten und einzelne Messpunkte werden zuerst in kleinen temporären
-Stack-Puffern kodiert und anschließend ebenfalls hineinkopiert. Gegenüber der
-zusammenhängenden Variante kostet die gekapselte Submit-Schnittstelle für diese
-Quellen eine zusätzliche Kopie und temporären Stack-Speicher; der permanente
-Sendepuffer bleibt bei 240 Bytes.
-Die Port-Prüfung benötigt auf dem Host weitere 240 Bytes zum Erkennen vorzeitiger
-Pufferänderungen; dieser Prüf-Speicher ist für einen echten Treiber nicht nötig.
+## Auf das eigene Projekt übertragen
 
-Nur der Port darf den Anwendungspuffer ausleihen. `busy` schützt den Puffer auch
-dann noch, wenn das letzte Byte bereits angenommen wurde. Bei Teilübertragungen
-bleibt die Quelle bis zum vollständigen Frame exklusiv. Ein akzeptierter Wert
-größer als die angebotene Länge stoppt den Versand dauerhaft. Eine neue Quelle
-kann deshalb weder einen Frame überschreiben noch ihre Bytes dazwischen senden.
-Unter Rückstau werden fällige Messungen später erfasst; es gibt kein Nachholen
-aller verpassten Samples und keine Zusage verlustfreier Trace-Aufzeichnung.
+1. `kymo_init`, den Port-Vertrag und die benötigten Feature-Dateien übernehmen.
+2. Die jeweilige Feature-Config und ihre Reader an die eigenen Werte anpassen.
+3. Nicht benötigte Feature-Init-Aufrufe und Dateien entfernen und die passenden
+   Build-Schalter deaktivieren. Den gemeinsamen TX-Puffer für die größte
+   verbleibende Frame-Art dimensionieren.
+4. Einen nichtblockierenden UART-/USB-Port implementieren; `busy` muss bei DMA
+   bis zur tatsächlichen Freigabe gesetzt bleiben.
+5. Einmal initialisieren, anschließend `KymoApp_Main()` aus einer Superloop oder
+   Task aufrufen. Port-Service nicht zusätzlich aufrufen.
+6. Benötigte Trace-Makros aus dem Trace-Header in die Anwendung einbetten.
+   Parallele Hooks erfordern externe Synchronisierung mit dem Endpoint sowie
+   geeignete Recorder-Locks; vor Stop müssen alle Produzenten ruhen.
 
-Das native Startprogramm beendet nach 5000 simulierten Zyklen die Produktion.
-Mit wiederholtem Port-Service und `exampleAppDrain()` werden bereits gepufferte Daten und
-Trace ausgeleitet, dann `KymoMux_QueueSessionEnd` gesendet. Die zusätzliche
-Abschlussfrist ist eine Host-Testgrenze, keine Freigabe für einen noch von DMA
-verwendeten Puffer. Unbegrenzte Live-Verbindungen und Wiederverbindung sind
-nicht Teil dieses endlichen Replay-Beispiels.
-
-Trace-Session 1 und der beschreibende Build-ID sind feste Demo-Werte. Metadaten
-und Dictionary werden einmal übertragen und zusammen geprüft. Bei Änderungen
-an Namen/IDs muss der SHA-256 in den Metadaten mitgeändert werden. Auf Hardware
-sind außerdem Session-ID und Taktangaben an die tatsächliche Laufzeit anzupassen.
-
-## Auf ein Board übertragen
-
-1. `kymo_user_config.h` projektweit für Anwendung und Library einbinden.
-2. In `kymo_bindings.cpp` die synthetischen Reader durch Anwendungswerte ersetzen.
-3. Den nativen Port durch UART/USB ersetzen: nichtblockierendes Lesen/Schreiben,
-   echte Uhr und korrekte `busy`-Meldung bei DMA. Dateistart/-ende durch
-   plattformspezifische Initialisierung und geordneten Verbindungsabbau ersetzen.
-4. `main_native.cpp` durch den Board-Einstieg ersetzen: `exampleAppInit()` einmal,
-   danach `examplePortService()` und `exampleAppCycle()` aus genau einer
-   Superloop oder Task aufrufen und Statuswerte behandeln. Zum geordneten Ende
-   nur noch Port-Service und `exampleAppDrain()` ausführen, bis `KYMO_IDLE`
-   erreicht ist. `kymo_app.cpp` und die Bindings bleiben unabhängig
-   vom nativen Startprogramm. RTOS-/ISR-Aufrufe brauchen zusätzliche geprüfte
-   Synchronisierung; dieses Beispiel verwendet keine parallelen Hooks.
-
-Portierungen werden separat auf dem Zielboard geprüft. Das native Beispiel
-bestätigt keine reale UART-, USB-, DMA- oder RTOS-Implementierung.
+Kein Feature verlangt Arduino-, UART- oder RTOS-Aufrufe in seinen Bindings.
+Die native Simulation bleibt vom Anwendungsablauf getrennt. Reale Treiber und
+RTOS-/ISR-Anbindung müssen auf dem Zielsystem geprüft werden.
 
 ## Automatische Prüfung
 
 `--check` prüft kopierendes Senden, verzögerte Freigabe, Ein-Byte-Teilübertragungen,
-anfänglichen Rückstau, Null-Annahmen, Betrieb ohne Anfragen und einen fehlerhaften
-Treiber. Der Decoder akzeptiert weder übersprungene Bytes noch unvollständige
-Frames. Geprüft werden CRC8/CRC16/CRC32, Trace-Reihenfolge, Dictionary-Hash,
-Session-Abschluss und Fortschritt aller aktiv angefragten Quellen.
-Ein zusätzlicher [Sendertest](tests/tx_test.cpp) kontrolliert die Submit-Grenzen,
-Kopiersemantik, Null-Annahmen, verzögerte Freigabe des letzten Bytes und den
-dauerhaften Stopp nach einem Treiberfehler direkt mit einem kontrollierten Port.
-Er prüft auch ungültige Initialisierung, abgelehnte Neuinitialisierung, unabhängige
-Sender, kopierende Treiber ohne Busy-Callback und Puffer größer als 255 Byte.
-Die native Gesamtsuite baut diesen Test zusätzlich nur mit TX ohne Runtime/Trace
-und prüft einen C99-Aufrufer gegen die C++11-Library.
-Der [Anwendungstest](tests/app_test.cpp) baut den Anwendungsablauf mit einem
-zweiten Port ohne Dateifunktionen und ohne nativen Programmeinstieg. Er prüft
-auch Initialisierung, Abschluss und die Ablehnung eines erneuten Starts.
+Rückstau, Null-Annahmen, Betrieb ohne Anfragen und einen fehlerhaften Treiber.
+Geprüft werden vollständige Frames, CRC8/CRC16/CRC32, Fortschritt der Quellen,
+Trace-Reihenfolge, Dictionary-Hash und Session-Abschluss. Mit `--app` werden die
+Captures zusätzlich vom echten KymoStudio-Decoder verarbeitet.
 
-Die vollständige Prüfung läuft auch über `python test/native_test.py`.
-Der Pakettest baut und startet das Beispiel ausschließlich aus dem exportierten
-Archiv. Kleine Einzelmodul-Beispiele bleiben unter [examples](../README.md).
+Vergleich mit dem bisherigen Beispiel (`968920e`): Frame- und Ereigniszahlen
+bleiben in allen vier gültigen Captures gleich. Die Captures sind nicht bytegleich:
+Die jetzt im Anwendungsablauf vor Main gesetzten Trace-Marker liegen vor dem
+Port-Service und damit einen simulierten Tick früher. Session-End entsteht beim
+Trace-Turn der gemeinsamen Abschlussrotation statt in einer eigenen Drain-
+Schleife. Nur diese Trace-Zeitwerte und die zugehörigen Prüfsummen ändern sich;
+DATA, Control, Metadaten, Dictionary und Ereignisinhalte bleiben gleich.
 
-English: this is a complete, portable composition of the existing Runtime,
-Parameter, Watch, Memory and Trace APIs. Port, bindings and application loop are
-separate. Run `python examples/integration/run.py --check` from the library root.
-The supplied port simulates file-backed RX/TX, short writes and delayed DMA
-ownership; it is not a hardware driver. The application deliberately uses one
-extra 240-byte frame copy and does not introduce an Endpoint implementation.
+Der [Sendertest](tests/tx_test.cpp) prüft den KymoTx-Vertrag separat.
+Der [Anwendungstest](tests/app_test.cpp) verwendet einen zweiten Port ohne
+Dateifunktionen und ohne nativen Programmeinstieg. Die native Library-Suite
+prüft zusätzlich Feature-Kombinationen, C99-Aufrufer, Header-Isolation,
+Compile-out, Kanalüberschneidungen und Fehlerbehandlung.
+
+English: selected feature modules initialize independently; the shared Endpoint
+coordinates RX and TX through one Main call. The supplied file port simulates
+partial writes and delayed DMA ownership. Run `python examples/integration/run.py
+--check` from the library root. See the [library API guide](../../docs/ENDPOINT.md).

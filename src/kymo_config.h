@@ -18,6 +18,7 @@
  * | Profile               | KYMO_PROFILE                | MINIMAL | Preset defaults for the switches below  |
  * | 1. Telemetry API      | KYMO_ENABLE_RUNTIME         | 1       | Cyclic Kymo_Init/Kymo_Main (recommended)|
  * |                       | KYMO_ENABLE_CPP             | 0       | Optional C++ push sender (KymoSender)   |
+ * | Modular integration   | KYMO_ENABLE_ENDPOINT        | 0       | Optional feature coordination (TX)    |
  * | Shared transport      | KYMO_ENABLE_TX              | 0       | Single-frame copy and partial writes   |
  * | 2. Telemetry payload  | KYMO_ENABLE_X               | 0       | X coordinate per sample                 |
  * |                       | KYMO_ENABLE_Z               | 0       | Z coordinate per sample                 |
@@ -65,11 +66,11 @@
 /** @brief Library major version; incremented for incompatible API changes. */
 #define KYMO_VERSION_MAJOR 7
 /** @brief Library minor version; incremented for compatible additions. */
-#define KYMO_VERSION_MINOR 2
+#define KYMO_VERSION_MINOR 3
 /** @brief Library patch version; incremented for compatible fixes. */
-#define KYMO_VERSION_PATCH 1
+#define KYMO_VERSION_PATCH 0
 /** @brief Library version as a string literal. */
-#define KYMO_VERSION_STRING "7.2.1"
+#define KYMO_VERSION_STRING "7.3.0"
 
 /** @brief Version of the compile-time configuration contract consumed by tools. */
 #define KYMO_CONFIG_API_VERSION 2
@@ -131,6 +132,14 @@
  */
 #ifndef KYMO_ENABLE_TX
 #define KYMO_ENABLE_TX 0
+#endif
+
+/** @brief Enable modular Endpoint Init/Main; disabled by default.
+ * @details Requires TX; each feature is still selected by its own build switch.
+ * @par Usage Define KYMO_ENABLE_ENDPOINT=1 and KYMO_ENABLE_TX=1 project-wide.
+ */
+#ifndef KYMO_ENABLE_ENDPOINT
+#define KYMO_ENABLE_ENDPOINT 0
 #endif
 
 /* ---- 2. Telemetry payload ----------------------------------------------- */
@@ -329,6 +338,7 @@
 
 #if !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLED) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_RUNTIME) || \
+    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_ENDPOINT) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TX) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CPP) || \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_X) || \
@@ -350,6 +360,10 @@
 #undef KYMO_DETAIL_VALID_0
 #undef KYMO_DETAIL_VALID_1
 #undef KYMO_DETAIL_PROFILE_2
+
+#if KYMO_ENABLED && KYMO_ENABLE_ENDPOINT && !KYMO_ENABLE_TX
+#error "KYMO_ENABLE_ENDPOINT requires KYMO_ENABLE_TX=1"
+#endif
 
 #if KYMO_ENABLED && KYMO_ENABLE_TRACE_SCHEDULER && !KYMO_ENABLE_TRACE_ISR
 #error "KYMO_ENABLE_TRACE_SCHEDULER requires KYMO_ENABLE_TRACE_ISR=1"
@@ -424,6 +438,9 @@
 
 /** @brief Effective cooperative runtime gate. */
 #define KYMO_EFFECTIVE_RUNTIME (KYMO_ENABLED && KYMO_ENABLE_RUNTIME)
+
+/** @brief Effective modular Endpoint gate. @par Usage Guard Endpoint callers. */
+#define KYMO_EFFECTIVE_ENDPOINT (KYMO_ENABLED && KYMO_ENABLE_ENDPOINT)
 
 /** @brief Effective shared transport gate, respecting the global switch.
  * @par Usage Gate code that uses KymoTx with this macro.

@@ -39,6 +39,11 @@ class CompilerAuditTests(unittest.TestCase):
                 entries[1]['arguments'][3] = '-DKYMO_ENABLE_TX=1'
                 with self.assertRaisesRegex(ValueError, 'KYMO_(ENABLE|EFFECTIVE)_TX'):
                     check_commands(entries)
+                for index, entry in enumerate(entries):
+                    entry['arguments'].append('-DKYMO_ENABLE_TX=1')
+                    entry['arguments'][3] = f'-DKYMO_ENABLE_ENDPOINT={index}'
+                with self.assertRaisesRegex(ValueError, 'KYMO_(ENABLE|EFFECTIVE)_ENDPOINT'):
+                    check_commands(entries)
                 entries[0]['arguments'][3] = '-DKYMO_MAX_CHANNELS=16'
                 for expression in ('16u', '0x10', '(8+8)', '(1u << 4)', '(32/2)'):
                     with self.subTest(size_expression=expression):

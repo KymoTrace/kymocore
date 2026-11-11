@@ -73,7 +73,7 @@ board = esp32dev
 framework = arduino
 monitor_speed = 115200
 lib_deps =
-    codename666/KymoCore @ 7.2.1
+    codename666/KymoCore @ 7.3.0
 ```
 
 For Uno, set `platform = atmelavr@5.3.0` and `board = uno` instead. The library
@@ -83,20 +83,20 @@ Alternatively, install directly from GitHub with a pinned release tag:
 
 ```ini
 lib_deps =
-    https://github.com/KymoTrace/kymocore.git#v7.2.1
+    https://github.com/KymoTrace/kymocore.git#v7.3.0
 ```
 
 Alternatively, build a package from this repository:
 
 ```sh
-pio pkg pack . -o KymoCore-7.2.1.tar.gz
+pio pkg pack . -o KymoCore-7.3.0.tar.gz
 ```
 
 Copy the archive into your project and reference it there:
 
 ```ini
 lib_deps =
-    file://KymoCore-7.2.1.tar.gz
+    file://KymoCore-7.3.0.tar.gz
 ```
 
 Alternatively, copy the complete library folder to `lib/KymoCore` of your own
@@ -307,7 +307,7 @@ bytes into the same stream.
 
 ![Frame fields, descriptor bits and concrete wire examples](images/protocol.png)
 
-Package version 7.2.1, protocol v6.2 and **wire version 1** are different
+Package version 7.3.0, protocol v6.2 and **wire version 1** are different
 things. The normative contract is in [PROTOCOL.md](PROTOCOL.md).
 
 | Offset | Size | Content |
@@ -841,5 +841,13 @@ driver and release all borrowed pointers, then zero-initialize the context. Call
 must be serialized.
 
 The [integration example](../examples/integration/README.md) shows complete port
-wiring. RX, source scheduling and module initialization stay in the application.
-The library imposes no fixed buffer capacity and implements no Endpoint.
+wiring with the optional Endpoint. When using KymoTx on its own, RX, source
+scheduling and module initialization remain the application's responsibility.
+The library imposes no fixed buffer capacity. The optional [Endpoint](ENDPOINT.md)
+can coordinate the features and shared sender.
+
+## Modular integration
+
+[Endpoint and separate feature headers](ENDPOINT.md) document shared Init/Main.
+The [complete example](../examples/integration/README.md) separates project modules
+and the native test port.
