@@ -68,9 +68,9 @@
 /** @brief Library minor version; incremented for compatible additions. */
 #define KYMO_VERSION_MINOR 3
 /** @brief Library patch version; incremented for compatible fixes. */
-#define KYMO_VERSION_PATCH 2
+#define KYMO_VERSION_PATCH 3
 /** @brief Library version as a string literal. */
-#define KYMO_VERSION_STRING "7.3.2"
+#define KYMO_VERSION_STRING "7.3.3"
 
 /** @brief Version of the compile-time configuration contract consumed by tools. */
 #define KYMO_CONFIG_API_VERSION 2

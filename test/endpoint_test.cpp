@@ -672,12 +672,68 @@ static void testControlSampleTime(void)
 #endif
     assert(point.flags == 0u); /* The caller's point remains unchanged. */
 }
+#if KYMO_EFFECTIVE_TIMESTAMP && KYMO_EFFECTIVE_RUNTIME && KYMO_EFFECTIVE_PARAMETERS
+/*******************************************************************************
+ * testSharedDeviceClock
+ ******************************************************************************/
+static void testSharedDeviceClock(uint32_t initializedAt, uint32_t sampledAt)
+{
+    Fixture fixture = {};
+    KymoEndpointConfig config = baseConfig(&fixture);
+    const KymoChannel channel = { 0u, PLOT_CHANNEL, KYMO_FLAG_TIMESTAMP };
+    KymoEndpointPlotConfig plot = {};
+    KymoEndpointParamConfig param = {};
+    const uint8_t list = KYMO_PARAM_OP_LIST;
+    const size_t TIMESTAMP_OFFSET = 8u;
+    size_t offset = 0u;
+    uint8_t seenPlot = 0u;
+    uint8_t seenParam = 0u;
+    fixture.ticks = initializedAt;
+    config.service = nullptr; /* Hold the clock fixed while dispatching both features. */
+    plot.channels = &channel;
+    plot.channel_count = 1u;
+    plot.sample = samplePlot;
+    plot.sample_user = &fixture;
+    fixture.parameter.id = PARAM_CHANNEL;
+    fixture.parameter.target = &fixture.gain;
+    fixture.parameter.maximum = 10.0f;
+    param.table = &fixture.parameter;
+    param.count = 1u;
+    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
+    assert(KymoEndpointPlot_Init(&fixture.endpoint, &fixture.plot, &plot) == KYMO_OK);
+    assert(KymoEndpointParam_Init(&fixture.endpoint, &fixture.param, &param) == KYMO_OK);
+    appendControl(&fixture, &list, sizeof(list));
+    fixture.ticks = sampledAt;
+    for (uint32_t cycle = 0u; cycle < TEST_CYCLES; ++cycle) {
+        (void)runCycle(&fixture);
+    }
+    while (offset < fixture.wire_length) {
+        const uint8_t *frame = fixture.wire + offset;
+        size_t length = KymoProtocol_FrameLength(frame[2]);
+        if (frame[2] == KYMO_DESCRIPTOR_PARAM) {
+            length = (size_t)frame[3] + 5u;
+        } else {
+            assert((frame[2] & KYMO_FLAG_TIMESTAMP) != 0u);
+            assert(emb_read_u32_le(frame + TIMESTAMP_OFFSET) == sampledAt);
+            seenPlot = (uint8_t)(seenPlot || frame[3] == PLOT_CHANNEL);
+            seenParam = (uint8_t)(seenParam || frame[3] == PARAM_CHANNEL);
+        }
+        assert(length != 0u && length <= fixture.wire_length - offset);
+        offset += length;
+    }
+    assert(seenPlot != 0u && seenParam != 0u);
+}
+#endif
 /*******************************************************************************
  * main
  ******************************************************************************/
 int main(void)
 {
     testControlSampleTime();
+#if KYMO_EFFECTIVE_TIMESTAMP && KYMO_EFFECTIVE_RUNTIME && KYMO_EFFECTIVE_PARAMETERS
+    testSharedDeviceClock(10000u, 12345u);
+    testSharedDeviceClock(UINT32_MAX - 3u, 5u);
+#endif
     testSetupErrors();
 #if KYMO_EFFECTIVE_TRACE
     testMetadataRepeat(0u, 0u);

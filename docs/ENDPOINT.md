@@ -199,3 +199,7 @@ A KymoStudio connection request is not part of this release.
 With `KYMO_ENABLE_TIMESTAMP=1`, Param readbacks, Watch samples and Memory samples
 carry the Endpoint cycle's millisecond clock. This preserves device sample time
 under transport backpressure. Plot keeps its per-channel timestamp flags.
+
+All Endpoint DATA timestamps, including Plot, use the same clock_ms origin.
+Plot is not rebased to its feature initialization; standalone Kymo_Init retains
+its initialization-relative timestamps.

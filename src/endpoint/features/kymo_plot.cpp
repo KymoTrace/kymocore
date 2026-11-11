@@ -48,6 +48,10 @@ KymoStatus KymoEndpointPlot_Init(KymoEndpoint *endpoint, KymoEndpointPlot *featu
             runtime.write = copyPlot;
             runtime.transport_user = endpoint;
             status = Kymo_Init(&feature->runtime, &runtime);
+#if KYMO_EFFECTIVE_TIMESTAMP
+            /* Every Endpoint DATA source uses the same device clock origin. */
+            feature->runtime.start_ms = 0u;
+#endif
             for (uint16_t index = 0u; (status == KYMO_OK) && (index < config->channel_count); ++index) {
                 status = kymoEndpointReserve(endpoint, config->channels[index].id);
             }

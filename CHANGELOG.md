@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.3.3 — 2026-11-11
+
+- Use one device clock origin for Endpoint Plot, Parameter, Watch and Memory.
+  Mixed streams no longer jump backwards when a control readback is interleaved
+  with Plot, preventing false device-restart detection in KymoStudio.
+- Cover actual interleaved Plot/Parameter output with a nonzero initialization
+  clock and uint32 wrap. Standalone Kymo_Init timestamp behavior is unchanged.
+
 ## 7.3.2 — 2026-11-11
 
 - Preserve device timestamps for Endpoint Param, Watch and Memory DATA output

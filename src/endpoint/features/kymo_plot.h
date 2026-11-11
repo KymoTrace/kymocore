@@ -34,6 +34,8 @@ typedef struct {
  * @details One instance per feature type per Endpoint. Failed setup latches a
  * configuration error on a configuring Endpoint; late setup leaves a running
  * Endpoint unchanged. Shared channel reservations reject cross-feature overlap.
+ * Timestamped channels use the Endpoint device clock directly, matching Param,
+ * Watch and Memory; they are not rebased to this feature's initialization time.
  * @param[in,out] endpoint Base in configuring phase.
  * @param[in,out] feature Zero-initialized feature storage.
  * @param[in] config Plot settings; NULL is invalid.
