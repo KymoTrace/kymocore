@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # ESP Component Registry manifest. Keep version equal to library.json and
 # library.properties (tools/test_package.py checks it). Upload: docs/PUBLISHING.md.
-version: "7.3.3"
+version: "7.3.4"
 description: "Portable heap-free C++11 telemetry and opt-in execution tracing for KymoStudio: compact binary frames over UART, USB, TCP, UDP or MQTT through application callbacks."
 url: "https://kymotrace.de/kymocore.html"
 repository: "https://github.com/KymoTrace/kymocore.git"

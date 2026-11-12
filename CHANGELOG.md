@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.3.4 — 2026-11-12
+
+- Standardize library sources, reference examples and native tests on the existing
+  four-space Allman layout. Code tokens, public APIs and wire protocol stay unchanged.
+- Add a shared `.clang-format` configuration, include it in exported packages and
+  document the formatting/check commands. Preserve Doxygen text and include order.
+- Validate native and Probe/Studio integration, configurator tests, Doxygen,
+  representative ESP32 applications and packaged Uno/ESP32 consumers.
+
 ## 7.3.3 — 2026-11-11
 
 - Use one device clock origin for Endpoint Plot, Parameter, Watch and Memory.
