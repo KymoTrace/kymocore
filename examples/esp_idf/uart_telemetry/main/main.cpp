@@ -52,10 +52,14 @@ static uint8_t readSample(void *pUser, uint8_t channelId, KymoSample *pSample)
     uint8_t result = 0U;
     float seconds = static_cast<float>(esp_timer_get_time()) / 1000000.0f;
     (void)pUser;
-    if ((pSample != nullptr) && (channelId <= 1U)) {
-        if (channelId == 0U) {
+    if ((pSample != nullptr) && (channelId <= 1U))
+    {
+        if (channelId == 0U)
+        {
             pSample->value = sinf(kTwoPi * 0.5f * seconds);
-        } else {
+        }
+        else
+        {
             pSample->value = fmodf(seconds, 1.0f);
         }
         result = 1U;
@@ -76,9 +80,11 @@ static uint8_t writeBytes(void *pUser, const uint8_t *pBytes, uint8_t length)
 {
     uint8_t result = 0U;
     (void)pUser;
-    if (pBytes != nullptr) {
+    if (pBytes != nullptr)
+    {
         int written = uart_tx_chars(kPort, reinterpret_cast<const char *>(pBytes), length);
-        if (written > 0) {
+        if (written > 0)
+        {
             result = static_cast<uint8_t>(written);
         }
     }
@@ -101,7 +107,8 @@ static esp_err_t initUart()
     uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     uartConfig.source_clk = UART_SCLK_DEFAULT;
     esp_err_t result = uart_driver_install(kPort, 256, 0, 0, nullptr, 0);
-    if (result == ESP_OK) {
+    if (result == ESP_OK)
+    {
         result = uart_param_config(kPort, &uartConfig);
     }
     return result;
@@ -117,19 +124,22 @@ static esp_err_t initUart()
 extern "C" void app_main(void)
 {
     KymoStatus status = KYMO_BAD_CONFIG;
-    KymoConfig config = {};   /* copied by Kymo_Init; may be local */
+    KymoConfig config = {}; /* copied by Kymo_Init; may be local */
     config.channels = sChannels;
     config.channel_count = KYMO_COUNT_OF(sChannels);
     config.clock_ms = readClockMs;
     config.sample = readSample;
     config.write = writeBytes;
     esp_log_level_set("*", ESP_LOG_NONE);
-    if (initUart() == ESP_OK) {
+    if (initUart() == ESP_OK)
+    {
         status = Kymo_Init(&sContext, &config);
     }
-    while ((status != KYMO_BAD_CONFIG) && (status != KYMO_IO_ERROR)) {
+    while ((status != KYMO_BAD_CONFIG) && (status != KYMO_IO_ERROR))
+    {
         status = Kymo_Main(&sContext);
-        if (status != KYMO_OK) {
+        if (status != KYMO_OK)
+        {
             vTaskDelay(1);
         }
     }

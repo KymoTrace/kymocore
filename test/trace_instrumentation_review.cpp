@@ -8,12 +8,33 @@ static unsigned recorderReads;
 static unsigned contextReads;
 static unsigned symbolReads;
 static KymoTraceRecorder recorder;
-static uint64_t clockRead(void *) { return ticks++; }
-static uint8_t coreRead(void *) { return 0u; }
-static uint32_t contextRead(void *) { return 1u; }
-static KymoTraceRecorder *getRecorder(void) { ++recorderReads; return &recorder; }
-static uint32_t getContext(void) { ++contextReads; return 1u; }
-static uint16_t getSymbol(void) { ++symbolReads; return 2u; }
+static uint64_t clockRead(void *)
+{
+    return ticks++;
+}
+static uint8_t coreRead(void *)
+{
+    return 0u;
+}
+static uint32_t contextRead(void *)
+{
+    return 1u;
+}
+static KymoTraceRecorder *getRecorder(void)
+{
+    ++recorderReads;
+    return &recorder;
+}
+static uint32_t getContext(void)
+{
+    ++contextReads;
+    return 1u;
+}
+static uint16_t getSymbol(void)
+{
+    ++symbolReads;
+    return 2u;
+}
 static int measuredReturn(void)
 {
     KYMO_TRACE_SCOPE(getRecorder(), getContext(), getSymbol());
@@ -34,7 +55,8 @@ int main(void)
     KymoTraceEvent event;
     const uint8_t types[] = {1u, 1u, 2u, 2u};
     const uint16_t depths[] = {1u, 2u, 2u, 1u};
-    for (unsigned i = 0u; i < 4u; ++i) {
+    for (unsigned i = 0u; i < 4u; ++i)
+    {
         assert(KymoTrace_Pop(&recorder, &event) == KYMO_OK);
         assert(event.event_type == types[i] && event.depth == depths[i]);
     }

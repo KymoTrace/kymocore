@@ -90,9 +90,9 @@
 #define __COUNTER__ __LINE__
 #endif
 
-#define KYMO_TRACE_SCOPE_IMPL(recorder_, context_, symbol_, unique_) \
-    KymoTraceScope KYMO_TRACE_DETAIL_JOIN(kymoTraceScope_, unique_)( \
-        (recorder_), (context_), (symbol_))
+#define KYMO_TRACE_SCOPE_IMPL(recorder_, context_, symbol_, unique_)                         \
+    KymoTraceScope KYMO_TRACE_DETAIL_JOIN(kymoTraceScope_, unique_)((recorder_), (context_), \
+                                                                    (symbol_))
 
 /** @brief Create a C++ RAII trace scope. @par Usage Place in the block to measure. */
 #define KYMO_TRACE_SCOPE(recorder_, context_, symbol_) \

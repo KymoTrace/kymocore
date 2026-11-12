@@ -59,6 +59,7 @@
   ],
   "export": {
     "include": [
+      ".clang-format",
       "src",
       "examples",
       "docs/images",

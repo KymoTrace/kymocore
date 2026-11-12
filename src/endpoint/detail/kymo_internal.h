@@ -18,8 +18,8 @@
  * @param[in] needsRead Nonzero requires RX.
  * @return OK, BAD_CONFIG, REJECTED or a previously latched error.
  * @par Usage Private first step of a feature Init; no I/O. */
-KymoStatus kymoEndpointPrepare(KymoEndpoint *endpoint, KymoEndpointFeature *binding,
-    uint8_t id, size_t capacity, uint8_t needsClock, uint8_t needsRead);
+KymoStatus kymoEndpointPrepare(KymoEndpoint *endpoint, KymoEndpointFeature *binding, uint8_t id,
+                               size_t capacity, uint8_t needsClock, uint8_t needsRead);
 /** @brief Attach a successfully initialized binding or latch its failure.
  * @param[in,out] endpoint Base checked by Prepare; NULL is tolerated.
  * @param[in,out] binding Initialized binding; NULL only on failure.
@@ -27,7 +27,7 @@ KymoStatus kymoEndpointPrepare(KymoEndpoint *endpoint, KymoEndpointFeature *bind
  * @return Unchanged status.
  * @par Usage Final step after Prepare; configuring base only. */
 KymoStatus kymoEndpointFinish(KymoEndpoint *endpoint, KymoEndpointFeature *binding,
-    KymoStatus status);
+                              KymoStatus status);
 /** @brief Reserve one previously unused DATA channel.
  * @param[in,out] endpoint Non-NULL configuring base checked by Prepare.
  * @param[in] channel Wire ID, 0..255.
@@ -54,7 +54,7 @@ size_t kymoEndpointCopy(void *user, const uint8_t *bytes, size_t length);
  * @param[in] now Endpoint cycle clock in milliseconds; included when timestamps are enabled.
  * @return Acquisition status, OK, BAD_SAMPLE or a terminal TX error.
  * @par Usage Shared private Param/Watch/Memory adapter. */
-KymoStatus kymoEndpointSample(KymoEndpoint *endpoint, KymoStatus status,
-    const KymoDataPoint *point, uint32_t now);
+KymoStatus kymoEndpointSample(KymoEndpoint *endpoint, KymoStatus status, const KymoDataPoint *point,
+                              uint32_t now);
 #endif
 #endif

@@ -5,10 +5,20 @@
 #include "transport/kymo_mux.h"
 
 static uint64_t nowTicks;
-static uint64_t clockRead(void *) { return ++nowTicks; }
-static uint8_t coreRead(void *) { return 0u; }
-static uint32_t contextRead(void *) { return 1u; }
-struct Driver {
+static uint64_t clockRead(void *)
+{
+    return ++nowTicks;
+}
+static uint8_t coreRead(void *)
+{
+    return 0u;
+}
+static uint32_t contextRead(void *)
+{
+    return 1u;
+}
+struct Driver
+{
     uint8_t busy;
     uint8_t borrow;
     uint8_t overAccept;
@@ -19,19 +29,26 @@ struct Driver {
     const uint8_t *lent;
     size_t lentLength;
 };
-static uint8_t isBusy(void *user) { return static_cast<Driver *>(user)->busy; }
+static uint8_t isBusy(void *user)
+{
+    return static_cast<Driver *>(user)->busy;
+}
 static size_t writeBytes(void *user, const uint8_t *bytes, size_t length)
 {
     Driver *driver = static_cast<Driver *>(user);
     ++driver->calls;
     size_t accepted = length < driver->limit ? length : driver->limit;
-    if (driver->overAccept != 0u) {
+    if (driver->overAccept != 0u)
+    {
         accepted = length + 1u;
-    } else {
+    }
+    else
+    {
         assert(driver->used + accepted <= sizeof(driver->received));
         memcpy(driver->received + driver->used, bytes, accepted);
         driver->used += accepted;
-        if (driver->borrow != 0u) {
+        if (driver->borrow != 0u)
+        {
             driver->busy = 1u;
             driver->lent = bytes;
             driver->lentLength = accepted;
@@ -67,7 +84,8 @@ int main(void)
     const size_t expectedLength = mux.frame_length;
     memcpy(expected, mux.frame, expectedLength);
     driver.limit = 2u;
-    for (unsigned i = 0u; i < 120u && mux.pending != 0u; ++i) {
+    for (unsigned i = 0u; i < 120u && mux.pending != 0u; ++i)
+    {
         (void)KymoMux_Service(&mux);
     }
     assert(driver.used == expectedLength);
@@ -81,7 +99,8 @@ int main(void)
     memcpy(expected, driver.lent, driver.lentLength);
     KymoTrace_Mark(&recorder, 1u, 1u, 9u);
     unsigned previousCalls = driver.calls;
-    for (unsigned i = 0u; i < 8u; ++i) {
+    for (unsigned i = 0u; i < 8u; ++i)
+    {
         assert(KymoMux_Service(&mux) == KYMO_BUSY);
         assert(memcmp(expected, driver.lent, driver.lentLength) == 0);
     }

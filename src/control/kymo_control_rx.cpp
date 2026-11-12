@@ -22,10 +22,13 @@ static void restart_at(KymoControlRx *rx, uint8_t byte)
 static void accept_descriptor(KymoControlRx *rx, uint8_t byte, uint32_t *invalid)
 {
     rx->expected = (byte == KYMO_DESCRIPTOR_PARAM) ? 0u : KymoProtocol_FrameLength(byte);
-    if ((rx->expected == 0u) && (byte != KYMO_DESCRIPTOR_PARAM)) {
+    if ((rx->expected == 0u) && (byte != KYMO_DESCRIPTOR_PARAM))
+    {
         ++*invalid;
         restart_at(rx, byte);
-    } else {
+    }
+    else
+    {
         rx->frame[2] = byte;
         rx->length = 3u;
     }
@@ -36,10 +39,13 @@ static void accept_descriptor(KymoControlRx *rx, uint8_t byte, uint32_t *invalid
  ******************************************************************************/
 static void accept_control_length(KymoControlRx *rx, uint8_t byte, uint32_t *invalid)
 {
-    if ((byte == 0u) || (byte > KYMO_CONTROL_REQUEST_MAX)) {
+    if ((byte == 0u) || (byte > KYMO_CONTROL_REQUEST_MAX))
+    {
         ++*invalid;
         restart_at(rx, byte);
-    } else {
+    }
+    else
+    {
         rx->frame[3] = byte;
         rx->length = 4u;
         rx->expected = 5u + byte;
@@ -52,23 +58,36 @@ static void accept_control_length(KymoControlRx *rx, uint8_t byte, uint32_t *inv
 size_t KymoControlRx_Byte(KymoControlRx *rx, uint8_t byte, uint32_t *invalid)
 {
     size_t complete = 0u;
-    if (rx->length == 0u) {
+    if (rx->length == 0u)
+    {
         restart_at(rx, byte);
-    } else if (rx->length == 1u) {
-        if (byte == KYMO_SYNC_1) {
+    }
+    else if (rx->length == 1u)
+    {
+        if (byte == KYMO_SYNC_1)
+        {
             rx->frame[1] = byte;
             rx->length = 2u;
-        } else {
+        }
+        else
+        {
             restart_at(rx, byte);
         }
-    } else if (rx->length == 2u) {
+    }
+    else if (rx->length == 2u)
+    {
         accept_descriptor(rx, byte, invalid);
-    } else if (rx->expected == 0u) {
+    }
+    else if (rx->expected == 0u)
+    {
         accept_control_length(rx, byte, invalid);
-    } else {
+    }
+    else
+    {
         rx->frame[rx->length] = byte;
         ++rx->length;
-        if (rx->length == rx->expected) {
+        if (rx->length == rx->expected)
+        {
             /* frame stays readable until the next byte arrives. */
             complete = rx->length;
             rx->length = 0u;

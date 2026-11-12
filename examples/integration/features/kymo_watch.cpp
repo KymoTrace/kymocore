@@ -9,7 +9,7 @@ static KymoEndpointWatch sFeature;
 #include <string.h>
 static const uint32_t WATCH_GAIN_ADDRESS = 0x20000000u;
 static const uint8_t WATCH_CHANNEL = 150u;
-static const KymoWatchRange RANGES[] = { { WATCH_GAIN_ADDRESS, sizeof(exampleGain) } };
+static const KymoWatchRange RANGES[] = {{WATCH_GAIN_ADDRESS, sizeof(exampleGain)}};
 /*******************************************************************************
  * readWatch
  ******************************************************************************/
@@ -17,7 +17,8 @@ static uint8_t readWatch(void *user, uint32_t address, uint8_t size, uint8_t *ou
 {
     uint8_t result = 0u;
     (void)user;
-    if ((output != nullptr) && (address == WATCH_GAIN_ADDRESS) && (size == sizeof(exampleGain))) {
+    if ((output != nullptr) && (address == WATCH_GAIN_ADDRESS) && (size == sizeof(exampleGain)))
+    {
         memcpy(output, &exampleGain, sizeof(exampleGain));
         result = 1u;
     }

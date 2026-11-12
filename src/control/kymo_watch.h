@@ -69,7 +69,8 @@
 #if KYMO_EFFECTIVE_WATCH || defined(DOXYGEN)
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /**
@@ -163,199 +164,204 @@ extern "C" {
  */
 #define KYMO_WATCH_FRAME_MAX_SIZE (11u + KYMO_WATCH_BUILD_ID_MAX + (8u * KYMO_WATCH_MAX_RANGES))
 
-/**
- * @brief One memory range the host may read.
- *
- * @details Addresses are the device's own 32-bit addresses as they appear in the
- * ELF file. A range must not be empty and must not wrap past 2^32.
- * @par Usage
- * { (uint32_t)(uintptr_t)&_data_start, data_and_bss_length }
- */
-typedef struct {
-    /** @brief First readable address. */
-    uint32_t start;
-    /** @brief Number of readable bytes from start. */
-    uint32_t length;
-} KymoWatchRange;
+    /**
+     * @brief One memory range the host may read.
+     *
+     * @details Addresses are the device's own 32-bit addresses as they appear in the
+     * ELF file. A range must not be empty and must not wrap past 2^32.
+     * @par Usage
+     * { (uint32_t)(uintptr_t)&_data_start, data_and_bss_length }
+     */
+    typedef struct
+    {
+        /** @brief First readable address. */
+        uint32_t start;
+        /** @brief Number of readable bytes from start. */
+        uint32_t length;
+    } KymoWatchRange;
 
-/**
- * @brief Optional memory reader.
- *
- * @details Copies @p size bytes from device address @p address into @p output in
- * the device's own byte order. Use it to lock around 8-byte reads or to map wire
- * addresses on a host build. Called only for checked, aligned addresses.
- * @param[in] context Application context from KymoWatchConfig.
- * @param[in] address Device address inside an allowed range.
- * @param[in] size 1, 2, 4 or 8.
- * @param[out] output Destination of at least @p size bytes.
- * @return 1 when the bytes were read, 0 to skip this sample.
- * @par Usage
- * static uint8_t read_locked(void *c, uint32_t a, uint8_t n, uint8_t *o) { lock(); memcpy(o, (void *)(uintptr_t)a, n); unlock(); return 1u; }
- */
-typedef uint8_t (*KymoWatchReadFn)(void *context, uint32_t address, uint8_t size, uint8_t *output);
+    /**
+     * @brief Optional memory reader.
+     *
+     * @details Copies @p size bytes from device address @p address into @p output in
+     * the device's own byte order. Use it to lock around 8-byte reads or to map wire
+     * addresses on a host build. Called only for checked, aligned addresses.
+     * @param[in] context Application context from KymoWatchConfig.
+     * @param[in] address Device address inside an allowed range.
+     * @param[in] size 1, 2, 4 or 8.
+     * @param[out] output Destination of at least @p size bytes.
+     * @return 1 when the bytes were read, 0 to skip this sample.
+     * @par Usage
+     * static uint8_t read_locked(void *c, uint32_t a, uint8_t n, uint8_t *o) { lock(); memcpy(o, (void *)(uintptr_t)a, n); unlock(); return 1u; }
+     */
+    typedef uint8_t (*KymoWatchReadFn)(void *context, uint32_t address, uint8_t size,
+                                       uint8_t *output);
 
-/**
- * @brief Configuration copied by KymoWatch_Init.
- *
- * @details ranges and build_id are referenced, not copied; they must outlive the
- * KymoWatch.
- * @par Usage
- * KymoWatchConfig config = { ranges, 1u, id, 16u, nullptr, nullptr };
- */
-typedef struct {
-    /** @brief Allowed memory ranges; 1..KYMO_WATCH_MAX_RANGES entries. */
-    const KymoWatchRange *ranges;
-    /** @brief Number of ranges. */
-    size_t range_count;
-    /** @brief Build ID reported to the host; NULL when build_id_length is 0. */
-    const uint8_t *build_id;
-    /** @brief Build ID length, 0..KYMO_WATCH_BUILD_ID_MAX; 0 means unknown. */
-    size_t build_id_length;
-    /** @brief Optional reader; NULL reads memory directly with the type's width. */
-    KymoWatchReadFn read;
-    /** @brief Context passed to read. */
-    void *read_context;
-} KymoWatchConfig;
+    /**
+     * @brief Configuration copied by KymoWatch_Init.
+     *
+     * @details ranges and build_id are referenced, not copied; they must outlive the
+     * KymoWatch.
+     * @par Usage
+     * KymoWatchConfig config = { ranges, 1u, id, 16u, nullptr, nullptr };
+     */
+    typedef struct
+    {
+        /** @brief Allowed memory ranges; 1..KYMO_WATCH_MAX_RANGES entries. */
+        const KymoWatchRange *ranges;
+        /** @brief Number of ranges. */
+        size_t range_count;
+        /** @brief Build ID reported to the host; NULL when build_id_length is 0. */
+        const uint8_t *build_id;
+        /** @brief Build ID length, 0..KYMO_WATCH_BUILD_ID_MAX; 0 means unknown. */
+        size_t build_id_length;
+        /** @brief Optional reader; NULL reads memory directly with the type's width. */
+        KymoWatchReadFn read;
+        /** @brief Context passed to read. */
+        void *read_context;
+    } KymoWatchConfig;
 
-/**
- * @brief State of one slot. Treat as read-only.
- * @par Usage
- * Inspect watch.slots[i] for diagnostics.
- */
-typedef struct {
-    /** @brief Device address of the variable. */
-    uint32_t address;
-    /** @brief Time of the next sample in ms (valid unless fresh). */
-    uint32_t due_ms;
-    /** @brief Sampling period in ms. */
-    uint16_t period_ms;
-    /** @brief Wire channel of the samples. */
-    uint8_t channel;
-    /** @brief KYMO_WATCH_TYPE_*; 0 when the slot is stopped. */
-    uint8_t type;
-    /** @brief 1 until the first sample after a WATCH_SET. */
-    uint8_t fresh;
-} KymoWatchSlot;
+    /**
+     * @brief State of one slot. Treat as read-only.
+     * @par Usage
+     * Inspect watch.slots[i] for diagnostics.
+     */
+    typedef struct
+    {
+        /** @brief Device address of the variable. */
+        uint32_t address;
+        /** @brief Time of the next sample in ms (valid unless fresh). */
+        uint32_t due_ms;
+        /** @brief Sampling period in ms. */
+        uint16_t period_ms;
+        /** @brief Wire channel of the samples. */
+        uint8_t channel;
+        /** @brief KYMO_WATCH_TYPE_*; 0 when the slot is stopped. */
+        uint8_t type;
+        /** @brief 1 until the first sample after a WATCH_SET. */
+        uint8_t fresh;
+    } KymoWatchSlot;
 
-/**
- * @brief Live-variable state: configuration, reassembly, slots, pending replies.
- *
- * @details Treat all fields as read-only after KymoWatch_Init; the counters are
- * diagnostics and wrap modulo 2^32.
- * @par Usage
- * Declare one static KymoWatch per receiving transport.
- */
-typedef struct {
-    /** @brief Copied configuration. */
-    KymoWatchConfig config;
-    /** @brief Frame reassembly shared with the other back-channel modules. */
-    KymoControlRx rx;
-    /** @brief Sampling slots. */
-    KymoWatchSlot slots[KYMO_MAX_WATCHES];
-    /** @brief Status of the pending acknowledgement per slot. */
-    uint8_t ack_status[KYMO_MAX_WATCHES];
-    /** @brief One bit per slot: an acknowledgement is due. */
-    uint8_t ack_pending[(KYMO_MAX_WATCHES + 7u) / 8u];
-    /** @brief Slot number of a request with an invalid slot, answered once. */
-    uint8_t bad_slot;
-    /** @brief 1 while the BAD_SLOT acknowledgement for bad_slot is due. */
-    uint8_t bad_slot_pending;
-    /** @brief 1 while a WATCH_INFO_REPLY is due. */
-    uint8_t info_due;
-    /** @brief 1 after a successful KymoWatch_Init. */
-    uint8_t ready;
-    /** @brief Inclusive allowed channel range; default Init permits all IDs. */
-    uint8_t first_channel;
-    /** @brief Last allowed channel; restricted Init reserves a project range. */
-    uint8_t last_channel;
-    /** @brief Slot where the next acknowledgement search starts. */
-    size_t ack_cursor;
-    /** @brief Slot where the next sample search starts (round robin). */
-    size_t sample_cursor;
-    /** @brief WATCH_SET requests accepted. */
-    uint32_t accepted;
-    /** @brief WATCH_SET requests refused. */
-    uint32_t rejected;
-    /** @brief Frames discarded: bad CRC, wrong length or unknown operation. */
-    uint32_t invalid;
-    /** @brief Samples skipped because the reader returned 0. */
-    uint32_t read_failures;
-} KymoWatch;
+    /**
+     * @brief Live-variable state: configuration, reassembly, slots, pending replies.
+     *
+     * @details Treat all fields as read-only after KymoWatch_Init; the counters are
+     * diagnostics and wrap modulo 2^32.
+     * @par Usage
+     * Declare one static KymoWatch per receiving transport.
+     */
+    typedef struct
+    {
+        /** @brief Copied configuration. */
+        KymoWatchConfig config;
+        /** @brief Frame reassembly shared with the other back-channel modules. */
+        KymoControlRx rx;
+        /** @brief Sampling slots. */
+        KymoWatchSlot slots[KYMO_MAX_WATCHES];
+        /** @brief Status of the pending acknowledgement per slot. */
+        uint8_t ack_status[KYMO_MAX_WATCHES];
+        /** @brief One bit per slot: an acknowledgement is due. */
+        uint8_t ack_pending[(KYMO_MAX_WATCHES + 7u) / 8u];
+        /** @brief Slot number of a request with an invalid slot, answered once. */
+        uint8_t bad_slot;
+        /** @brief 1 while the BAD_SLOT acknowledgement for bad_slot is due. */
+        uint8_t bad_slot_pending;
+        /** @brief 1 while a WATCH_INFO_REPLY is due. */
+        uint8_t info_due;
+        /** @brief 1 after a successful KymoWatch_Init. */
+        uint8_t ready;
+        /** @brief Inclusive allowed channel range; default Init permits all IDs. */
+        uint8_t first_channel;
+        /** @brief Last allowed channel; restricted Init reserves a project range. */
+        uint8_t last_channel;
+        /** @brief Slot where the next acknowledgement search starts. */
+        size_t ack_cursor;
+        /** @brief Slot where the next sample search starts (round robin). */
+        size_t sample_cursor;
+        /** @brief WATCH_SET requests accepted. */
+        uint32_t accepted;
+        /** @brief WATCH_SET requests refused. */
+        uint32_t rejected;
+        /** @brief Frames discarded: bad CRC, wrong length or unknown operation. */
+        uint32_t invalid;
+        /** @brief Samples skipped because the reader returned 0. */
+        uint32_t read_failures;
+    } KymoWatch;
 
-/**
- * @brief Validate the configuration and reset all slots.
- *
- * @details Rejects NULL arguments, 0 or more than KYMO_WATCH_MAX_RANGES ranges,
- * empty or wrapping ranges, a build ID longer than KYMO_WATCH_BUILD_ID_MAX and a
- * NULL build ID with nonzero length. On failure the watch is unusable until a
- * successful Init.
- * @param[out] watch State to reset; NULL is rejected.
- * @param[in] config Configuration; NULL is rejected. Copied; referenced arrays must outlive @p watch.
- * @return KYMO_OK, or KYMO_BAD_CONFIG.
- * @par Usage
- * Call once during start-up, before the first KymoWatch_Feed.
- */
-KymoStatus KymoWatch_Init(KymoWatch *watch, const KymoWatchConfig *config);
+    /**
+     * @brief Validate the configuration and reset all slots.
+     *
+     * @details Rejects NULL arguments, 0 or more than KYMO_WATCH_MAX_RANGES ranges,
+     * empty or wrapping ranges, a build ID longer than KYMO_WATCH_BUILD_ID_MAX and a
+     * NULL build ID with nonzero length. On failure the watch is unusable until a
+     * successful Init.
+     * @param[out] watch State to reset; NULL is rejected.
+     * @param[in] config Configuration; NULL is rejected. Copied; referenced arrays must outlive @p watch.
+     * @return KYMO_OK, or KYMO_BAD_CONFIG.
+     * @par Usage
+     * Call once during start-up, before the first KymoWatch_Feed.
+     */
+    KymoStatus KymoWatch_Init(KymoWatch *watch, const KymoWatchConfig *config);
 
-/** @brief Initialize Watch with an inclusive allowed DATA-channel range.
- * @details Requests outside this range receive OUT_OF_RANGE before any slot is
- * activated. Period-zero stop requests remain valid. Ordinary Init permits all
- * channels; this entry point is useful when several features share a stream.
- * @param[out] watch State to initialize; NULL is invalid.
- * @param[in] config Normal Watch configuration.
- * @param[in] first_channel First allowed channel.
- * @param[in] last_channel Last allowed channel; must not precede first_channel.
- * @return OK or BAD_CONFIG. Failure leaves a non-NULL watch uninitialized.
- * @par Usage Reserve the same channel range in the coordinating application.
- */
-KymoStatus KymoWatch_InitRestricted(KymoWatch *watch, const KymoWatchConfig *config,
-    uint8_t first_channel, uint8_t last_channel);
+    /** @brief Initialize Watch with an inclusive allowed DATA-channel range.
+     * @details Requests outside this range receive OUT_OF_RANGE before any slot is
+     * activated. Period-zero stop requests remain valid. Ordinary Init permits all
+     * channels; this entry point is useful when several features share a stream.
+     * @param[out] watch State to initialize; NULL is invalid.
+     * @param[in] config Normal Watch configuration.
+     * @param[in] first_channel First allowed channel.
+     * @param[in] last_channel Last allowed channel; must not precede first_channel.
+     * @return OK or BAD_CONFIG. Failure leaves a non-NULL watch uninitialized.
+     * @par Usage Reserve the same channel range in the coordinating application.
+     */
+    KymoStatus KymoWatch_InitRestricted(KymoWatch *watch, const KymoWatchConfig *config,
+                                        uint8_t first_channel, uint8_t last_channel);
 
-/**
- * @brief Consume received bytes and handle every complete live-variable request.
- *
- * @details Bytes may arrive in any split. DATA frames and other modules' control
- * messages are ignored without counting them as invalid.
- * @param[in,out] watch Initialized state; NULL or uninitialized input is ignored.
- * @param[in] bytes Received bytes; NULL is treated as empty.
- * @param[in] length Number of readable bytes.
- * @return Number of WATCH_INFO and WATCH_SET requests handled during this call.
- * @par Usage
- * Feed whatever a non-blocking read returned, then drain KymoWatch_NextReply.
- */
-size_t KymoWatch_Feed(KymoWatch *watch, const uint8_t *bytes, size_t length);
+    /**
+     * @brief Consume received bytes and handle every complete live-variable request.
+     *
+     * @details Bytes may arrive in any split. DATA frames and other modules' control
+     * messages are ignored without counting them as invalid.
+     * @param[in,out] watch Initialized state; NULL or uninitialized input is ignored.
+     * @param[in] bytes Received bytes; NULL is treated as empty.
+     * @param[in] length Number of readable bytes.
+     * @return Number of WATCH_INFO and WATCH_SET requests handled during this call.
+     * @par Usage
+     * Feed whatever a non-blocking read returned, then drain KymoWatch_NextReply.
+     */
+    size_t KymoWatch_Feed(KymoWatch *watch, const uint8_t *bytes, size_t length);
 
-/**
- * @brief Encode the next due reply: first a WATCH_INFO_REPLY, then acknowledgements.
- *
- * @details The frame is complete and CRC-protected; send it as is. Taking a reply
- * clears it, so send it in the same step.
- * @param[in,out] watch Initialized state; NULL yields zero.
- * @param[out] output Frame buffer; NULL yields zero.
- * @param[in] capacity Writable bytes; KYMO_WATCH_FRAME_MAX_SIZE fits every reply.
- * @return Frame length, or zero when none is due or the buffer is too small (the
- *         reply then stays due).
- * @par Usage
- * while ((n = KymoWatch_NextReply(&watch, frame, sizeof(frame))) != 0u) { send(frame, n); }
- */
-size_t KymoWatch_NextReply(KymoWatch *watch, uint8_t *output, size_t capacity);
+    /**
+     * @brief Encode the next due reply: first a WATCH_INFO_REPLY, then acknowledgements.
+     *
+     * @details The frame is complete and CRC-protected; send it as is. Taking a reply
+     * clears it, so send it in the same step.
+     * @param[in,out] watch Initialized state; NULL yields zero.
+     * @param[out] output Frame buffer; NULL yields zero.
+     * @param[in] capacity Writable bytes; KYMO_WATCH_FRAME_MAX_SIZE fits every reply.
+     * @return Frame length, or zero when none is due or the buffer is too small (the
+     *         reply then stays due).
+     * @par Usage
+     * while ((n = KymoWatch_NextReply(&watch, frame, sizeof(frame))) != 0u) { send(frame, n); }
+     */
+    size_t KymoWatch_NextReply(KymoWatch *watch, uint8_t *output, size_t capacity);
 
-/**
- * @brief Take the next due sample.
- *
- * @details Checks the slots round robin and reads the first due variable. Fills id
- * (the requested channel) and value; flags and the other fields are zero, so the
- * application can add its timestamp. A slot sampled late is rescheduled from
- * @p now_ms, so a pause never causes a burst.
- * @param[in,out] watch Initialized state; NULL is rejected.
- * @param[in] now_ms Application clock in milliseconds (wrapping is fine).
- * @param[out] point Destination; NULL is rejected.
- * @return KYMO_OK with a sample, KYMO_IDLE if none is due, KYMO_BAD_CONFIG for NULL
- *         or uninitialized input.
- * @par Usage
- * while (KymoWatch_NextSample(&watch, now_ms, &point) == KYMO_OK) { send point; }
- */
-KymoStatus KymoWatch_NextSample(KymoWatch *watch, uint32_t now_ms, KymoDataPoint *point);
+    /**
+     * @brief Take the next due sample.
+     *
+     * @details Checks the slots round robin and reads the first due variable. Fills id
+     * (the requested channel) and value; flags and the other fields are zero, so the
+     * application can add its timestamp. A slot sampled late is rescheduled from
+     * @p now_ms, so a pause never causes a burst.
+     * @param[in,out] watch Initialized state; NULL is rejected.
+     * @param[in] now_ms Application clock in milliseconds (wrapping is fine).
+     * @param[out] point Destination; NULL is rejected.
+     * @return KYMO_OK with a sample, KYMO_IDLE if none is due, KYMO_BAD_CONFIG for NULL
+     *         or uninitialized input.
+     * @par Usage
+     * while (KymoWatch_NextSample(&watch, now_ms, &point) == KYMO_OK) { send point; }
+     */
+    KymoStatus KymoWatch_NextSample(KymoWatch *watch, uint32_t now_ms, KymoDataPoint *point);
 
 #ifdef __cplusplus
 }

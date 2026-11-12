@@ -20,7 +20,7 @@ static size_t copyBytes(void *user, const uint8_t *bytes, size_t length)
  ******************************************************************************/
 int main(void)
 {
-    const uint8_t frame[] = { 1u, 2u, 3u };
+    const uint8_t frame[] = {1u, 2u, 3u};
     uint8_t storage[sizeof(frame)] = {0};
     uint8_t received[sizeof(frame)] = {0};
     KymoTx tx = {0};

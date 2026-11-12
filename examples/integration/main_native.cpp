@@ -30,27 +30,36 @@ int main(int argc, char **argv)
     int result = EXIT_RUN_FAILURE;
     KymoStatus status = KYMO_BAD_CONFIG;
     if ((argc == REQUIRED_ARGUMENT_COUNT) &&
-        (exampleNativeOpen(argv[REQUEST_FILE_ARGUMENT], argv[CAPTURE_FILE_ARGUMENT]) != 0u)) {
+        (exampleNativeOpen(argv[REQUEST_FILE_ARGUMENT], argv[CAPTURE_FILE_ARGUMENT]) != 0u))
+    {
         status = exampleAppInit();
-        for (uint32_t cycle = 0u; (cycle < SIMULATION_CYCLES) &&
+        for (uint32_t cycle = 0u;
+             (cycle < SIMULATION_CYCLES) &&
              ((status == KYMO_OK) || (status == KYMO_BUSY) || (status == KYMO_IDLE)) &&
-             (examplePortHealthy() != 0u); ++cycle) {
+             (examplePortHealthy() != 0u);
+             ++cycle)
+        {
             exampleTraceCycle(cycle);
             status = KymoApp_Main();
         }
         if (((status == KYMO_OK) || (status == KYMO_BUSY) || (status == KYMO_IDLE)) &&
-            (examplePortHealthy() != 0u)) {
+            (examplePortHealthy() != 0u))
+        {
             status = KymoApp_RequestStop();
             status = (status == KYMO_OK) ? KYMO_BUSY : status;
             /* A host-test deadline is never permission to reuse DMA storage. */
-            for (uint32_t cycle = 0u; (cycle < DRAIN_DEADLINE_CYCLES) &&
-                 (status == KYMO_BUSY) && (examplePortHealthy() != 0u); ++cycle) {
+            for (uint32_t cycle = 0u; (cycle < DRAIN_DEADLINE_CYCLES) && (status == KYMO_BUSY) &&
+                                      (examplePortHealthy() != 0u);
+                 ++cycle)
+            {
                 status = KymoApp_Main();
             }
         }
-        result = (status == KYMO_IO_ERROR) ? EXIT_TX_CONTRACT_FAILURE :
-            ((status == KYMO_IDLE) ? EXIT_SUCCESSFUL : EXIT_RUN_FAILURE);
-        if (exampleNativeClose() == 0u) {
+        result = (status == KYMO_IO_ERROR)
+                     ? EXIT_TX_CONTRACT_FAILURE
+                     : ((status == KYMO_IDLE) ? EXIT_SUCCESSFUL : EXIT_RUN_FAILURE);
+        if (exampleNativeClose() == 0u)
+        {
             result = EXIT_RUN_FAILURE;
         }
     }

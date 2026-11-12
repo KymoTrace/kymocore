@@ -33,7 +33,8 @@ static uint8_t readSample(void *user, uint8_t id, KymoSample *sample)
 {
     uint8_t result = 0u;
     float *values = static_cast<float *>(user);
-    if (sSkip == 0u) {
+    if (sSkip == 0u)
+    {
         sample->value = (values != nullptr) ? values[id] : (float)id;
         result = 1u;
     }
@@ -47,9 +48,12 @@ static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
 {
     uint8_t accepted = (length < sWriteLimit) ? length : sWriteLimit;
     (void)user;
-    if (sOverAccept != 0u) {
+    if (sOverAccept != 0u)
+    {
         accepted = (uint8_t)(length + 1u);
-    } else {
+    }
+    else
+    {
         assert(sByteCount + accepted <= sizeof(sBytes));
         memcpy(sBytes + sByteCount, bytes, accepted);
         sByteCount += accepted;
@@ -124,7 +128,8 @@ static void testValidation(void)
     config.channel_count = KYMO_COUNT_OF(duplicate);
     assert(Kymo_Init(&context, &config) == KYMO_BAD_CONFIG);
     assert(Kymo_Main(&context) == KYMO_BAD_CONFIG); /* failed Init disables */
-    for (uint16_t i = 0u; i < KYMO_COUNT_OF(tooMany); ++i) {
+    for (uint16_t i = 0u; i < KYMO_COUNT_OF(tooMany); ++i)
+    {
         tooMany[i].id = (uint8_t)i;
     }
     config.channels = tooMany;
@@ -180,7 +185,8 @@ static void testScheduling(void)
     sNowMs += 10u;
     KymoStatus status = Kymo_Main(&context);
     unsigned calls = 1u;
-    while (status == KYMO_BUSY) {
+    while (status == KYMO_BUSY)
+    {
         status = Kymo_Main(&context);
         ++calls;
     }

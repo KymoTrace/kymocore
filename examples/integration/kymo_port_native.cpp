@@ -44,15 +44,19 @@ static uint8_t sHealthy = 0u;
 uint8_t exampleNativeOpen(const char *inputPath, const char *outputPath)
 {
     uint8_t result = 0u;
-    if ((inputPath != nullptr) && (outputPath != nullptr) &&
-        (strcmp(inputPath, outputPath) != 0)) {
+    if ((inputPath != nullptr) && (outputPath != nullptr) && (strcmp(inputPath, outputPath) != 0))
+    {
         sInput = fopen(inputPath, "rb");
-        if (sInput != nullptr) {
+        if (sInput != nullptr)
+        {
             sOutput = fopen(outputPath, "wb");
-            if (sOutput != nullptr) {
+            if (sOutput != nullptr)
+            {
                 sHealthy = 1u;
                 result = 1u;
-            } else {
+            }
+            else
+            {
                 (void)fclose(sInput);
                 sInput = nullptr;
             }
@@ -67,13 +71,16 @@ uint8_t exampleNativeOpen(const char *inputPath, const char *outputPath)
 void examplePortService(void)
 {
     ++sTicks;
-    if (sHoldCycles != 0u) {
+    if (sHoldCycles != 0u)
+    {
         --sHoldCycles;
     }
-    if ((sBorrowed != nullptr) && (sHoldCycles == 0u)) {
+    if ((sBorrowed != nullptr) && (sHoldCycles == 0u))
+    {
         /* Detect buffer reuse before simulated DMA completion. */
         if ((memcmp(sSaved, sBorrowed, sBorrowedLength) != 0) ||
-            (fwrite(sBorrowed, 1u, sBorrowedLength, sOutput) != sBorrowedLength)) {
+            (fwrite(sBorrowed, 1u, sBorrowedLength, sOutput) != sBorrowedLength))
+        {
             sHealthy = 0u;
         }
         sBorrowed = nullptr;
@@ -87,12 +94,15 @@ void examplePortService(void)
 size_t examplePortRead(uint8_t *output, size_t capacity)
 {
     size_t length = 0u;
-    if ((output != nullptr) && (sInput != nullptr) && (sHealthy != 0u)) {
-        if (capacity > RX_FRAGMENT_BYTES) {
+    if ((output != nullptr) && (sInput != nullptr) && (sHealthy != 0u))
+    {
+        if (capacity > RX_FRAGMENT_BYTES)
+        {
             capacity = RX_FRAGMENT_BYTES;
         }
         length = fread(output, 1u, capacity, sInput);
-        if (ferror(sInput) != 0) {
+        if (ferror(sInput) != 0)
+        {
             sHealthy = 0u;
         }
     }
@@ -105,8 +115,8 @@ size_t examplePortRead(uint8_t *output, size_t capacity)
 size_t examplePortWrite(const uint8_t *bytes, size_t length)
 {
     size_t accepted = 0u;
-    if ((bytes != nullptr) && (length != 0u) && (sHealthy != 0u) &&
-        (examplePortBusy() == 0u)) {
+    if ((bytes != nullptr) && (length != 0u) && (sHealthy != 0u) && (examplePortBusy() == 0u))
+    {
         ++sWrites;
 #if EXAMPLE_NATIVE_FAULT
         /* A second write after the violation is itself an example failure. */
@@ -114,19 +124,26 @@ size_t examplePortWrite(const uint8_t *bytes, size_t length)
         accepted = length + 1u;
 #else
         /* Zero acceptance is legal even after busy returned zero. */
-        if ((sWrites % ZERO_WRITE_INTERVAL) != 0u) {
+        if ((sWrites % ZERO_WRITE_INTERVAL) != 0u)
+        {
             accepted = length;
-            if (accepted > EXAMPLE_NATIVE_CHUNK) {
+            if (accepted > EXAMPLE_NATIVE_CHUNK)
+            {
                 accepted = EXAMPLE_NATIVE_CHUNK;
             }
-            if (accepted > sizeof(sSaved)) {
+            if (accepted > sizeof(sSaved))
+            {
                 accepted = sizeof(sSaved);
             }
-            if (EXAMPLE_NATIVE_HOLD == 0u) {
-                if (fwrite(bytes, 1u, accepted, sOutput) != accepted) {
+            if (EXAMPLE_NATIVE_HOLD == 0u)
+            {
+                if (fwrite(bytes, 1u, accepted, sOutput) != accepted)
+                {
                     sHealthy = 0u;
                 }
-            } else {
+            }
+            else
+            {
                 sBorrowed = bytes;
                 sBorrowedLength = accepted;
                 memcpy(sSaved, bytes, accepted);
@@ -179,11 +196,14 @@ uint8_t examplePortHealthy(void)
 uint8_t exampleNativeClose(void)
 {
     uint8_t result = (uint8_t)((sBorrowed == nullptr) && (sHealthy != 0u));
-    if (sBorrowed == nullptr) {
-        if ((sInput != nullptr) && (fclose(sInput) != 0)) {
+    if (sBorrowed == nullptr)
+    {
+        if ((sInput != nullptr) && (fclose(sInput) != 0))
+        {
             result = 0u;
         }
-        if ((sOutput != nullptr) && (fclose(sOutput) != 0)) {
+        if ((sOutput != nullptr) && (fclose(sOutput) != 0))
+        {
             result = 0u;
         }
         sInput = nullptr;

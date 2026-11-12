@@ -21,19 +21,24 @@ KymoStatus exampleAppInit(void)
     KymoEndpointMemoryConfig memory = exampleMemoryConfig();
     KymoEndpointTraceConfig trace = exampleTraceConfig();
     KymoStatus status = KymoApp_Init(&core);
-    if (status == KYMO_OK) {
+    if (status == KYMO_OK)
+    {
         status = KymoApp_PlotInit(&plot);
     }
-    if (status == KYMO_OK) {
+    if (status == KYMO_OK)
+    {
         status = KymoApp_ParamInit(&param);
     }
-    if (status == KYMO_OK) {
+    if (status == KYMO_OK)
+    {
         status = KymoApp_WatchInit(&watch);
     }
-    if (status == KYMO_OK) {
+    if (status == KYMO_OK)
+    {
         status = KymoApp_MemoryInit(&memory);
     }
-    if (status == KYMO_OK) {
+    if (status == KYMO_OK)
+    {
         status = KymoApp_TraceInit(&trace);
     }
     return status;

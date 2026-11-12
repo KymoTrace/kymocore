@@ -99,7 +99,8 @@ static inline uint8_t emb_u8_only_bits(uint8_t value, uint8_t allowed)
 static inline uint8_t emb_u8_bit(uint8_t index)
 {
     uint8_t result = 0;
-    if (index < 8u) {
+    if (index < 8u)
+    {
         result = (uint8_t)(UINT32_C(1) << index);
     }
     return result;
@@ -118,12 +119,12 @@ static inline uint8_t emb_u8_bit(uint8_t index)
  * @par Usage
  * emb_bitset_test(seen, sizeof(seen), channel_id) checks whether a channel was seen.
  */
-static inline uint8_t emb_bitset_test(const uint8_t *bits, size_t capacity,
-                                     size_t index)
+static inline uint8_t emb_bitset_test(const uint8_t *bits, size_t capacity, size_t index)
 {
     uint8_t result = 0;
     size_t byte_index = index / 8u;
-    if ((bits != NULL) && (byte_index < capacity)) {
+    if ((bits != NULL) && (byte_index < capacity))
+    {
         result = emb_u8_has_any(bits[byte_index], emb_u8_bit((uint8_t)(index % 8u)));
     }
     return result;
@@ -145,7 +146,8 @@ static inline uint8_t emb_bitset_set(uint8_t *bits, size_t capacity, size_t inde
 {
     uint8_t result = 0;
     size_t byte_index = index / 8u;
-    if ((bits != NULL) && (byte_index < capacity)) {
+    if ((bits != NULL) && (byte_index < capacity))
+    {
         bits[byte_index] = EMB_U8_OR(bits[byte_index], emb_u8_bit((uint8_t)(index % 8u)));
         result = 1;
     }
@@ -168,14 +170,14 @@ static inline uint8_t emb_bitset_clear(uint8_t *bits, size_t capacity, size_t in
 {
     uint8_t result = 0;
     size_t byte_index = index / 8u;
-    if ((bits != NULL) && (byte_index < capacity)) {
-        bits[byte_index] = (uint8_t)(bits[byte_index] &
-                                     (uint8_t)~emb_u8_bit((uint8_t)(index % 8u)));
+    if ((bits != NULL) && (byte_index < capacity))
+    {
+        bits[byte_index] =
+            (uint8_t)(bits[byte_index] & (uint8_t)~emb_u8_bit((uint8_t)(index % 8u)));
         result = 1;
     }
     return result;
 }
-
 
 /** @} */
 #endif /* EMBEDDED_COMMON_BITS_H */

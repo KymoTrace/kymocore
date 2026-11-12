@@ -40,19 +40,23 @@
  * @par Usage
  * uint8_t crc = emb_crc8_msb(data, length, 0x07u, 0u);
  */
-static inline uint8_t emb_crc8_msb(const uint8_t *data, size_t length,
-                                  uint8_t polynomial, uint8_t initial)
+static inline uint8_t emb_crc8_msb(const uint8_t *data, size_t length, uint8_t polynomial,
+                                   uint8_t initial)
 {
     uint8_t result = initial;
     size_t index;
-    if (data != NULL) {
-        for (index = 0; index < length; ++index) {
+    if (data != NULL)
+    {
+        for (index = 0; index < length; ++index)
+        {
             uint8_t bit;
             result = (uint8_t)(result ^ data[index]);
-            for (bit = 0; bit < 8u; ++bit) {
+            for (bit = 0; bit < 8u; ++bit)
+            {
                 uint8_t high = (uint8_t)(result & 0x80u);
                 result = (uint8_t)((unsigned int)result << 1u);
-                if (high != 0u) {
+                if (high != 0u)
+                {
                     result = (uint8_t)(result ^ polynomial);
                 }
             }
@@ -76,13 +80,17 @@ static inline uint16_t emb_crc16_ccitt(const uint8_t *data, size_t length)
 {
     uint16_t crc = 0xffffu;
     size_t index;
-    if (data != NULL) {
-        for (index = 0; index < length; ++index) {
+    if (data != NULL)
+    {
+        for (index = 0; index < length; ++index)
+        {
             uint8_t bit;
             crc = (uint16_t)(crc ^ (uint16_t)((uint16_t)data[index] << 8u));
-            for (bit = 0; bit < 8u; ++bit) {
+            for (bit = 0; bit < 8u; ++bit)
+            {
                 uint16_t shifted = (uint16_t)((uint32_t)crc << 1u);
-                if ((crc & 0x8000u) != 0u) {
+                if ((crc & 0x8000u) != 0u)
+                {
                     shifted = (uint16_t)(shifted ^ 0x1021u);
                 }
                 crc = shifted;
@@ -107,14 +115,20 @@ static inline uint32_t emb_crc32_ieee(const uint8_t *data, size_t length)
 {
     uint32_t crc = UINT32_C(0xffffffff);
     size_t index;
-    if (data != NULL) {
-        for (index = 0; index < length; ++index) {
+    if (data != NULL)
+    {
+        for (index = 0; index < length; ++index)
+        {
             uint8_t bit;
             crc = crc ^ (uint32_t)data[index];
-            for (bit = 0; bit < 8u; ++bit) {
-                if ((crc & 1u) != 0u) {
+            for (bit = 0; bit < 8u; ++bit)
+            {
+                if ((crc & 1u) != 0u)
+                {
                     crc = (crc >> 1u) ^ UINT32_C(0xedb88320);
-                } else {
+                }
+                else
+                {
                     crc = crc >> 1u;
                 }
             }

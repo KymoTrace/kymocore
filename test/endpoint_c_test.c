@@ -7,7 +7,7 @@
 #include <assert.h>
 static size_t writes;
 static uint8_t storage[KYMO_FRAME_MAX_SIZE];
-static const KymoChannel channels[] = { { 0u, 7u, 0u } };
+static const KymoChannel channels[] = {{0u, 7u, 0u}};
 /*******************************************************************************
  * clockMs
  ******************************************************************************/

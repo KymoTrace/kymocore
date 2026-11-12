@@ -60,10 +60,14 @@ static uint8_t readSample(void *user, uint8_t id, KymoSample *out)
     uint8_t result = 0U;
     const float phase = static_cast<float>(millis() % 2000UL) / 2000.0f;
     (void)user;
-    if (out != nullptr) {
-        if (id == 0U) {
+    if (out != nullptr)
+    {
+        if (id == 0U)
+        {
             out->value = sinf(phase * 6.283185307f);
-        } else {
+        }
+        else
+        {
             out->value = (2.0f * phase) - 1.0f;
         }
         result = 1U;
@@ -87,8 +91,10 @@ static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
     uint8_t result = 0U;
     int available = Serial.availableForWrite();
     (void)user;
-    if ((bytes != nullptr) && (available > 0)) {
-        if (available < length) {
+    if ((bytes != nullptr) && (available > 0))
+    {
+        if (available < length)
+        {
             length = static_cast<uint8_t>(available);
         }
         result = static_cast<uint8_t>(Serial.write(bytes, length));
@@ -101,7 +107,7 @@ static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
  ******************************************************************************/
 void setup()
 {
-    KymoConfig config = {};   /* copied by Kymo_Init; may be local */
+    KymoConfig config = {}; /* copied by Kymo_Init; may be local */
     Serial.begin(115200);
     config.channels = channels;
     config.channel_count = KYMO_COUNT_OF(channels);
@@ -124,11 +130,15 @@ void loop()
 /*******************************************************************************
  * setup
  ******************************************************************************/
-void setup() {}
+void setup()
+{
+}
 
 /*******************************************************************************
  * loop
  ******************************************************************************/
-void loop() {}
+void loop()
+{
+}
 
 #endif

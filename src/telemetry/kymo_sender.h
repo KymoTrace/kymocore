@@ -37,8 +37,9 @@
  * @par Usage
  * Derive a small adapter for UART, USB, TCP or a test capture buffer.
  */
-class KymoStream {
-public:
+class KymoStream
+{
+  public:
     /**
      * @brief Accept a prefix of the offered bytes.
      * @param[in] data Readable bytes owned by the sender.
@@ -51,10 +52,15 @@ public:
      * @brief Report whether the last buffer is still owned by the driver.
      * @return True while in flight or unavailable.
      */
-    virtual bool busy() const { return false; }
+    virtual bool busy() const
+    {
+        return false;
+    }
 
     /** @brief Virtual destructor for polymorphic adapters. */
-    virtual ~KymoStream() {}
+    virtual ~KymoStream()
+    {
+    }
 };
 
 /**
@@ -68,7 +74,7 @@ public:
  */
 class KymoSender
 {
-public:
+  public:
     /**
      * @brief Construct a sender without stream; call begin() before sending.
      * @par Usage
@@ -157,8 +163,7 @@ public:
      * @param[in] includeTimestamp Request a timestamp.
      * @return Same codes as send().
      */
-    KymoStatus send3D(uint8_t channelId, float x, float y, float z,
-                      bool includeTimestamp = false);
+    KymoStatus send3D(uint8_t channelId, float x, float y, float z, bool includeTimestamp = false);
 
     /**
      * @brief Advance a pending short write once.
@@ -169,7 +174,7 @@ public:
      */
     KymoStatus flush();
 
-private:
+  private:
     /**
      * @brief Shared validation, encoding and first write attempt.
      * @param[in] channelId Channel identifier.

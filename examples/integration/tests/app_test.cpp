@@ -77,7 +77,8 @@ int main(void)
     assert(KymoApp_Main() == KYMO_BAD_CONFIG);
     assert(KymoApp_RequestStop() == KYMO_BAD_CONFIG);
     assert(exampleAppInit() == KYMO_OK);
-    for (uint32_t cycle = 0u; cycle < ACTIVE_TEST_CYCLES; ++cycle) {
+    for (uint32_t cycle = 0u; cycle < ACTIVE_TEST_CYCLES; ++cycle)
+    {
         status = KymoApp_Main();
         assert(status == KYMO_OK || status == KYMO_BUSY || status == KYMO_IDLE);
     }
@@ -85,7 +86,9 @@ int main(void)
     assert(exampleAppInit() == KYMO_REJECTED);
     assert(KymoApp_RequestStop() == KYMO_OK);
     status = KYMO_BUSY;
-    for (uint32_t cycle = 0u; (cycle < DRAIN_TEST_DEADLINE_CYCLES) && (status == KYMO_BUSY); ++cycle) {
+    for (uint32_t cycle = 0u; (cycle < DRAIN_TEST_DEADLINE_CYCLES) && (status == KYMO_BUSY);
+         ++cycle)
+    {
         status = KymoApp_Main();
     }
     assert(status == KYMO_IDLE);

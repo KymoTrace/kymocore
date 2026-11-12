@@ -7,7 +7,7 @@
 #include <string.h>
 
 /* Explicit fixture bytes, split into two physical transfers. */
-static const uint8_t EXPECTED_FRAME[] = { 1u, 2u, 3u, 4u };
+static const uint8_t EXPECTED_FRAME[] = {1u, 2u, 3u, 4u};
 static const size_t TRANSFER_CHUNK_BYTES = 2u;
 static const uint8_t REUSED_BUFFER_BYTE = 99u;
 
@@ -42,11 +42,16 @@ static size_t examplePortWrite(void *user, const uint8_t *bytes, size_t length)
     assert(bytes != nullptr && length != 0u && sBusy == 0u);
     assert(user == &sBusy);
     ++sWriteCalls;
-    if (sViolate != 0u) {
+    if (sViolate != 0u)
+    {
         accepted = length + 1u;
-    } else if (sRejectOnce != 0u) {
+    }
+    else if (sRejectOnce != 0u)
+    {
         sRejectOnce = 0u;
-    } else {
+    }
+    else
+    {
         accepted = (length > TRANSFER_CHUNK_BYTES) ? TRANSFER_CHUNK_BYTES : length;
         sBorrowed = bytes;
         sBorrowedLength = accepted;
@@ -76,7 +81,8 @@ static size_t copyWrite(void *user, const uint8_t *bytes, size_t length)
 {
     size_t *calls = static_cast<size_t *>(user);
     assert(length == TEST_CAPACITY);
-    for (size_t index = 0u; index < length; ++index) {
+    for (size_t index = 0u; index < length; ++index)
+    {
         assert(bytes[index] == REUSED_BUFFER_BYTE);
     }
     ++*calls;
@@ -98,7 +104,7 @@ static void testIndependentSender(void)
     config.transport_user = &calls;
     memset(buffer, REUSED_BUFFER_BYTE, sizeof(buffer));
     assert(KymoTx_Init(&other, &config) == KYMO_OK);
-    config.write = nullptr;  /* Init copied the configuration. */
+    config.write = nullptr; /* Init copied the configuration. */
     /* Aliased input is supported; the size_t callback must handle >255 bytes. */
     assert(KymoTx_Submit(&other, buffer, sizeof(buffer)) == KYMO_OK);
     assert(KymoTx_Service(&other) == KYMO_IDLE);
@@ -148,31 +154,32 @@ int main(void)
     assert(KymoTx_Submit(&sTx, original, 0u) == KYMO_BAD_CONFIG);
     assert(KymoTx_Submit(&sTx, original, TEST_CAPACITY + 1u) == KYMO_BAD_CONFIG);
     assert(KymoTx_Submit(&sTx, original, sizeof(original)) == KYMO_OK);
-    memset(original, REUSED_BUFFER_BYTE, sizeof(original));  /* submit already copied */
+    memset(original, REUSED_BUFFER_BYTE, sizeof(original)); /* submit already copied */
     sBusy = 1u;
     assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == 0u);
     assert(KymoTx_Submit(&sTx, original, sizeof(original)) == KYMO_BUSY);
     sBusy = 0u;
     ++calls;
-    assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls);  /* zero write */
+    assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls); /* zero write */
     ++calls;
-    assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls);  /* first half */
-    assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls);  /* borrowed */
+    assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls); /* first half */
+    assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls); /* borrowed */
     assert(KymoTx_Init(&sTx, &config) == KYMO_REJECTED);
     testIndependentSender();
     releaseTransfer();
     ++calls;
-    assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls);  /* final half */
+    assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls); /* final half */
     assert(KymoTx_Submit(&sTx, original, sizeof(original)) == KYMO_BUSY);
     assert(KymoTx_Service(&sTx) == KYMO_BUSY && sWriteCalls == calls);
     releaseTransfer();
     assert(KymoTx_Service(&sTx) == KYMO_IDLE && sWriteCalls == calls);
     assert(sWireLength == sizeof(EXPECTED_FRAME) &&
-        memcmp(sWire, EXPECTED_FRAME, sizeof(EXPECTED_FRAME)) == 0);
+           memcmp(sWire, EXPECTED_FRAME, sizeof(EXPECTED_FRAME)) == 0);
 
     /* Exact maximum capacity works too, without truncation or duplicate writes. */
     assert(KymoTx_Submit(&sTx, maximum, sizeof(maximum)) == KYMO_OK);
-    for (size_t offset = 0u; offset < sizeof(maximum); offset += TRANSFER_CHUNK_BYTES) {
+    for (size_t offset = 0u; offset < sizeof(maximum); offset += TRANSFER_CHUNK_BYTES)
+    {
         assert(KymoTx_Service(&sTx) == KYMO_BUSY);
         releaseTransfer();
     }

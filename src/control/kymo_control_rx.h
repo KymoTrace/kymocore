@@ -30,7 +30,8 @@
 #if KYMO_EFFECTIVE_PARAMETERS || KYMO_EFFECTIVE_WATCH || defined(DOXYGEN)
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /**
@@ -53,58 +54,59 @@ extern "C" {
 /** @brief Highest operation code defined in PROTOCOL.md. */
 #define KYMO_CONTROL_OP_LAST 0x06u
 
-/**
- * @brief Reassembly state for one receiving module.
- *
- * @details frame holds the bytes of the current candidate; length counts them and
- * expected is the complete length once known (zero while unknown).
- * @par Usage
- * Embedded in KymoParamReceiver and KymoWatch; zero-initialize.
- */
-typedef struct {
-    /** @brief Bytes of the frame being reassembled. */
-    uint8_t frame[KYMO_FRAME_MAX_SIZE];
-    /** @brief Number of valid bytes in frame. */
-    size_t length;
-    /** @brief Complete-frame length once known, else zero. */
-    size_t expected;
-} KymoControlRx;
+    /**
+     * @brief Reassembly state for one receiving module.
+     *
+     * @details frame holds the bytes of the current candidate; length counts them and
+     * expected is the complete length once known (zero while unknown).
+     * @par Usage
+     * Embedded in KymoParamReceiver and KymoWatch; zero-initialize.
+     */
+    typedef struct
+    {
+        /** @brief Bytes of the frame being reassembled. */
+        uint8_t frame[KYMO_FRAME_MAX_SIZE];
+        /** @brief Number of valid bytes in frame. */
+        size_t length;
+        /** @brief Complete-frame length once known, else zero. */
+        size_t expected;
+    } KymoControlRx;
 
-/**
- * @brief Consume one byte.
- *
- * @details Skips bytes until a sync marker; rejects unsupported descriptors and
- * control lengths outside 1..KYMO_CONTROL_REQUEST_MAX by incrementing *invalid.
- * When the function returns a length, rx->frame holds a complete frame of that
- * many bytes (CRC not yet checked); handle it before feeding the next byte, which
- * starts a new frame.
- * @param[in,out] rx Reassembly state; must not be NULL.
- * @param[in] byte Received byte.
- * @param[in,out] invalid Diagnostic counter of discarded frames; must not be NULL.
- * @return Length of the completed frame, or zero.
- * @par Usage
- * if ((n = KymoControlRx_Byte(&rx, byte, &invalid)) != 0u) { handle(rx.frame, n); }
- */
-size_t KymoControlRx_Byte(KymoControlRx *rx, uint8_t byte, uint32_t *invalid);
+    /**
+     * @brief Consume one byte.
+     *
+     * @details Skips bytes until a sync marker; rejects unsupported descriptors and
+     * control lengths outside 1..KYMO_CONTROL_REQUEST_MAX by incrementing *invalid.
+     * When the function returns a length, rx->frame holds a complete frame of that
+     * many bytes (CRC not yet checked); handle it before feeding the next byte, which
+     * starts a new frame.
+     * @param[in,out] rx Reassembly state; must not be NULL.
+     * @param[in] byte Received byte.
+     * @param[in,out] invalid Diagnostic counter of discarded frames; must not be NULL.
+     * @return Length of the completed frame, or zero.
+     * @par Usage
+     * if ((n = KymoControlRx_Byte(&rx, byte, &invalid)) != 0u) { handle(rx.frame, n); }
+     */
+    size_t KymoControlRx_Byte(KymoControlRx *rx, uint8_t byte, uint32_t *invalid);
 
-/**
- * @brief Check the mandatory CRC of a complete control frame.
- * @param[in] frame Complete control frame; must not be NULL.
- * @param[in] length Its length (payload + 5).
- * @return 1 when the CRC-8 over descriptor, length and payload matches.
- * @par Usage
- * Call before interpreting the operation byte frame[4].
- */
-uint8_t KymoControlRx_CrcValid(const uint8_t *frame, size_t length);
+    /**
+     * @brief Check the mandatory CRC of a complete control frame.
+     * @param[in] frame Complete control frame; must not be NULL.
+     * @param[in] length Its length (payload + 5).
+     * @return 1 when the CRC-8 over descriptor, length and payload matches.
+     * @par Usage
+     * Call before interpreting the operation byte frame[4].
+     */
+    uint8_t KymoControlRx_CrcValid(const uint8_t *frame, size_t length);
 
-/**
- * @brief Whether an operation code belongs to any back-channel module.
- * @param[in] operation Operation byte (frame[4]).
- * @return 1 for codes KYMO_CONTROL_OP_FIRST..KYMO_CONTROL_OP_LAST.
- * @par Usage
- * Ignore known foreign operations; count unknown ones as invalid.
- */
-uint8_t KymoControl_IsKnownOperation(uint8_t operation);
+    /**
+     * @brief Whether an operation code belongs to any back-channel module.
+     * @param[in] operation Operation byte (frame[4]).
+     * @return 1 for codes KYMO_CONTROL_OP_FIRST..KYMO_CONTROL_OP_LAST.
+     * @par Usage
+     * Ignore known foreign operations; count unknown ones as invalid.
+     */
+    uint8_t KymoControl_IsKnownOperation(uint8_t operation);
 
 #ifdef __cplusplus
 }

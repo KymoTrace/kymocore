@@ -1,0 +1,23 @@
+# Keep the established embedded C/C++ layout reproducible.
+BasedOnStyle: Microsoft
+Language: Cpp
+Standard: c++11
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+BreakBeforeBraces: Allman
+IndentExternBlock: Indent
+NamespaceIndentation: All
+PointerAlignment: Right
+DerivePointerAlignment: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+SortIncludes: Never
+IncludeBlocks: Preserve
+ReflowComments: false
+FixNamespaceComments: false
+IndentPPDirectives: None
+AlignEscapedNewlines: Left

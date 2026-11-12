@@ -22,16 +22,21 @@ static KymoStatus produceParameters(void *user, uint8_t source, uint32_t now, ui
     KymoStatus status = KYMO_IDLE;
     (void)now;
     (void)draining;
-    if (source == 0u) {
+    if (source == 0u)
+    {
         KymoDataPoint point = {};
         status = KymoParam_NextReadback(&feature->receiver, &point);
         status = kymoEndpointSample(feature->binding.endpoint, status, &point, now);
-    } else {
+    }
+    else
+    {
         uint8_t frame[KYMO_PARAM_FRAME_MAX_SIZE] = {};
         size_t length = KymoParam_NextDescription(&feature->receiver, frame, sizeof(frame));
-        if (length != 0u) {
-            status = kymoEndpointCopy(feature->binding.endpoint, frame, length) == length ?
-                KYMO_OK : feature->binding.endpoint->error;
+        if (length != 0u)
+        {
+            status = kymoEndpointCopy(feature->binding.endpoint, frame, length) == length
+                         ? KYMO_OK
+                         : feature->binding.endpoint->error;
         }
     }
     return status;
@@ -40,16 +45,19 @@ static KymoStatus produceParameters(void *user, uint8_t source, uint32_t now, ui
  * KymoEndpointParam_Init
  ******************************************************************************/
 KymoStatus KymoEndpointParam_Init(KymoEndpoint *endpoint, KymoEndpointParam *feature,
-    const KymoEndpointParamConfig *config)
+                                  const KymoEndpointParamConfig *config)
 {
     KymoEndpointFeature *binding = feature != nullptr ? &feature->binding : nullptr;
     KymoStatus status = kymoEndpointPrepare(endpoint, binding, KYMO_ENDPOINT_PARAM,
-        KYMO_PARAM_FRAME_MAX_SIZE, 0u, 1u);
-    if (status == KYMO_OK) {
+                                            KYMO_PARAM_FRAME_MAX_SIZE, 0u, 1u);
+    if (status == KYMO_OK)
+    {
         status = KYMO_BAD_CONFIG;
-        if (config != nullptr) {
+        if (config != nullptr)
+        {
             status = KymoParam_Init(&feature->receiver, config->table, config->count);
-            for (size_t index = 0u; (status == KYMO_OK) && (index < config->count); ++index) {
+            for (size_t index = 0u; (status == KYMO_OK) && (index < config->count); ++index)
+            {
                 status = kymoEndpointReserve(endpoint, config->table[index].id);
             }
         }

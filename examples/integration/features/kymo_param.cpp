@@ -10,8 +10,7 @@ static const uint8_t GAIN_PARAMETER_ID = 100u;
 static const float GAIN_MINIMUM = 0.0f;
 static const float GAIN_MAXIMUM = 10.0f;
 static const KymoParameter PARAMETERS[] = {
-    { GAIN_PARAMETER_ID, &exampleGain, GAIN_MINIMUM, GAIN_MAXIMUM, "gain", "" }
-};
+    {GAIN_PARAMETER_ID, &exampleGain, GAIN_MINIMUM, GAIN_MAXIMUM, "gain", ""}};
 /*******************************************************************************
  * exampleParamConfig
  ******************************************************************************/

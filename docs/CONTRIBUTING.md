@@ -29,6 +29,12 @@ If the English and German versions differ, the German version prevails.
 
 ## Technical notes
 
+- Format C/C++ files in `src/`, `examples/` and `test/` using the root
+  `.clang-format` (verified with clang-format 23.1.1): four spaces, Allman braces
+  and a 100-column code limit. Include order and Doxygen text stay unchanged;
+  function separator rules remain 80 columns including indentation.
+  Run `clang-format --style=file -i path/to/file.cpp`, or check without edits
+  using `clang-format --style=file --dry-run --Werror path/to/file.cpp`.
 - New source files start with the SPDX line
   `SPDX-License-Identifier: MIT`.
 - Run the native suite with `python test/native_test.py` from the repository root.

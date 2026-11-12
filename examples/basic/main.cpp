@@ -45,7 +45,8 @@ static uint8_t readSample(void *pUser, uint8_t channelId, KymoSample *pSample)
 {
     uint8_t result = 0U;
     (void)pUser;
-    if ((pSample != nullptr) && (channelId == 7U)) {
+    if ((pSample != nullptr) && (channelId == 7U))
+    {
         pSample->value = 1.0f;
         result = 1U;
     }
@@ -66,8 +67,10 @@ static uint8_t writeFrame(void *pUser, const uint8_t *pBytes, uint8_t length)
 {
     uint8_t result = 0U;
     (void)pUser;
-    if ((pBytes != nullptr) && (length <= sizeof(sCapturedFrame))) {
-        for (uint8_t index = 0U; index < length; ++index) {
+    if ((pBytes != nullptr) && (length <= sizeof(sCapturedFrame)))
+    {
+        for (uint8_t index = 0U; index < length; ++index)
+        {
             sCapturedFrame[index] = pBytes[index];
         }
         sCapturedLength = length;
@@ -86,22 +89,23 @@ int main()
 {
     int result = 0;
     KymoStatus status = KYMO_BAD_CONFIG;
-    KymoConfig config = {};   /* copied by Kymo_Init; may be local */
+    KymoConfig config = {}; /* copied by Kymo_Init; may be local */
     config.channels = sChannels;
     config.channel_count = KYMO_COUNT_OF(sChannels);
     config.clock_ms = readClockMs;
     config.sample = readSample;
     config.write = writeFrame;
     status = Kymo_Init(&sContext, &config);
-    if (status != KYMO_OK) {
+    if (status != KYMO_OK)
+    {
         result = 1;
     }
-    for (uint8_t step = 0U; (step < 10U) && (result == 0); ++step) {
+    for (uint8_t step = 0U; (step < 10U) && (result == 0); ++step)
+    {
         status = Kymo_Main(&sContext);
-        if ((status != KYMO_OK) || (sCapturedLength != 9U) ||
-            (sCapturedFrame[0] != KYMO_SYNC_0) ||
-            (sCapturedFrame[1] != KYMO_SYNC_1) ||
-            (sCapturedFrame[3] != 7U)) {
+        if ((status != KYMO_OK) || (sCapturedLength != 9U) || (sCapturedFrame[0] != KYMO_SYNC_0) ||
+            (sCapturedFrame[1] != KYMO_SYNC_1) || (sCapturedFrame[3] != 7U))
+        {
             result = 1;
         }
         sTickMs += 20U;

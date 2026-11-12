@@ -21,7 +21,8 @@ static KymoStatus producePlot(void *user, uint8_t source, uint32_t now, uint8_t 
     KymoStatus status = KYMO_IDLE;
     (void)source;
     (void)now;
-    if (draining == 0u) {
+    if (draining == 0u)
+    {
         status = Kymo_Main(&feature->runtime);
     }
     return status;
@@ -30,14 +31,16 @@ static KymoStatus producePlot(void *user, uint8_t source, uint32_t now, uint8_t 
  * KymoEndpointPlot_Init
  ******************************************************************************/
 KymoStatus KymoEndpointPlot_Init(KymoEndpoint *endpoint, KymoEndpointPlot *feature,
-    const KymoEndpointPlotConfig *config)
+                                 const KymoEndpointPlotConfig *config)
 {
     KymoEndpointFeature *binding = feature != nullptr ? &feature->binding : nullptr;
-    KymoStatus status = kymoEndpointPrepare(endpoint, binding, KYMO_ENDPOINT_PLOT,
-        KYMO_FRAME_MAX_SIZE, 1u, 0u);
-    if (status == KYMO_OK) {
+    KymoStatus status =
+        kymoEndpointPrepare(endpoint, binding, KYMO_ENDPOINT_PLOT, KYMO_FRAME_MAX_SIZE, 1u, 0u);
+    if (status == KYMO_OK)
+    {
         status = KYMO_BAD_CONFIG;
-        if (config != nullptr) {
+        if (config != nullptr)
+        {
             KymoConfig runtime = {};
             runtime.channels = config->channels;
             runtime.channel_count = config->channel_count;
@@ -52,7 +55,9 @@ KymoStatus KymoEndpointPlot_Init(KymoEndpoint *endpoint, KymoEndpointPlot *featu
             /* Every Endpoint DATA source uses the same device clock origin. */
             feature->runtime.start_ms = 0u;
 #endif
-            for (uint16_t index = 0u; (status == KYMO_OK) && (index < config->channel_count); ++index) {
+            for (uint16_t index = 0u; (status == KYMO_OK) && (index < config->channel_count);
+                 ++index)
+            {
                 status = kymoEndpointReserve(endpoint, config->channels[index].id);
             }
         }

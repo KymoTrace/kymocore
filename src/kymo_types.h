@@ -22,20 +22,21 @@
 #include "kymo_config.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/** @name Status codes
- * @{ */
-/**
- * @brief Result of a KymoCore operation.
- *
- * @details A plain uint8_t keeps the C ABI small and stable. Compare against
- * the KYMO_* status macros; never rely on ordering beyond KYMO_OK being zero.
- * @par Usage
- * KymoStatus status = Kymo_Main(&context);
- */
-typedef uint8_t KymoStatus;
+    /** @name Status codes
+     * @{ */
+    /**
+     * @brief Result of a KymoCore operation.
+     *
+     * @details A plain uint8_t keeps the C ABI small and stable. Compare against
+     * the KYMO_* status macros; never rely on ordering beyond KYMO_OK being zero.
+     * @par Usage
+     * KymoStatus status = Kymo_Main(&context);
+     */
+    typedef uint8_t KymoStatus;
 
 /**
  * @brief Success: the operation completed.
@@ -113,58 +114,58 @@ typedef uint8_t KymoStatus;
  * Change the state that blocks the request before retrying.
  */
 #define KYMO_REJECTED 7u
-/** @} */
+    /** @} */
 
-/** @name Shared callback types
- * @{ */
-/**
- * @brief Read a monotonic millisecond counter.
- *
- * @details The counter may wrap modulo 2^32; KymoCore uses unsigned differences.
- * @param[in,out] user Application context registered with the callback; may be NULL.
- * @return Current uint32 millisecond tick.
- * @par Usage
- * Wrap the platform tick function, for example millis() or HAL_GetTick().
- */
-typedef uint32_t (*KymoClockFn)(void *user);
+    /** @name Shared callback types
+     * @{ */
+    /**
+     * @brief Read a monotonic millisecond counter.
+     *
+     * @details The counter may wrap modulo 2^32; KymoCore uses unsigned differences.
+     * @param[in,out] user Application context registered with the callback; may be NULL.
+     * @return Current uint32 millisecond tick.
+     * @par Usage
+     * Wrap the platform tick function, for example millis() or HAL_GetTick().
+     */
+    typedef uint32_t (*KymoClockFn)(void *user);
 
-/**
- * @brief Accept a prefix of a pending binary frame.
- *
- * @details Zero applies backpressure; short writes resume at the remaining offset.
- * Synchronous drivers copy before returning. Asynchronous drivers may retain the
- * bytes only while the matching KymoBusyFn reports nonzero. Message transports
- * (MQTT, CAN-FD, UDP) accept the whole frame or zero.
- * @param[in,out] user Transport context registered with the callback; may be NULL.
- * @param[in] bytes Non-null readable span owned by KymoCore; must not be modified.
- * @param[in] length Requested byte count, 1..21.
- * @return Accepted byte count in 0..length. Larger counts latch KYMO_IO_ERROR.
- * @par Usage
- * Forward bytes to a UART/USB/TCP driver and report only bytes actually accepted.
- */
-typedef uint8_t (*KymoWriteFn)(void *user, const uint8_t *bytes, uint8_t length);
+    /**
+     * @brief Accept a prefix of a pending binary frame.
+     *
+     * @details Zero applies backpressure; short writes resume at the remaining offset.
+     * Synchronous drivers copy before returning. Asynchronous drivers may retain the
+     * bytes only while the matching KymoBusyFn reports nonzero. Message transports
+     * (MQTT, CAN-FD, UDP) accept the whole frame or zero.
+     * @param[in,out] user Transport context registered with the callback; may be NULL.
+     * @param[in] bytes Non-null readable span owned by KymoCore; must not be modified.
+     * @param[in] length Requested byte count, 1..21.
+     * @return Accepted byte count in 0..length. Larger counts latch KYMO_IO_ERROR.
+     * @par Usage
+     * Forward bytes to a UART/USB/TCP driver and report only bytes actually accepted.
+     */
+    typedef uint8_t (*KymoWriteFn)(void *user, const uint8_t *bytes, uint8_t length);
 
-/**
- * @brief Report whether the transport still owns the last transmit buffer.
- *
- * @details Optional for copying drivers; mandatory for drivers borrowing the pointer.
- * Also report busy while disconnected. Zero permits reuse of the buffer.
- * @param[in,out] user Transport context registered with the callback.
- * @return Nonzero while unavailable or in flight; zero when the buffer may be reused.
- * @par Usage
- * Read a UART DMA completion flag or USB transmit state.
- */
-typedef uint8_t (*KymoBusyFn)(void *user);
+    /**
+     * @brief Report whether the transport still owns the last transmit buffer.
+     *
+     * @details Optional for copying drivers; mandatory for drivers borrowing the pointer.
+     * Also report busy while disconnected. Zero permits reuse of the buffer.
+     * @param[in,out] user Transport context registered with the callback.
+     * @return Nonzero while unavailable or in flight; zero when the buffer may be reused.
+     * @par Usage
+     * Read a UART DMA completion flag or USB transmit state.
+     */
+    typedef uint8_t (*KymoBusyFn)(void *user);
 
-/**
- * @brief Advance application-side transport maintenance once per cycle.
- *
- * @details Keep execution bounded; must not call back into KymoCore recursively.
- * @param[in,out] user Transport context registered with the callback.
- * @par Usage
- * Poll a network client or driver completion state.
- */
-typedef void (*KymoServiceFn)(void *user);
+    /**
+     * @brief Advance application-side transport maintenance once per cycle.
+     *
+     * @details Keep execution bounded; must not call back into KymoCore recursively.
+     * @param[in,out] user Transport context registered with the callback.
+     * @par Usage
+     * Poll a network client or driver completion state.
+     */
+    typedef void (*KymoServiceFn)(void *user);
 /** @} */
 
 /**

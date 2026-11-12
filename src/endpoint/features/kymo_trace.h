@@ -12,62 +12,69 @@
 #include "../../transport/kymo_mux.h"
 #if (KYMO_EFFECTIVE_ENDPOINT && KYMO_EFFECTIVE_TRACE) || defined(DOXYGEN)
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-/** @brief Trace-only settings; no physical writer or other feature configs.
- * @details Copied by Init; referenced arrays and contexts remain caller-owned.
- * @par Usage Zero-initialize and assign named fields. */
-typedef struct {
-    KymoTraceConfig recorder; /**< Clock, session and synchronization callbacks. */
-    const uint8_t *metadata; /**< Persistent canonical session metadata JSON, excluding CRC. */
-    size_t metadata_length; /**< Metadata bytes, excluding string terminator. */
-    const uint8_t *dictionary; /**< Persistent canonical dictionary JSON, excluding CRC. */
-    size_t dictionary_length; /**< Dictionary bytes, excluding string terminator. */
-    uint32_t generation; /**< Record generation; nonzero. */
-    uint32_t health_period_ticks; /**< Optional health interval; zero disables it. */
-    uint32_t metadata_period_ticks; /**< Repeat metadata and dictionary after this many recorder ticks; zero sends only at startup. Interval starts after the previous pair completes. */
-} KymoEndpointTraceConfig;
-/** @brief Persistent Trace context; exposed solely for static allocation.
- * @details Internal fields are read-only; never move/reinitialize a bound feature.
- * @par Usage Declare static storage or zero-initialize before the first Init. */
-typedef struct {
-    KymoEndpointFeature binding; /**< Internal ownership and dispatch. */
-    KymoTraceRecorder recorder; /**< Owned event recorder. */
-    KymoMux mux; /**< Owned trace/admin mux. */
-    KymoEndpointTraceConfig config; /**< Copied trace configuration. */
-    uint8_t metadata_stage; /**< Internal metadata progress. */
-    uint8_t end_queued; /**< Session end submitted exactly once. */
-    uint8_t metadata_ready; /**< Startup metadata completed; remains true during periodic refresh. */
-    uint8_t repeat_armed; /**< One normal trace turn must follow each metadata pair before repeating. */
-    uint64_t metadata_completed_ticks; /**< Recorder clock at completion of the last metadata pair. */
-} KymoEndpointTrace;
-/** @brief Initialize and register Trace completely, without physical I/O.
- * @details One instance per feature type per Endpoint. Failed setup latches a
- * configuration error on a configuring Endpoint; late setup leaves a running
- * Endpoint unchanged. Shared channel reservations reject cross-feature overlap.
- * @param[in,out] endpoint Base in configuring phase.
- * @param[in,out] feature Zero-initialized feature storage.
- * @param[in] config Trace settings; NULL is invalid.
- * @return OK, BAD_CONFIG for invalid resources, REJECTED for duplicate/late
- * initialization, or the existing terminal error.
- * @par Usage Check success before starting the common Main loop. */
-KymoStatus KymoEndpointTrace_Init(KymoEndpoint *endpoint, KymoEndpointTrace *feature,
-    const KymoEndpointTraceConfig *config);
-/** @brief Obtain the recorder only during configuration/running phases.
- * @details Do not retain the returned pointer across stop/reinitialization.
- * Calls read Endpoint phase: externally serialize hooks with Main/stop; recorder
- * locking alone does not protect Endpoint state. Quiesce hooks before stop.
- * Recorder locks must match execution contexts. No implicit ISR safety.
- * @param[in,out] feature Trace context; NULL is allowed.
- * @return Recorder or NULL before successful Init/after stop/fault.
- * @par Usage Prefer the feature instrumentation macros below. */
-KymoTraceRecorder *KymoEndpointTrace_Recorder(KymoEndpointTrace *feature);
-/** @brief Check that session metadata and dictionary have been handed to TX.
- * @param[in] feature Trace context; NULL is allowed.
- * @details Remains ready during periodic refresh; stop/fault clears readiness.
- * @return Nonzero when running after the startup metadata pair was queued.
- * @par Usage Optional diagnostic; recording may begin before metadata completes. */
-uint8_t KymoEndpointTrace_IsReady(const KymoEndpointTrace *feature);
+    /** @brief Trace-only settings; no physical writer or other feature configs.
+     * @details Copied by Init; referenced arrays and contexts remain caller-owned.
+     * @par Usage Zero-initialize and assign named fields. */
+    typedef struct
+    {
+        KymoTraceConfig recorder; /**< Clock, session and synchronization callbacks. */
+        const uint8_t *metadata;  /**< Persistent canonical session metadata JSON, excluding CRC. */
+        size_t metadata_length;   /**< Metadata bytes, excluding string terminator. */
+        const uint8_t *dictionary;    /**< Persistent canonical dictionary JSON, excluding CRC. */
+        size_t dictionary_length;     /**< Dictionary bytes, excluding string terminator. */
+        uint32_t generation;          /**< Record generation; nonzero. */
+        uint32_t health_period_ticks; /**< Optional health interval; zero disables it. */
+        uint32_t
+            metadata_period_ticks; /**< Repeat metadata and dictionary after this many recorder ticks; zero sends only at startup. Interval starts after the previous pair completes. */
+    } KymoEndpointTraceConfig;
+    /** @brief Persistent Trace context; exposed solely for static allocation.
+     * @details Internal fields are read-only; never move/reinitialize a bound feature.
+     * @par Usage Declare static storage or zero-initialize before the first Init. */
+    typedef struct
+    {
+        KymoEndpointFeature binding;    /**< Internal ownership and dispatch. */
+        KymoTraceRecorder recorder;     /**< Owned event recorder. */
+        KymoMux mux;                    /**< Owned trace/admin mux. */
+        KymoEndpointTraceConfig config; /**< Copied trace configuration. */
+        uint8_t metadata_stage;         /**< Internal metadata progress. */
+        uint8_t end_queued;             /**< Session end submitted exactly once. */
+        uint8_t
+            metadata_ready; /**< Startup metadata completed; remains true during periodic refresh. */
+        uint8_t
+            repeat_armed; /**< One normal trace turn must follow each metadata pair before repeating. */
+        uint64_t
+            metadata_completed_ticks; /**< Recorder clock at completion of the last metadata pair. */
+    } KymoEndpointTrace;
+    /** @brief Initialize and register Trace completely, without physical I/O.
+     * @details One instance per feature type per Endpoint. Failed setup latches a
+     * configuration error on a configuring Endpoint; late setup leaves a running
+     * Endpoint unchanged. Shared channel reservations reject cross-feature overlap.
+     * @param[in,out] endpoint Base in configuring phase.
+     * @param[in,out] feature Zero-initialized feature storage.
+     * @param[in] config Trace settings; NULL is invalid.
+     * @return OK, BAD_CONFIG for invalid resources, REJECTED for duplicate/late
+     * initialization, or the existing terminal error.
+     * @par Usage Check success before starting the common Main loop. */
+    KymoStatus KymoEndpointTrace_Init(KymoEndpoint *endpoint, KymoEndpointTrace *feature,
+                                      const KymoEndpointTraceConfig *config);
+    /** @brief Obtain the recorder only during configuration/running phases.
+     * @details Do not retain the returned pointer across stop/reinitialization.
+     * Calls read Endpoint phase: externally serialize hooks with Main/stop; recorder
+     * locking alone does not protect Endpoint state. Quiesce hooks before stop.
+     * Recorder locks must match execution contexts. No implicit ISR safety.
+     * @param[in,out] feature Trace context; NULL is allowed.
+     * @return Recorder or NULL before successful Init/after stop/fault.
+     * @par Usage Prefer the feature instrumentation macros below. */
+    KymoTraceRecorder *KymoEndpointTrace_Recorder(KymoEndpointTrace *feature);
+    /** @brief Check that session metadata and dictionary have been handed to TX.
+     * @param[in] feature Trace context; NULL is allowed.
+     * @details Remains ready during periodic refresh; stop/fault clears readiness.
+     * @return Nonzero when running after the startup metadata pair was queued.
+     * @par Usage Optional diagnostic; recording may begin before metadata completes. */
+    uint8_t KymoEndpointTrace_IsReady(const KymoEndpointTrace *feature);
 #ifdef __cplusplus
 }
 #endif

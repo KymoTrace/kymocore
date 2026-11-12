@@ -16,7 +16,8 @@ static uint8_t readValue(void *context, size_t index, uint32_t *bytes)
 {
     uint8_t ok = 0u;
     (void)context;
-    if (index != skip_index) {
+    if (index != skip_index)
+    {
         *bytes = values[index];
         ok = 1u;
     }
@@ -41,8 +42,8 @@ int main(void)
 
     /* Golden vector: a5 5a 60 0d 07 dc 01 00 10 00 00 "parser" crc */
     size_t length = KymoMemory_NextInfo(&memory, 0u, frame, sizeof(frame));
-    const uint8_t expected_head[] = {0xA5u, 0x5Au, 0x60u, 0x0Du, 0x07u, 0xDCu, 0x01u,
-                                     0x00u, 0x10u, 0x00u, 0x00u};
+    const uint8_t expected_head[] = {0xA5u, 0x5Au, 0x60u, 0x0Du, 0x07u, 0xDCu,
+                                     0x01u, 0x00u, 0x10u, 0x00u, 0x00u};
     assert(length == 18u && memcmp(frame, expected_head, sizeof(expected_head)) == 0);
     assert(memcmp(frame + 11, "parser", 6u) == 0);
     assert(frame[17] == emb_crc8_msb(frame + 2, 15u, 0x07u, 0u));
@@ -58,9 +59,11 @@ int main(void)
     assert(KymoMemory_NextInfo(&memory, 5001u, frame, sizeof(frame)) == 18u);
 
     /* First round at once, one entry per call, then idle until the period passes. */
-    assert(KymoMemory_NextSample(&memory, 100u, &point) == KYMO_OK && point.id == 220u && point.value == 3712.0f);
+    assert(KymoMemory_NextSample(&memory, 100u, &point) == KYMO_OK && point.id == 220u &&
+           point.value == 3712.0f);
     assert(KymoMemory_NextSample(&memory, 100u, &point) == KYMO_OK && point.id == 221u);
-    assert(KymoMemory_NextSample(&memory, 100u, &point) == KYMO_OK && point.id == 222u && point.value == 14080.0f);
+    assert(KymoMemory_NextSample(&memory, 100u, &point) == KYMO_OK && point.id == 222u &&
+           point.value == 14080.0f);
     assert(KymoMemory_NextSample(&memory, 599u, &point) == KYMO_IDLE);
     skip_index = 1u;
     assert(KymoMemory_NextSample(&memory, 600u, &point) == KYMO_OK && point.id == 220u);

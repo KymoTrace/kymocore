@@ -42,7 +42,8 @@ KymoStatus KymoApp_TraceInit(const KymoEndpointTraceConfig *config)
 void exampleTraceCycle(uint32_t cycle)
 {
     if ((KymoEndpointTrace_IsReady(&sFeature) != 0u) &&
-        ((cycle % TRACE_MARKER_PERIOD_CYCLES) == 0u)) {
+        ((cycle % TRACE_MARKER_PERIOD_CYCLES) == 0u))
+    {
         KYMO_ENDPOINT_TRACE_MARK(&sFeature, TRACE_CONTEXT_ID, TRACE_MARKER_ID, cycle);
     }
 }

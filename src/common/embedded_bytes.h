@@ -101,10 +101,8 @@ static inline void emb_write_u64_le(uint8_t *output, uint64_t value)
  */
 static inline uint32_t emb_read_u32_le(const uint8_t *input)
 {
-    uint32_t result = (uint32_t)input[0] |
-                      ((uint32_t)input[1] << 8u) |
-                      ((uint32_t)input[2] << 16u) |
-                      ((uint32_t)input[3] << 24u);
+    uint32_t result = (uint32_t)input[0] | ((uint32_t)input[1] << 8u) |
+                      ((uint32_t)input[2] << 16u) | ((uint32_t)input[3] << 24u);
     return result;
 }
 
@@ -144,7 +142,6 @@ static inline float emb_read_f32_le(const uint8_t *input)
     memcpy(&result, &bits, sizeof(result));
     return result;
 }
-
 
 /** @} */
 #endif /* EMBEDDED_COMMON_BYTES_H */

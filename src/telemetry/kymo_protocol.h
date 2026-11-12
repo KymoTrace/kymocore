@@ -35,7 +35,8 @@
 #include "../kymo_types.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /** @name Protocol constants
@@ -167,10 +168,10 @@ extern "C" {
  * @par Usage
  * Validate application channel flags against KYMO_SUPPORTED_FLAGS.
  */
-#define KYMO_SUPPORTED_FLAGS EMB_U8_OR( \
-    (KYMO_ENABLE_X ? KYMO_FLAG_X : 0u), EMB_U8_OR( \
-    (KYMO_ENABLE_Z ? KYMO_FLAG_Z : 0u), \
-    (KYMO_ENABLE_TIMESTAMP ? KYMO_FLAG_TIMESTAMP : 0u)))
+#define KYMO_SUPPORTED_FLAGS                                \
+    EMB_U8_OR((KYMO_ENABLE_X ? KYMO_FLAG_X : 0u),           \
+              EMB_U8_OR((KYMO_ENABLE_Z ? KYMO_FLAG_Z : 0u), \
+                        (KYMO_ENABLE_TIMESTAMP ? KYMO_FLAG_TIMESTAMP : 0u)))
 
 /**
  * @brief Flags accepted by the raw codec of this library build.
@@ -178,8 +179,8 @@ extern "C" {
  * @par Usage
  * Validate KymoDataPoint::flags before KymoProtocol_Encode.
  */
-#define KYMO_CODEC_FLAGS EMB_U8_OR(KYMO_SUPPORTED_FLAGS,     (KYMO_ENABLE_TIMESTAMP ? KYMO_FLAG_TIMESTAMP_US : 0u))
-
+#define KYMO_CODEC_FLAGS \
+    EMB_U8_OR(KYMO_SUPPORTED_FLAGS, (KYMO_ENABLE_TIMESTAMP ? KYMO_FLAG_TIMESTAMP_US : 0u))
 
 /**
  * @brief Mask selecting the two wire-version bits.
@@ -217,144 +218,141 @@ extern "C" {
  */
 #define KYMO_FRAME_MAX_SIZE 21u
 
-/** @} */
+    /** @} */
 
-/**
- * @brief Native application representation of one measurement.
- *
- * @details Input to the encoder and output of successful decoding. Padding and host byte order
- * are never sent. Zero-initialize before filling fields; absent decoded fields become zero.
- * All selected coordinates must be finite IEEE-754 binary32 values.
- * @par Usage
- * Set id/value and optional flags/fields, then call KymoProtocol_Encode.
- */
-typedef struct
-{
     /**
-     * @brief Channel identifier in the inclusive range 0..255.
+     * @brief Native application representation of one measurement.
      *
-     * @details Input to encoding; output from decoding.
+     * @details Input to the encoder and output of successful decoding. Padding and host byte order
+     * are never sent. Zero-initialize before filling fields; absent decoded fields become zero.
+     * All selected coordinates must be finite IEEE-754 binary32 values.
      * @par Usage
-     * point.id = 7;
+     * Set id/value and optional flags/fields, then call KymoProtocol_Encode.
      */
-    uint8_t id;
-    /**
-     * @brief Presence flags for X, Z and timestamp, plus the timestamp unit.
-     *
-     * @details Input/output; only KYMO_CODEC_FLAGS bits are accepted by this build.
-     * Zero selects Y only. Wire flags remain defined even when their features are disabled.
-     * @par Usage
-     * point.flags = KYMO_ALLOWED_FLAGS;
-     */
-    uint8_t flags;
-    /**
-     * @brief Optional X coordinate.
-     *
-     * @details Input/output; relevant only when KYMO_FLAG_X is set. Decoded absent X is zero.
-     * @par Usage
-     * Set point.x for Cartesian measurements.
-     */
-    float x;
-    /**
-     * @brief Mandatory Y coordinate or scalar measurement.
-     *
-     * @details Input/output; must be finite even when no optional fields are selected.
-     * @par Usage
-     * point.value = temperature;
-     */
-    float value;
-    /**
-     * @brief Optional Z coordinate.
-     *
-     * @details Input/output; relevant only when KYMO_FLAG_Z is set. Decoded absent Z is zero.
-     * @par Usage
-     * Set point.z for XYZ or YZ measurements.
-     */
-    float z;
-    /**
-     * @brief Optional timestamp relative to the sender epoch, in ms or µs.
-     *
-     * @details Input/output; used only with KYMO_FLAG_TIMESTAMP. Milliseconds by
-     * default, microseconds with KYMO_FLAG_TIMESTAMP_US. Wraps modulo 2^32.
-     * @par Usage
-     * Use elapsed milliseconds rather than Unix time.
-     */
-    uint32_t timestamp_ms;
-} KymoDataPoint;
+    typedef struct
+    {
+        /**
+         * @brief Channel identifier in the inclusive range 0..255.
+         *
+         * @details Input to encoding; output from decoding.
+         * @par Usage
+         * point.id = 7;
+         */
+        uint8_t id;
+        /**
+         * @brief Presence flags for X, Z and timestamp, plus the timestamp unit.
+         *
+         * @details Input/output; only KYMO_CODEC_FLAGS bits are accepted by this build.
+         * Zero selects Y only. Wire flags remain defined even when their features are disabled.
+         * @par Usage
+         * point.flags = KYMO_ALLOWED_FLAGS;
+         */
+        uint8_t flags;
+        /**
+         * @brief Optional X coordinate.
+         *
+         * @details Input/output; relevant only when KYMO_FLAG_X is set. Decoded absent X is zero.
+         * @par Usage
+         * Set point.x for Cartesian measurements.
+         */
+        float x;
+        /**
+         * @brief Mandatory Y coordinate or scalar measurement.
+         *
+         * @details Input/output; must be finite even when no optional fields are selected.
+         * @par Usage
+         * point.value = temperature;
+         */
+        float value;
+        /**
+         * @brief Optional Z coordinate.
+         *
+         * @details Input/output; relevant only when KYMO_FLAG_Z is set. Decoded absent Z is zero.
+         * @par Usage
+         * Set point.z for XYZ or YZ measurements.
+         */
+        float z;
+        /**
+         * @brief Optional timestamp relative to the sender epoch, in ms or µs.
+         *
+         * @details Input/output; used only with KYMO_FLAG_TIMESTAMP. Milliseconds by
+         * default, microseconds with KYMO_FLAG_TIMESTAMP_US. Wraps modulo 2^32.
+         * @par Usage
+         * Use elapsed milliseconds rather than Unix time.
+         */
+        uint32_t timestamp_ms;
+    } KymoDataPoint;
 
 /** @name Codec operations
  * @{ */
 #if KYMO_ENABLED && (KYMO_ENABLE_CRC || KYMO_ENABLE_DECODER || defined(DOXYGEN))
-/**
- * @brief Calculate CRC-8/ATM over a byte range.
- *
- * @details Polynomial 0x07, initial zero, no reflection and no final XOR. There are eight
- * bit iterations per input byte. Null data is treated as empty and produces zero.
- * Compiled only when encoder CRC or the decoder is enabled.
- * @param[in] data Readable byte range; may be NULL for the defined empty-input behavior.
- * @param[in] length Number of bytes to read; must fit the actual data allocation when data is non-null.
- * @return CRC byte in 0..255.
- * @par Usage
- * KymoProtocol_Crc8(frame + 2, frame_length - 3) covers descriptor through payload.
- */
-uint8_t KymoProtocol_Crc8(const uint8_t *data, size_t length);
+    /**
+     * @brief Calculate CRC-8/ATM over a byte range.
+     *
+     * @details Polynomial 0x07, initial zero, no reflection and no final XOR. There are eight
+     * bit iterations per input byte. Null data is treated as empty and produces zero.
+     * Compiled only when encoder CRC or the decoder is enabled.
+     * @param[in] data Readable byte range; may be NULL for the defined empty-input behavior.
+     * @param[in] length Number of bytes to read; must fit the actual data allocation when data is non-null.
+     * @return CRC byte in 0..255.
+     * @par Usage
+     * KymoProtocol_Crc8(frame + 2, frame_length - 3) covers descriptor through payload.
+     */
+    uint8_t KymoProtocol_Crc8(const uint8_t *data, size_t length);
 #endif
 
 #if KYMO_ENABLED
 
-/**
- * @brief Encode a validated point into a caller-owned byte buffer.
- *
- * @details No allocation, text conversion or struct casting. Validation failures leave the output
- * buffer unchanged. Disabled payload flags are rejected via KYMO_SUPPORTED_FLAGS.
- * Length depends only on the selected optional fields.
- * KYMO_ENABLE_CRC selects protected frames (1) or NO_CRC with zero trailer (0).
- * @param[in] point Measurement to encode; NULL is rejected. Selected coordinates must be finite.
- * @param[out] output Writable frame buffer; NULL is rejected. Must not overlap point.
- * @param[in] output_capacity Actual writable capacity in bytes; 21 bytes handles every point.
- * @return Encoded length (9, 13, 17 or 21), or zero for invalid input/insufficient capacity.
- * @par Usage
- * size_t n = KymoProtocol_Encode(&point, frame, sizeof(frame));
- * Transmit only frame[0..n-1] when n is nonzero.
- */
-size_t KymoProtocol_Encode(const KymoDataPoint *point,
-                           uint8_t *output,
-                           size_t output_capacity);
+    /**
+     * @brief Encode a validated point into a caller-owned byte buffer.
+     *
+     * @details No allocation, text conversion or struct casting. Validation failures leave the output
+     * buffer unchanged. Disabled payload flags are rejected via KYMO_SUPPORTED_FLAGS.
+     * Length depends only on the selected optional fields.
+     * KYMO_ENABLE_CRC selects protected frames (1) or NO_CRC with zero trailer (0).
+     * @param[in] point Measurement to encode; NULL is rejected. Selected coordinates must be finite.
+     * @param[out] output Writable frame buffer; NULL is rejected. Must not overlap point.
+     * @param[in] output_capacity Actual writable capacity in bytes; 21 bytes handles every point.
+     * @return Encoded length (9, 13, 17 or 21), or zero for invalid input/insufficient capacity.
+     * @par Usage
+     * size_t n = KymoProtocol_Encode(&point, frame, sizeof(frame));
+     * Transmit only frame[0..n-1] when n is nonzero.
+     */
+    size_t KymoProtocol_Encode(const KymoDataPoint *point, uint8_t *output, size_t output_capacity);
 
 #if KYMO_ENABLED && (KYMO_ENABLE_DECODER || defined(DOXYGEN))
-/**
- * @brief Validate and decode exactly one complete binary frame.
- *
- * @details Checks synchronization, descriptor, exact length and finite coordinates.
- * CRC is checked unless the wire descriptor sets NO_CRC; its trailer is ignored.
- * Available with KYMO_ENABLE_DECODER=1. Both CRC modes are accepted regardless
- * of encoder CRC setting; disabled X/Z/timestamp layouts are rejected.
- * Only a fully valid result is committed; failure leaves output unchanged. The caller
- * performs stream reassembly before calling this function.
- * @param[in] frame Readable frame bytes; NULL is rejected.
- * @param[in] frame_length Actual readable length; must match the descriptor-derived size exactly.
- * @param[out] output Destination measurement, or NULL to reject. Unselected fields are zero on success.
- * @return KYMO_OK on success; KYMO_BAD_SAMPLE for an invalid frame; KYMO_BAD_CONFIG for NULL output.
- * @par Usage
- * Consume point only when KymoProtocol_Decode(frame, length, &point) == KYMO_OK.
- */
-KymoStatus KymoProtocol_Decode(const uint8_t *frame,
-                               size_t frame_length,
-                               KymoDataPoint *output);
+    /**
+     * @brief Validate and decode exactly one complete binary frame.
+     *
+     * @details Checks synchronization, descriptor, exact length and finite coordinates.
+     * CRC is checked unless the wire descriptor sets NO_CRC; its trailer is ignored.
+     * Available with KYMO_ENABLE_DECODER=1. Both CRC modes are accepted regardless
+     * of encoder CRC setting; disabled X/Z/timestamp layouts are rejected.
+     * Only a fully valid result is committed; failure leaves output unchanged. The caller
+     * performs stream reassembly before calling this function.
+     * @param[in] frame Readable frame bytes; NULL is rejected.
+     * @param[in] frame_length Actual readable length; must match the descriptor-derived size exactly.
+     * @param[out] output Destination measurement, or NULL to reject. Unselected fields are zero on success.
+     * @return KYMO_OK on success; KYMO_BAD_SAMPLE for an invalid frame; KYMO_BAD_CONFIG for NULL output.
+     * @par Usage
+     * Consume point only when KymoProtocol_Decode(frame, length, &point) == KYMO_OK.
+     */
+    KymoStatus KymoProtocol_Decode(const uint8_t *frame, size_t frame_length,
+                                   KymoDataPoint *output);
 #endif
 
-/**
- * @brief Derive complete-frame length from a supported descriptor.
- *
- * @details Unsupported versions, message types or disabled payload fields yield zero.
- * No payload access is performed; the NO_CRC bit does not change frame length.
- * @param[in] descriptor Descriptor byte from offset two of a candidate frame.
- * @return 9, 13, 17 or 21 bytes for supported layouts; zero otherwise.
- * @par Usage
- * Wait for KymoProtocol_FrameLength(descriptor) bytes before complete-frame decoding.
- */
-size_t KymoProtocol_FrameLength(uint8_t descriptor);
-/** @} */
+    /**
+     * @brief Derive complete-frame length from a supported descriptor.
+     *
+     * @details Unsupported versions, message types or disabled payload fields yield zero.
+     * No payload access is performed; the NO_CRC bit does not change frame length.
+     * @param[in] descriptor Descriptor byte from offset two of a candidate frame.
+     * @return 9, 13, 17 or 21 bytes for supported layouts; zero otherwise.
+     * @par Usage
+     * Wait for KymoProtocol_FrameLength(descriptor) bytes before complete-frame decoding.
+     */
+    size_t KymoProtocol_FrameLength(uint8_t descriptor);
+    /** @} */
 
 #endif /* KYMO_ENABLED */
 

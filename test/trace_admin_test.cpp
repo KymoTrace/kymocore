@@ -35,7 +35,8 @@ static size_t writePort(void *, const uint8_t *bytes, size_t length)
     size_t accepted = reject != 0u ? 0u : 1u;
     assert(length != 0u && busy == 0u);
     ++writes;
-    if ((hold != 0u) && (accepted != 0u)) {
+    if ((hold != 0u) && (accepted != 0u))
+    {
         borrowed = bytes;
         snapshotLength = length;
         memcpy(snapshot, bytes, length);
@@ -63,8 +64,8 @@ int main(void)
     KymoTrace_Mark(&recorder, 1u, 1u, 1u);
     assert(KymoMux_ServiceAdmin(&mux) == KYMO_IDLE && writes == 0u);
     const uint8_t metadata[] = "{}";
-    assert(KymoMux_QueueAdmin(&mux, KYMO_TRACE_PAYLOAD_SESSION_META,
-        1u, metadata, sizeof(metadata) - 1u) == KYMO_OK);
+    assert(KymoMux_QueueAdmin(&mux, KYMO_TRACE_PAYLOAD_SESSION_META, 1u, metadata,
+                              sizeof(metadata) - 1u) == KYMO_OK);
     reject = 1u;
     assert(KymoMux_ServiceAdmin(&mux) == KYMO_BUSY && mux.frame_offset == 0u);
     reject = 0u;
@@ -75,7 +76,8 @@ int main(void)
     assert(memcmp(borrowed, snapshot, snapshotLength) == 0);
     busy = 0u;
     hold = 0u;
-    for (size_t cycle = 0u; cycle < KYMO_TRACE_FRAME_MAX; ++cycle) {
+    for (size_t cycle = 0u; cycle < KYMO_TRACE_FRAME_MAX; ++cycle)
+    {
         (void)KymoMux_ServiceAdmin(&mux);
     }
     assert(mux.admin_pending == 0u && mux.pending == 0u);
@@ -87,7 +89,8 @@ int main(void)
     assert(mux.frame[3] == KYMO_TRACE_PAYLOAD_BATCH);
     calls = writes;
     assert(KymoMux_ServiceAdmin(&mux) == KYMO_REJECTED && writes == calls);
-    for (size_t cycle = 0u; cycle < KYMO_TRACE_FRAME_MAX; ++cycle) {
+    for (size_t cycle = 0u; cycle < KYMO_TRACE_FRAME_MAX; ++cycle)
+    {
         (void)KymoMux_Service(&mux);
     }
     assert(mux.pending == 0u && KymoMux_Service(&mux) == KYMO_IDLE);

@@ -28,6 +28,13 @@ blockiert Pull Requests ohne diese Bestätigung.
 
 ## Technische Hinweise
 
+- C/C++-Dateien in `src/`, `examples/` und `test/` mit der `.clang-format` im
+  Wurzelverzeichnis formatieren (geprüft mit clang-format 23.1.1): vier Leerzeichen,
+  Allman-Klammern und höchstens 100 Spalten für Code. Include-Reihenfolge und
+  Doxygen-Texte bleiben erhalten; Funktionstrennlinien bleiben einschließlich
+  Einrückung 80 Spalten breit. Formatieren mit
+  `clang-format --style=file -i path/to/file.cpp`; nur prüfen mit
+  `clang-format --style=file --dry-run --Werror path/to/file.cpp`.
 - Neue Quelldateien beginnen mit der SPDX-Zeile
   `SPDX-License-Identifier: MIT`.
 - Native Tests aus dem Repository-Wurzelverzeichnis mit
