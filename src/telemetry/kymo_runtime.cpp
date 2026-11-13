@@ -188,6 +188,29 @@ KymoStatus Kymo_Main(KymoContext *context)
     return status;
 }
 
+/*******************************************************************************
+ * Kymo_SampleBound
+ ******************************************************************************/
+uint8_t Kymo_SampleBound(void *user, uint8_t id, KymoSample *sample)
+{
+    uint8_t found = 0u;
+    const KymoPlotBinding *binding = (const KymoPlotBinding *)user;
+    if ((binding != nullptr) && (sample != nullptr) && (binding->channels != nullptr) &&
+        (binding->values != nullptr))
+    {
+        uint16_t i;
+        for (i = 0u; (i < binding->count) && (found == 0u); ++i)
+        {
+            if ((binding->channels[i].id == id) && (binding->values[i] != nullptr))
+            {
+                sample->value = *binding->values[i];
+                found = 1u;
+            }
+        }
+    }
+    return found;
+}
+
 #endif /* KYMO_ENABLE_RUNTIME */
 
 #endif /* KYMO_ENABLED */

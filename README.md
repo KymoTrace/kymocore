@@ -191,6 +191,9 @@ Connect KymoStudio at 115200 baud and 8N1 and assign channel 0 to a chart.
 Close any open serial monitor first. A completely SDK-free, executable example
 is in [examples/basic](examples/basic/README.md).
 
+To plot existing variables without writing a sample callback, bind them with
+`Kymo_SampleBound`: see the [Arduino quickstart](examples/arduino/quickstart/README.md).
+
 ## Supported platforms
 
 KymoCore is platform-independent. The larger hardware examples in

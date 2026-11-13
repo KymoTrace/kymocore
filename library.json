@@ -49,6 +49,14 @@
       ]
     },
     {
+      "name": "quickstart",
+      "base": "examples/arduino/quickstart",
+      "files": [
+        "platformio.ini",
+        "README.md"
+      ]
+    },
+    {
       "name": "simple analog example",
       "base": "examples/arduino/simple_analog_example",
       "files": [

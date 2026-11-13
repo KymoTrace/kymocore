@@ -1,5 +1,8 @@
 # Arduino
 
+Start with `quickstart`: it plots two variables through `Kymo_SampleBound` and
+needs no sample callback or build flags.
+
 Use `simple_analog_example` for two waveform channels, or
 `multi_sensor_example` for Y/XY/XYZ. Each sketch is self-contained and marks the
 four integration steps in its comments: **WHAT** (channel table), **WHEN**

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Add `KymoPlotBinding` and `Kymo_SampleBound`: plot `float` variables through
+  the existing runtime or Endpoint Plot without writing a sample callback.
+  Part of the runtime, no new build switch; unused, the linker drops it.
+- Add the Arduino `quickstart` example (A0/A1, default build settings) and a
+  native test for the binding. Existing APIs and the wire protocol are unchanged.
+
 ## 7.3.4 — 2026-11-12
 
 - Standardize library sources, reference examples and native tests on the existing

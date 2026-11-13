@@ -197,6 +197,10 @@ einem Diagramm zuordnen. Einen geöffneten seriellen Monitor vorher schließen.
 Ein vollständig SDK-freies, ausführbares Beispiel liegt in
 [examples/basic](examples/basic/README.md).
 
+Vorhandene Variablen lassen sich ohne eigenen Messcallback plotten: mit
+`Kymo_SampleBound` binden, siehe
+[Arduino-Quickstart](examples/arduino/quickstart/README.md).
+
 ## Unterstützte Plattformen
 
 KymoCore ist plattformunabhängig. Die größeren Hardwarebeispiele in
