@@ -201,7 +201,8 @@ uint8_t Kymo_SampleBound(void *user, uint8_t id, KymoSample *sample)
         uint16_t i;
         for (i = 0u; (i < binding->count) && (found == 0u); ++i)
         {
-            if ((binding->channels[i].id == id) && (binding->values[i] != nullptr))
+            if ((binding->channels[i].id == id) && (binding->values[i] != nullptr) &&
+                emb_u8_only_bits(binding->channels[i].flags, KYMO_FLAG_TIMESTAMP))
             {
                 sample->value = *binding->values[i];
                 found = 1u;

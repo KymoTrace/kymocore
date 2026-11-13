@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "KymoCore.h"
+#include "common/embedded_bytes.h"
 
 static const uint8_t ID_FAST = 3u;
 static const uint8_t ID_SLOW = 9u;
@@ -58,8 +59,7 @@ static void expectFrame(uint8_t id, float value)
     assert(Kymo_Main(&sContext) == KYMO_OK);
     assert(sFrameLength > (FRAME_VALUE_OFFSET + sizeof(sent)));
     assert(sFrame[FRAME_ID_OFFSET] == id);
-    /* Native hosts are little endian like the wire format. */
-    memcpy(&sent, sFrame + FRAME_VALUE_OFFSET, sizeof(sent));
+    sent = emb_read_f32_le(sFrame + FRAME_VALUE_OFFSET);
     assert(sent == value);
 }
 
@@ -101,6 +101,25 @@ int main()
     assert(Kymo_SampleBound(nullptr, ID_FAST, &sample) == 0u);
     assert(Kymo_SampleBound(&sBinding, ID_FAST, nullptr) == 0u);
     assert(Kymo_SampleBound(&hole, ID_FAST, &sample) == 0u);
+
+    /* Enabled X/Z channels must be skipped without emitting zero coordinates. */
+#if KYMO_EFFECTIVE_X && KYMO_EFFECTIVE_Z && KYMO_EFFECTIVE_TIMESTAMP
+    const KymoChannel scalarChannels[] = {
+        {10u, ID_FAST, KYMO_FLAG_X},
+        {10u, ID_SLOW, KYMO_FLAG_Z},
+        {10u, ID_UNBOUND, KYMO_FLAG_TIMESTAMP}};
+    const float *const scalarValues[] = {&sFast, &sSlow, &sFast};
+    KymoPlotBinding scalarBinding = {scalarChannels, scalarValues, KYMO_COUNT_OF(scalarChannels)};
+    config.channels = scalarChannels;
+    config.channel_count = KYMO_COUNT_OF(scalarChannels);
+    config.sample_user = &scalarBinding;
+    assert(Kymo_Init(&sContext, &config) == KYMO_OK);
+    sFrameLength = 0u;
+    assert(Kymo_Main(&sContext) == KYMO_SKIPPED);
+    assert(Kymo_Main(&sContext) == KYMO_SKIPPED);
+    assert(sFrameLength == 0u);
+    expectFrame(ID_UNBOUND, sFast);
+#endif
 
     printf("bound_test: PASS\n");
     return result;

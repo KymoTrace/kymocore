@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.4.0 - 2026-11-13
 
 - Add `KymoPlotBinding` and `Kymo_SampleBound`: plot `float` variables through
   the existing runtime or Endpoint Plot without writing a sample callback.

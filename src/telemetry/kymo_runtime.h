@@ -301,14 +301,15 @@ extern "C"
      * @brief Ready-made KymoSampleFn that reads a bound float variable.
      *
      * @details Looks up id in the binding's channel table (at most count
-     * comparisons) and copies the variable into sample->value. X and Z stay zero,
-     * so it suits scalar channels with an optional timestamp. The value is read
+     * comparisons) and copies the variable into sample->value. Accepts scalar
+     * channels with an optional timestamp; X/Z channels are skipped. The value is read
      * when the channel is due; update variables from the context that calls
      * Kymo_Main. Uses no runtime state, so it also serves KymoEndpointPlotConfig.
      * @param[in] user A KymoPlotBinding; NULL yields zero.
      * @param[in] id Channel ID to look up.
      * @param[out] sample Destination; NULL yields zero.
-     * @return One if the ID is bound to a non-null variable, otherwise zero.
+     * @return One if the ID is bound to a non-null variable with scalar flags,
+     * otherwise zero (the runtime reports KYMO_SKIPPED).
      * @par Usage
      * config.sample = Kymo_SampleBound; config.sample_user = &binding;
      */

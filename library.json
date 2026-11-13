@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
   "name": "KymoCore",
-  "version": "7.3.4",
+  "version": "7.4.0",
   "description": "Portable heap-free C++11 telemetry with a C API, optional modular Endpoint, shared transport, live variables, parameters, memory metrics and execution tracing. Hardware-neutral callbacks for Arduino, ESP32, STM32 and more.",
   "keywords": [
     "kymotrace",
