@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 7.3.4" src="https://img.shields.io/badge/version-7.3.4-7C5CFF">
+  <img alt="Version 7.4.0" src="https://img.shields.io/badge/version-7.4.0-7C5CFF">
   <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-15123A">
   <img alt="C++11 with C API" src="https://img.shields.io/badge/C%2B%2B11-C--API-A78BFA">
   <img alt="Platforms" src="https://img.shields.io/badge/Arduino%20%C2%B7%20ESP32%20%C2%B7%20STM32-PlatformIO-FDE047">
@@ -99,7 +99,7 @@ Add this to your project's `platformio.ini`:
 
 ```ini
 lib_deps =
-    codename666/KymoCore @ 7.3.4
+    codename666/KymoCore @ 7.4.0
 ```
 
 ### Complete example for Arduino and ESP32
@@ -190,6 +190,9 @@ Build with `pio run`, then flash the connected board with `pio run -t upload`.
 Connect KymoStudio at 115200 baud and 8N1 and assign channel 0 to a chart.
 Close any open serial monitor first. A completely SDK-free, executable example
 is in [examples/basic](examples/basic/README.md).
+
+To plot existing variables without writing a sample callback, bind them with
+`Kymo_SampleBound`: see the [Arduino quickstart](examples/arduino/quickstart/README.md).
 
 ## Supported platforms
 

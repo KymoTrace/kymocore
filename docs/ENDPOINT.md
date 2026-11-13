@@ -69,6 +69,11 @@ seine eigene Tick-Uhr mit passender Frequenz in den Metadaten. Callbacks müssen
 innerhalb der eigenen Echtzeitgrenzen zurückkehren; der Endpoint kann einen
 blockierenden Callback nicht unterbrechen.
 
+Für Plot-Kanäle, die nur `float`-Variablen senden, kann `Kymo_SampleBound`
+mit einem `KymoPlotBinding` als `sample` und `sample_user` der
+`KymoEndpointPlotConfig` dienen. Es sind dieselben Tabellen wie bei
+`Kymo_Init`; ein eigener Sample-Callback entfällt.
+
 ## Speicher, Kanäle und Zustände
 
 Der Endpoint speichert Referenzen auf die registrierten Feature-Kontexte. Ein

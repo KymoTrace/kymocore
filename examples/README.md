@@ -1,6 +1,6 @@
 # Small KymoCore reference examples
 
-KymoCore includes four small single-purpose reference examples. Each keeps its telemetry
+KymoCore includes a few small single-purpose reference examples. Each keeps its telemetry
 setup in a self-contained source file: include `KymoCore.h`, describe
 the channels, provide clock/sample/write callbacks, fill a `KymoConfig` by name,
 then call `Kymo_Init` once and `Kymo_Main` cyclically.
@@ -8,6 +8,7 @@ then call `Kymo_Init` once and `Kymo_Main` cyclically.
 | Example | Purpose | Build from the repository root |
 |---|---|---|
 | [basic](basic/README.md) | Portable C Init/Main without a hardware SDK | See its README |
+| [quickstart](arduino/quickstart/README.md) | Two Arduino ADC variables bound without a sample callback | `pio run -d examples/arduino/quickstart -e uno` |
 | [simple analog](arduino/simple_analog_example/README.md) | Two Arduino UART waveform channels | `pio run -d examples/arduino/simple_analog_example -e uno` |
 | [multi sensor](arduino/multi_sensor_example/README.md) | Independently scheduled Y/XY/XYZ channels | `pio run -d examples/arduino/multi_sensor_example -e uno` |
 | [ESP-IDF UART](esp_idf/uart_telemetry/README.md) | Native ESP-IDF UART without Arduino | See its README |

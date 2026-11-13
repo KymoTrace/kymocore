@@ -61,6 +61,9 @@ def main():
                                        ["-DKYMO_MAX_CHANNELS=256"])):
             build_and_run(args.cxx, temp, f"runtime_{index}", "test/runtime_test.cpp",
                           flags, TELEMETRY_SOURCES)
+        build_and_run(args.cxx, temp, "bound", "test/bound_test.cpp", [], TELEMETRY_SOURCES)
+        build_and_run(args.cxx, temp, "bound_xyz", "test/bound_test.cpp",
+                      FULL_TELEMETRY, TELEMETRY_SOURCES)
         param_sources = TELEMETRY_SOURCES + CONTROL_SOURCES
         for index, flags in enumerate((PARAMETERS, PARAMETERS + ["-DKYMO_ENABLE_CRC=1"],
                                        PARAMETERS + ["-DKYMO_ENABLE_CRC_TABLE=1"],

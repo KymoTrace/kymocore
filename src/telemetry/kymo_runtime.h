@@ -125,6 +125,32 @@ extern "C"
      * Switch on id, copy values into sample, then return one.
      */
     typedef uint8_t (*KymoSampleFn)(void *user, uint8_t id, KymoSample *sample);
+
+    /**
+     * @brief Bind scalar plot channels to float variables instead of a sample callback.
+     *
+     * @details Input for Kymo_SampleBound. values[i] is the variable plotted on
+     * channels[i]; both tables therefore have the same order and count entries.
+     * The tables and variables must outlive the runtime. A swapped order cannot be
+     * detected and is part of the caller contract. No state, no heap.
+     * @par Usage
+     * @code{.c}
+     * static float adc0, adc1;
+     * static const KymoChannel channels[] = {{20u, 0u, 0u}, {20u, 1u, 0u}};
+     * static const float *const values[] = {&adc0, &adc1};
+     * static KymoPlotBinding binding = {channels, values, KYMO_COUNT_OF(channels)};
+     * // config.sample = Kymo_SampleBound; config.sample_user = &binding;
+     * @endcode
+     */
+    typedef struct
+    {
+        /** @brief Channel table, the same one passed as KymoConfig.channels. */
+        const KymoChannel *channels;
+        /** @brief One readable float per channel, in channel table order. */
+        const float *const *values;
+        /** @brief Number of entries in both tables. */
+        uint16_t count;
+    } KymoPlotBinding;
     /** @} */
 
     /** @name Configuration and runtime storage
@@ -270,6 +296,24 @@ extern "C"
      * Call from a cyclic task faster than the sum of channel rates.
      */
     KymoStatus Kymo_Main(KymoContext *context);
+
+    /**
+     * @brief Ready-made KymoSampleFn that reads a bound float variable.
+     *
+     * @details Looks up id in the binding's channel table (at most count
+     * comparisons) and copies the variable into sample->value. Accepts scalar
+     * channels with an optional timestamp; X/Z channels are skipped. The value is read
+     * when the channel is due; update variables from the context that calls
+     * Kymo_Main. Uses no runtime state, so it also serves KymoEndpointPlotConfig.
+     * @param[in] user A KymoPlotBinding; NULL yields zero.
+     * @param[in] id Channel ID to look up.
+     * @param[out] sample Destination; NULL yields zero.
+     * @return One if the ID is bound to a non-null variable with scalar flags,
+     * otherwise zero (the runtime reports KYMO_SKIPPED).
+     * @par Usage
+     * config.sample = Kymo_SampleBound; config.sample_user = &binding;
+     */
+    uint8_t Kymo_SampleBound(void *user, uint8_t id, KymoSample *sample);
 /** @} */
 #endif
 
