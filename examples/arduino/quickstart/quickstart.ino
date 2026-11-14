@@ -5,11 +5,11 @@
  * @brief Plot two variables over Serial without writing a sample callback.
  * @details The sketch has two parts. The Arduino adapter (clock and bounded
  * Serial write) can stay as it is; replace it for other boards. The application
- * part binds two float variables to channels 0 and 1 with Kymo_SampleBound.
+ * part binds two float variables to channels 0 and 1 with KymoRuntime_sampleBound.
  * Runs with the default build settings: no flags, no device timestamps.
  */
 #include <Arduino.h>
-#include <KymoCore.h>
+#include <kymo_modules.h>
 
 #if KYMO_EFFECTIVE_RUNTIME
 
@@ -32,7 +32,7 @@ static uint32_t readClockMs(void *user)
 /**
  * @brief Copy as many bytes as Serial can take right now.
  * @details Reporting fewer bytes than offered is fine; the runtime resumes
- * the rest on the next Kymo_Main() call without blocking loop().
+ * the rest on the next KymoRuntime_main() call without blocking loop().
  * @param[in] user Unused; nullptr.
  * @param[in] bytes Frame bytes; not retained.
  * @param[in] length Requested byte count.
@@ -64,6 +64,7 @@ static float adc1 = 0.0f;
 
 /* period_ms, id, flags: channels 0 and 1, every 20 ms, scalar value only. */
 static const KymoChannel channels[] = {{20U, 0U, 0U}, {20U, 1U, 0U}};
+
 /* One variable per channel, in the same order as the channel table. */
 static const float *const values[] = {&adc0, &adc1};
 static_assert(KYMO_COUNT_OF(values) == KYMO_COUNT_OF(channels), "one variable per channel");
@@ -72,20 +73,27 @@ static KymoPlotBinding binding = {channels, values, KYMO_COUNT_OF(channels)};
 static KymoContext context = {};
 static KymoStatus initStatus = KYMO_BAD_CONFIG;
 
+/** @brief Fixed runtime table and callbacks; no setup-time mutation. */
+static const KymoConfig runtimeConfig = {
+    channels,                /* channels */
+    KYMO_COUNT_OF(channels), /* channel_count */
+    readClockMs,             /* clock_ms */
+    KymoRuntime_sampleBound, /* sample */
+    writeBytes,              /* write */
+    nullptr,                 /* busy */
+    nullptr,                 /* service */
+    nullptr,                 /* clock_user */
+    &binding,                /* sample_user */
+    nullptr,                 /* transport_user */
+};
+
 /**
  * setup
  */
 void setup()
 {
-    KymoConfig config = {}; /* copied by Kymo_Init; may be local */
     Serial.begin(115200);
-    config.channels = channels;
-    config.channel_count = KYMO_COUNT_OF(channels);
-    config.clock_ms = readClockMs;
-    config.sample = Kymo_SampleBound; /* reads the bound variables */
-    config.sample_user = &binding;
-    config.write = writeBytes;
-    initStatus = Kymo_Init(&context, &config);
+    initStatus = KymoRuntime_init(&context, &runtimeConfig);
 }
 
 /**
@@ -97,7 +105,7 @@ void loop()
     adc1 = static_cast<float>(analogRead(A1));
     if (initStatus == KYMO_OK)
     {
-        (void)Kymo_Main(&context);
+        (void)KymoRuntime_main(&context);
     }
 }
 

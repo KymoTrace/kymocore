@@ -1,8 +1,10 @@
+> Neuer Standardinstanz-Einstieg: [Core/Parameter-Prototyp](CORE_ENTRY.md).
+
 # Endpoint und getrennte Feature-Module
 
 Der optionale Endpoint richtet den gemeinsamen Transport ein und koordiniert
 die ausgewählten Features. Die Anwendung ruft nach der Initialisierung nur
-`KymoEndpoint_Main()` zyklisch auf. Die Library verwendet C-kompatible Header,
+`KymoCoreEndpoint_main()` zyklisch auf. Die Library verwendet C-kompatible Header,
 C++11-Implementierungen und statischen, vom Aufrufer bereitgestellten Speicher.
 Bestehende Low-Level-APIs funktionieren weiterhin unabhängig davon.
 
@@ -15,14 +17,14 @@ heißen unmittelbar `kymo_plot`, `kymo_param`, `kymo_watch`, `kymo_memory` und
 
 ## Was gehört wohin?
 
-| Library-Header unter `src/endpoint/` | Öffentliche Aufgabe | Benötigter Modulschalter |
+| Header der expliziten Instanzschnittstelle | Öffentliche Aufgabe | Benötigter Modulschalter |
 |---|---|---|
-| [kymo_endpoint.h](../src/endpoint/kymo_endpoint.h) | Basis-Config, Init, Main, RequestStop, Status | ENDPOINT und TX |
-| [features/kymo_plot.h](../src/endpoint/features/kymo_plot.h) | Kanäle, Perioden, Sample-Callback, PlotInit | RUNTIME |
-| [features/kymo_param.h](../src/endpoint/features/kymo_param.h) | Parametertabelle und ParamInit | PARAMETERS und DECODER |
-| [features/kymo_watch.h](../src/endpoint/features/kymo_watch.h) | Speicherbereiche, Reader, Kanalintervall und WatchInit | WATCH und DECODER |
-| [features/kymo_memory.h](../src/endpoint/features/kymo_memory.h) | Speicher-Einträge, Reader, Perioden und MemoryInit | MEMORY |
-| [features/kymo_trace.h](../src/endpoint/features/kymo_trace.h) | Recorder, Metadaten, Dictionary, TraceInit und Instrumentierung | TRACE |
+| [kymo_endpoint.h](../src/core/kymo_core_endpoint.h) | Basis-Config, Init, Main, RequestStop, Status | ENDPOINT und TX |
+| [features/kymo_plot.h](../src/features/plot/kymo_core_endpoint_plot.h) | Kanäle, Perioden, Sample-Callback, PlotInit | RUNTIME |
+| [features/kymo_param.h](../src/features/parameters/kymo_core_endpoint_param.h) | Parametertabelle und ParamInit | PARAMETERS und DECODER |
+| [features/kymo_watch.h](../src/features/watch/kymo_core_endpoint_watch.h) | Speicherbereiche, Reader, Kanalintervall und WatchInit | WATCH und DECODER |
+| [features/kymo_memory.h](../src/features/memory/kymo_core_endpoint_memory.h) | Speicher-Einträge, Reader, Perioden und MemoryInit | MEMORY |
+| [features/kymo_trace.h](../src/features/trace/kymo_core_endpoint_trace.h) | Recorder, Metadaten, Dictionary, TraceInit und Instrumentierung | TRACE |
 
 Schalter heißen jeweils `KYMO_ENABLE_<NAME>`. ENDPOINT und TX sind standardmäßig
 aus. XY benötigt zusätzlich X, XYZ auch Z; diese bleiben Einstellungen des
@@ -31,22 +33,22 @@ behalten ihre bisherigen Compile-Schalter und Abhängigkeiten.
 
 Jeder Feature-Header enthält nur seine eigene Fassade und seine benötigte
 Low-Level-Schnittstelle. Er inkludiert weder andere Feature-Fassaden noch den
-Sammelheader `KymoCore.h`. Gemeinsame interne Typen ermöglichen die statische
+Sammelheader `kymo_modules.h`. Gemeinsame interne Typen ermöglichen die statische
 Speicherbereitstellung; ihre Felder sind keine Erweiterungs-API.
 
 ## Initialisieren und betreiben
 
 1. Einheitliche Build-Schalter für **alle** Library- und Anwendungsdateien setzen,
    bevorzugt über `KYMO_USER_CONFIG_HEADER`.
-2. Einen nullinitialisierten `KymoEndpoint`, TX-Puffer und gegebenenfalls einen
+2. Einen nullinitialisierten `KymoCoreEndpoint`, TX-Puffer und gegebenenfalls einen
    separaten RX-Puffer dauerhaft bereitstellen.
-3. `KymoEndpointConfig` nach Namen füllen und `KymoEndpoint_Init()` aufrufen.
+3. `KymoCoreEndpointConfig` nach Namen füllen und `KymoCoreEndpoint_init()` aufrufen.
 4. Für jedes gewünschte Feature einen eigenen nullinitialisierten Kontext und
-   eine eigene Config bereitstellen; `KymoEndpoint<Feature>_Init()` aufrufen.
-5. Jeden Init-Status prüfen. Erst danach `KymoEndpoint_Main()` regelmäßig aufrufen.
+   eine eigene Config bereitstellen; `KymoCoreEndpoint<Feature>_Init()` aufrufen.
+5. Jeden Init-Status prüfen. Erst danach `KymoCoreEndpoint_main()` regelmäßig aufrufen.
 
-Die konkreten Init-Namen sind `KymoEndpointPlot_Init`, `KymoEndpointParam_Init`,
-`KymoEndpointWatch_Init`, `KymoEndpointMemory_Init` und `KymoEndpointTrace_Init`.
+Die konkreten Init-Namen sind `KymoCoreEndpointPlot_init`, `KymoCoreEndpointParam_init`,
+`KymoCoreEndpointWatch_init`, `KymoCoreEndpointMemory_init` und `KymoCoreEndpointTrace_init`.
 Jeder Aufruf initialisiert und registriert sein Feature vollständig. Weder
 separate Registrierung noch manuelles Feed/NextSample/Mux-Service sind nötig.
 Initialisierung verursacht keine physischen Port-Aufrufe.
@@ -69,10 +71,10 @@ seine eigene Tick-Uhr mit passender Frequenz in den Metadaten. Callbacks müssen
 innerhalb der eigenen Echtzeitgrenzen zurückkehren; der Endpoint kann einen
 blockierenden Callback nicht unterbrechen.
 
-Für Plot-Kanäle, die nur `float`-Variablen senden, kann `Kymo_SampleBound`
+Für Plot-Kanäle, die nur `float`-Variablen senden, kann `KymoRuntime_sampleBound`
 mit einem `KymoPlotBinding` als `sample` und `sample_user` der
-`KymoEndpointPlotConfig` dienen. Es sind dieselben Tabellen wie bei
-`Kymo_Init`; ein eigener Sample-Callback entfällt.
+`KymoCorePlotConfig` dienen. Es sind dieselben Tabellen wie bei
+`KymoRuntime_init`; ein eigener Sample-Callback entfällt.
 
 ## Speicher, Kanäle und Zustände
 
@@ -170,7 +172,7 @@ Endpoint-Zustand und müssen gegenüber Main/Stop extern serialisiert werden.
 Recorder-Locks allein synchronisieren den Endpoint nicht. Hardware-/RTOS-/ISR-
 Anbindungen müssen diese Vorgabe erfüllen; Init/Main selbst sind nicht ISR-sicher.
 
-Vor `KymoEndpoint_RequestStop()` externe Trace-Produzenten anhalten. Danach
+Vor `KymoCoreEndpoint_requestStop()` externe Trace-Produzenten anhalten. Danach
 denselben Main-Aufruf fortsetzen: kein neues RX/Sampling, keine periodischen
 Memory-/Health-Nachrichten, aber bestehende Antworten, Trace und Session-End
 werden beendet. `KYMO_IDLE` bestätigt den abgeschlossenen Stop einschließlich
@@ -190,7 +192,7 @@ Integration; Endpoint-Code wird nach diesem Beispiel eingerichtet.
 
 ### Optional Trace metadata repetition
 
-Set `KymoEndpointTraceConfig.metadata_period_ticks` to a recorder-clock interval
+Set `KymoCoreEndpointTraceConfig.metadata_period_ticks` to a recorder-clock interval
 (e.g. 5,000,000 ticks for five seconds with a 1 MHz clock). Zero, the default,
 sends session metadata and the dictionary only at startup. The interval starts
 when the previous pair has been handed to the shared transmitter. Data is sent
@@ -206,5 +208,5 @@ carry the Endpoint cycle's millisecond clock. This preserves device sample time
 under transport backpressure. Plot keeps its per-channel timestamp flags.
 
 All Endpoint DATA timestamps, including Plot, use the same clock_ms origin.
-Plot is not rebased to its feature initialization; standalone Kymo_Init retains
+Plot is not rebased to its feature initialization; standalone KymoRuntime_init retains
 its initialization-relative timestamps.

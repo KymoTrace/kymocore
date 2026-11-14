@@ -5,9 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "common/embedded_bits.h"
-#include "common/embedded_bytes.h"
-#include "common/embedded_crc.h"
+#include "../src/binary/embedded_bits.h"
+#include "../src/binary/embedded_bytes.h"
+#include "../src/binary/embedded_crc.h"
 
 /**
  * main

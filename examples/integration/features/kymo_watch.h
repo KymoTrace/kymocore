@@ -7,18 +7,19 @@
  */
 #ifndef EXAMPLE_FEATURE_WATCH_H
 #define EXAMPLE_FEATURE_WATCH_H
-#include <endpoint/features/kymo_watch.h>
+#include <features/watch/kymo_core_endpoint_watch.h>
+
 /**
  * @brief Construct the demonstration watch configuration.
- * @return Config referring to persistent tables/callbacks.
+ * @return Reference to fixed configuration with persistent tables/callbacks.
  * @par Usage Replace demo bindings with application data.
  */
-KymoEndpointWatchConfig exampleWatchConfig(void);
+const KymoCoreEndpointWatchConfig &exampleWatchConfig(void);
 
 /**
  * @brief Initialize and register this feature completely.
  * @param[in] config Feature configuration; referenced data must persist.
  * @return Feature initialization status. @par Usage Check before starting Main.
  */
-KymoStatus KymoApp_WatchInit(const KymoEndpointWatchConfig *config);
+KymoStatus KymoApp_WatchInit(const KymoCoreEndpointWatchConfig *config);
 #endif

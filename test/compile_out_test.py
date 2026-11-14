@@ -32,7 +32,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="kymo-compile-out-") as temp_name:
         temp = Path(temp_name)
         c_off = temp / "off.c"
-        c_off.write_text(r'''#include "trace/kymo_instrumentation.h"
+        c_off.write_text(r'''#include "features/trace/kymo_trace_instrumentation.h"
 int main(void) {
     int side_effect = 0;
     if (1) KYMO_TRACE_ENTER(undefined_recorder, ++side_effect, missing_symbol);
@@ -93,34 +93,34 @@ int main(void) { return 0; }
 
         direct = temp / "direct.c"
         direct.write_text(
-            '#include "telemetry/kymo_protocol.h"\n'
-            'int main(void) { return (int)KymoProtocol_Encode(0, 0, 0); }\n',
+            '#include "../src/communication/kymo_protocol.h"\n'
+            'int main(void) { return (int)KymoProtocol_encode(0, 0, 0); }\n',
             encoding="utf-8",
         )
         run([args.cc, "-std=c99", "-Werror=implicit-function-declaration",
              "-DKYMO_ENABLED=0", "-Isrc", str(direct), "-o", str(temp / "direct")], 1)
         direct_runtime = temp / "direct-runtime.c"
         direct_runtime.write_text(
-            '#include "telemetry/kymo_runtime.h"\n'
-            'int main(void) { KymoContext c = {0}; return (int)Kymo_Main(&c); }\n',
+            '#include "features/plot/kymo_runtime.h"\n'
+            'int main(void) { KymoContext c = {0}; return (int)KymoRuntime_main(&c); }\n',
             encoding="utf-8",
         )
         run([args.cc, "-std=c99", "-Werror=implicit-function-declaration", "-DKYMO_ENABLED=0",
              "-DKYMO_ENABLE_RUNTIME=1", "-Isrc", str(direct_runtime), "-o", str(temp / "direct-runtime")], 1)
         direct_tx = temp / "direct-tx.c"
-        direct_tx.write_text('#include <KymoCore.h>\n'
-                             'int main(void) { return KymoTx_Service(0); }\n', encoding="utf-8")
+        direct_tx.write_text('#include <kymo_modules.h>\n'
+                             'int main(void) { return KymoTx_service(0); }\n', encoding="utf-8")
         for flags in ([], ["-DKYMO_ENABLE_TX=0"], ["-DKYMO_ENABLED=0", "-DKYMO_ENABLE_TX=1"]):
             run([args.cc, "-std=c99", "-Werror=implicit-function-declaration", *flags,
                  "-Isrc", "-c", str(direct_tx), "-o", str(temp / "direct-tx.o")], 1)
-        run([args.cxx, "-std=c++11", "-O0", "-Isrc", "-c", "src/transport/kymo_tx.cpp",
+        run([args.cxx, "-std=c++11", "-O0", "-Isrc", "-c", "src/communication/kymo_tx.cpp",
              "-o", str(temp / "tx-off.o")])
         symbols = subprocess.run([NM, "-g", str(temp / "tx-off.o")], check=True,
                                  capture_output=True, text=True)
         assert "kymotx" not in symbols.stdout.lower(), symbols.stdout
         direct_cpp = temp / "direct-cpp.cpp"
         direct_cpp.write_text(
-            '#include "telemetry/kymo_sender.h"\nint main() { KymoSender sender; return (int)sender.flush(); }\n',
+            '#include "features/plot/kymo_sender.h"\nint main() { KymoSender sender; return (int)sender.flush(); }\n',
             encoding="utf-8",
         )
         run([args.cxx, "-std=c++11", "-DKYMO_ENABLED=0", "-DKYMO_ENABLE_CPP=1",
@@ -128,29 +128,29 @@ int main(void) { return 0; }
 
         fake = temp / "fake"
         fake.mkdir()
-        (fake / "trace").mkdir()
+        (fake / "features" / "trace").mkdir(parents=True)
         for name in ("kymo_config.h", "kymo_version.h", "kymo_config_check.h"):
             shutil.copy2(ROOT / "src" / name, fake / name)
-        shutil.copy2(ROOT / "src" / "trace" / "kymo_instrumentation.h",
-                     fake / "trace" / "kymo_instrumentation.h")
-        (fake / "trace" / "kymo_trace.h").write_text(r'''#ifndef TEST_KYMO_TRACE_H
+        shutil.copy2(ROOT / "src" / "features" / "trace" / "kymo_trace_instrumentation.h",
+                     fake / "features" / "trace" / "kymo_trace_instrumentation.h")
+        (fake / "features" / "trace" / "kymo_trace.h").write_text(r'''#ifndef TEST_KYMO_TRACE_H
 #define TEST_KYMO_TRACE_H
 static int trace_calls;
 static int trace_scope_constructed;
 static int trace_scope_destroyed;
-static inline int KymoTrace_Enter(int *r, int c, int s) { ++trace_calls; return *r + c + s; }
-static inline int KymoTrace_Exit(int *r, int c, int s) { ++trace_calls; return *r + c + s; }
-static inline int KymoTrace_Mark(int *r, int c, int m, int v) { ++trace_calls; return *r + c + m + v; }
-static inline int KymoTrace_IsrEnter(int *r, int c) { ++trace_calls; return *r + c; }
-static inline int KymoTrace_IsrExit(int *r, int c) { ++trace_calls; return *r + c; }
-static inline int KymoTrace_Scheduler(int *r, int c, int t) { ++trace_calls; return *r + c + t; }
-static inline int KymoTrace_FlowSend(int *r, int c, int s, int correlation) { ++trace_calls; return *r + c + s + correlation; }
-static inline int KymoTrace_FlowReceive(int *r, int c, int s, int correlation) { ++trace_calls; return *r + c + s + correlation; }
+static inline int KymoTrace_enter(int *r, int c, int s) { ++trace_calls; return *r + c + s; }
+static inline int KymoTrace_exit(int *r, int c, int s) { ++trace_calls; return *r + c + s; }
+static inline int KymoTrace_mark(int *r, int c, int m, int v) { ++trace_calls; return *r + c + m + v; }
+static inline int KymoTrace_isrEnter(int *r, int c) { ++trace_calls; return *r + c; }
+static inline int KymoTrace_isrExit(int *r, int c) { ++trace_calls; return *r + c; }
+static inline int KymoTrace_scheduler(int *r, int c, int t) { ++trace_calls; return *r + c + t; }
+static inline int KymoTrace_flowSend(int *r, int c, int s, int correlation) { ++trace_calls; return *r + c + s + correlation; }
+static inline int KymoTrace_flowReceive(int *r, int c, int s, int correlation) { ++trace_calls; return *r + c + s + correlation; }
 class KymoTraceScope { public: KymoTraceScope(int *, int, int) { ++trace_scope_constructed; } ~KymoTraceScope() { ++trace_scope_destroyed; } };
 #endif
 ''', encoding="utf-8")
         active = temp / "active.cpp"
-        active.write_text(r'''#include "trace/kymo_instrumentation.h"
+        active.write_text(r'''#include "features/trace/kymo_trace_instrumentation.h"
 static int eval_counts[27];
 static int eval(int slot) { ++eval_counts[slot]; return slot; }
 static int *eval_recorder(int slot, int *recorder) { ++eval_counts[slot]; return recorder; }
@@ -185,7 +185,7 @@ int main() {
             if proc.returncode == 0:
                 raise AssertionError(f"invalid KYMO_ENABLED token accepted: {bad!r}")
 
-        boolean_flags = ("KYMO_ENABLE_ENDPOINT", "KYMO_ENABLE_TX", "KYMO_ENABLED", "KYMO_ENABLE_RUNTIME", "KYMO_ENABLE_X", "KYMO_ENABLE_Z",
+        boolean_flags = ("KYMO_ENABLE_CORE", "KYMO_ENABLE_ENDPOINT", "KYMO_ENABLE_TX", "KYMO_ENABLED", "KYMO_ENABLE_RUNTIME", "KYMO_ENABLE_X", "KYMO_ENABLE_Z",
                          "KYMO_ENABLE_TIMESTAMP", "KYMO_ENABLE_CRC", "KYMO_ENABLE_DECODER",
                          "KYMO_ENABLE_CPP", "KYMO_ENABLE_TRACE", "KYMO_ENABLE_TRACE_ISR",
                          "KYMO_ENABLE_TRACE_SCHEDULER", "KYMO_ENABLE_TRACE_FLOW")

@@ -18,7 +18,7 @@
  * |-----------------------|-----------------------------|---------|-----------------------------------------|
  * | Master                | KYMO_ENABLED                | 1       | 0 compiles the whole library out        |
  * | Profile               | KYMO_PROFILE                | MINIMAL | Preset defaults for the switches below  |
- * | 1. Telemetry API      | KYMO_ENABLE_RUNTIME         | 1       | Cyclic Kymo_Init/Kymo_Main (recommended)|
+ * | 1. Telemetry API      | KYMO_ENABLE_RUNTIME         | 1       | Cyclic KymoRuntime_init/KymoRuntime_main (recommended)|
  * |                       | KYMO_ENABLE_CPP             | 0       | Optional C++ push sender (KymoSender)   |
  * | Modular integration   | KYMO_ENABLE_ENDPOINT        | 0       | Optional feature coordination (TX)    |
  * | Shared transport      | KYMO_ENABLE_TX              | 0       | Single-frame copy and partial writes   |
@@ -74,8 +74,10 @@
 
 /** @brief Profile value: scalar telemetry only (library default). */
 #define KYMO_PROFILE_MINIMAL 0
+
 /** @brief Profile value: X, Z and timestamp enabled. */
 #define KYMO_PROFILE_XYZ 1
+
 /** @brief Profile value: XYZ plus complete execution tracing. */
 #define KYMO_PROFILE_TRACE 2
 
@@ -85,6 +87,16 @@
 #endif
 
 /* ---- 1. Telemetry API --------------------------------------------------- */
+
+/**
+ * @brief Enable the library-owned Core Init/Main entry (0 or 1).
+ * @details Enables its internal dispatcher and sender automatically. Features
+ * remain separately gated and require successful feature Init to run.
+ * @par Usage Define KYMO_ENABLE_CORE=1 consistently for all translation units.
+ */
+#ifndef KYMO_ENABLE_CORE
+#define KYMO_ENABLE_CORE 0
+#endif
 
 /** @brief Enable cooperative Init/Main scheduling; defaults to enabled. */
 #ifndef KYMO_ENABLE_RUNTIME
@@ -182,7 +194,7 @@
  * @details Needs no decoder: the device describes its entries with MEMORY_INFO
  * frames by itself and samples them as ordinary DATA points.
  * @par Usage
- * -DKYMO_ENABLE_MEMORY=1, then KymoMemory_Init with a read callback.
+ * -DKYMO_ENABLE_MEMORY=1, then KymoMemory_init with a read callback.
  */
 #ifndef KYMO_ENABLE_MEMORY
 #define KYMO_ENABLE_MEMORY 0

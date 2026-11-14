@@ -41,7 +41,7 @@ def render_port_template(project: dict[str, Any]) -> dict[str, str]:
         (callbacks.get("critical_exit"), "void", "void *user", "leave the recorder critical section"),
     ]
 
-    header = ["#pragma once", "#include <KymoCore.h>", "#ifdef __cplusplus", 'extern "C" {', "#endif"]
+    header = ["#pragma once", "#include <kymo_modules.h>", "#ifdef __cplusplus", 'extern "C" {', "#endif"]
     source = ["/* User-owned starter only. Replace each TODO with target-specific behavior. */",
               '#include "kymo_port.h"']
     # A shared callback must remain available when any consuming feature is on,

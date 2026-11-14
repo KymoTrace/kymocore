@@ -1,9 +1,9 @@
 # Small KymoCore reference examples
 
 KymoCore includes a few small single-purpose reference examples. Each keeps its telemetry
-setup in a self-contained source file: include `KymoCore.h`, describe
+setup in a self-contained source file: include `kymo_modules.h`, describe
 the channels, provide clock/sample/write callbacks, fill a `KymoConfig` by name,
-then call `Kymo_Init` once and `Kymo_Main` cyclically.
+then call `KymoRuntime_init` once and `KymoRuntime_main` cyclically.
 
 | Example | Purpose | Build from the repository root |
 |---|---|---|
@@ -25,3 +25,7 @@ environments are `nano` and `mega`.
 Larger UART, MQTT, TCP, maximum-throughput, CRC/decoder/C++ and trace/flow demos
 belong to [KymoProbe](https://github.com/KymoTrace/kymoprobe), where a central
 `src/main.cpp` selects the application. Library changes belong only to KymoCore.
+
+The default Core entry is demonstrated in [core_parameters](core_parameters/README.md)
+and [core_features](core_features/README.md). The integration example retains the
+explicit-instance path with finite shutdown.

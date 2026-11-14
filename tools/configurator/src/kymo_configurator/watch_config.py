@@ -77,7 +77,7 @@ def render_watch_source(settings: dict[str, Any]) -> str:
     if build_id:
         lines.append(f"    id_length = {build_id}(&id);")
     lines += [f"    const KymoWatchConfig config = {{ ranges, {len(ranges)}u, id, id_length, nullptr, nullptr }};",
-              "    return KymoWatch_Init(&kymo_generated_watch, &config);", "}",
+              "    return KymoWatch_init(&kymo_generated_watch, &config);", "}",
               "#endif /* KYMO_EFFECTIVE_WATCH */", ""]
     return "\n".join(lines)
 

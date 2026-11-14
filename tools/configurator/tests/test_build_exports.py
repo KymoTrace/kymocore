@@ -56,7 +56,7 @@ int main(void) {
     int result = 0;
 #if KYMO_EFFECTIVE_RUNTIME
     KymoContext context;
-    result = (int)Kymo_Init(&context, &kymo_generated_config);
+    result = (int)KymoRuntime_init(&context, &kymo_generated_config);
 #endif
     return result;
 }

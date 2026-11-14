@@ -5,7 +5,7 @@
  */
 #include "kymo_trace.h"
 #include "../detail/kymo_internal.h"
-static KymoEndpointTrace sFeature;
+static KymoCoreEndpointTrace sFeature;
 #include "../kymo_port.h"
 #include "../kymo_trace_records.h"
 static const uint64_t TRACE_SESSION_ID = 1u;
@@ -15,29 +15,32 @@ static const uint16_t TRACE_MARKER_ID = 1u;
 static const uint32_t TRACE_RECORD_GENERATION = 1u;
 static const uint32_t TRACE_MARKER_PERIOD_CYCLES = 200u;
 
+/** @brief Fixed trace resources, callbacks and feature settings. */
+static const KymoCoreEndpointTraceConfig sTraceConfig = {{examplePortClockTicks, nullptr, nullptr,
+                                                          nullptr, nullptr, nullptr,
+                                                          TRACE_SESSION_ID, TRACE_CLOCK_DOMAIN_ID},
+                                                         exampleTraceMetadata,
+                                                         sizeof(exampleTraceMetadata) - 1u,
+                                                         exampleTraceDictionary,
+                                                         sizeof(exampleTraceDictionary) - 1u,
+                                                         TRACE_RECORD_GENERATION,
+                                                         0u,
+                                                         0u};
+
 /****************************************************************************************************
  * exampleTraceConfig
  ***************************************************************************************************/
-KymoEndpointTraceConfig exampleTraceConfig(void)
+const KymoCoreEndpointTraceConfig &exampleTraceConfig(void)
 {
-    KymoEndpointTraceConfig config = {};
-    config.recorder.clock_ticks = examplePortClockTicks;
-    config.recorder.session_id = TRACE_SESSION_ID;
-    config.recorder.clock_domain_id = TRACE_CLOCK_DOMAIN_ID;
-    config.metadata = exampleTraceMetadata;
-    config.metadata_length = sizeof(exampleTraceMetadata) - 1u;
-    config.dictionary = exampleTraceDictionary;
-    config.dictionary_length = sizeof(exampleTraceDictionary) - 1u;
-    config.generation = TRACE_RECORD_GENERATION;
-    return config;
+    return sTraceConfig;
 }
 
 /****************************************************************************************************
  * KymoApp_TraceInit
  ***************************************************************************************************/
-KymoStatus KymoApp_TraceInit(const KymoEndpointTraceConfig *config)
+KymoStatus KymoApp_TraceInit(const KymoCoreEndpointTraceConfig *config)
 {
-    return KymoEndpointTrace_Init(exampleEndpoint(), &sFeature, config);
+    return KymoCoreEndpointTrace_init(exampleEndpoint(), &sFeature, config);
 }
 
 /****************************************************************************************************
@@ -45,7 +48,7 @@ KymoStatus KymoApp_TraceInit(const KymoEndpointTraceConfig *config)
  ***************************************************************************************************/
 void exampleTraceCycle(uint32_t cycle)
 {
-    if ((KymoEndpointTrace_IsReady(&sFeature) != 0u) &&
+    if ((KymoCoreEndpointTrace_isReady(&sFeature) != 0u) &&
         ((cycle % TRACE_MARKER_PERIOD_CYCLES) == 0u))
     {
         KYMO_ENDPOINT_TRACE_MARK(&sFeature, TRACE_CONTEXT_ID, TRACE_MARKER_ID, cycle);

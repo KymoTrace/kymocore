@@ -8,6 +8,7 @@
 #ifndef EXAMPLE_KYMO_APP_H
 #define EXAMPLE_KYMO_APP_H
 #include <kymo_types.h>
+
 /**
  * @brief Initialize the base and the five selected demo features.
  * @return Initialization status; no loop starts on error.

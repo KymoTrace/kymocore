@@ -14,14 +14,14 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 WARNINGS = ["-Wall", "-Wextra", "-Werror", "-pedantic"]
-TELEMETRY_SOURCES = ["src/telemetry/kymo_protocol.cpp", "src/telemetry/kymo_runtime.cpp",
-                     "src/telemetry/kymo_sender.cpp"]
+TELEMETRY_SOURCES = ["src/communication/kymo_protocol.cpp", "src/features/plot/kymo_runtime.cpp",
+                     "src/features/plot/kymo_sender.cpp"]
 FULL_TELEMETRY = ["-DKYMO_PROFILE=KYMO_PROFILE_XYZ", "-DKYMO_ENABLE_CPP=1",
                   "-DKYMO_ENABLE_DECODER=1"]
 PARAMETERS = ["-DKYMO_ENABLE_DECODER=1", "-DKYMO_ENABLE_PARAMETERS=1"]
 WATCH = ["-DKYMO_ENABLE_DECODER=1", "-DKYMO_ENABLE_WATCH=1"]
-CONTROL_SOURCES = ["src/control/kymo_control_rx.cpp", "src/control/kymo_param.cpp",
-                   "src/control/kymo_watch.cpp"]
+CONTROL_SOURCES = ["src/communication/kymo_control_rx.cpp", "src/features/parameters/kymo_param.cpp",
+                   "src/features/watch/kymo_watch.cpp"]
 PROFILES = ([],["-DKYMO_PROFILE=KYMO_PROFILE_XYZ"], ["-DKYMO_PROFILE=KYMO_PROFILE_TRACE"],
             ["-DKYMO_ENABLED=0"])
 
@@ -82,17 +82,17 @@ def main():
                                        ["-DKYMO_ENABLE_MEMORY=1", "-DKYMO_ENABLE_CRC=1",
                                         "-DKYMO_MAX_MEMORY_ENTRIES=32"])):
             build_and_run(args.cxx, temp, f"memory_{index}", "test/memory_test.cpp",
-                          flags, TELEMETRY_SOURCES + ["src/telemetry/kymo_memory.cpp"])
+                          flags, TELEMETRY_SOURCES + ["src/features/memory/kymo_memory.cpp"])
         build_and_run(args.cxx, temp, "tx_minimal", "examples/integration/tests/tx_test.cpp",
                       ["-DKYMO_ENABLE_TX=1", "-DKYMO_ENABLE_RUNTIME=0"],
-                      ["src/transport/kymo_tx.cpp"])
+                      ["src/communication/kymo_tx.cpp"])
         run([args.cc, "-std=c99", *WARNINGS, "-DKYMO_ENABLE_TX=1", "-Isrc",
              "-c", "test/tx_c_test.c", "-o", temp / "tx-c.o"])
         run([args.cxx, "-std=c++11", *WARNINGS, "-DKYMO_ENABLE_TX=1", "-Isrc",
-             temp / "tx-c.o", "src/transport/kymo_tx.cpp", "-o", temp / "tx-c"])
+             temp / "tx-c.o", "src/communication/kymo_tx.cpp", "-o", temp / "tx-c"])
         run([temp / "tx-c"])
         probe = temp / "entry.c"
-        probe.write_text("#include <KymoCore.h>\nint main(void) { return 0; }\n",
+        probe.write_text("#include <kymo_modules.h>\nint main(void) { return 0; }\n",
                          encoding="utf-8")
         for flags in PROFILES + (PARAMETERS, WATCH, PARAMETERS + WATCH[1:], ["-DKYMO_ENABLE_MEMORY=1"], ["-DKYMO_ENABLE_TX=1"]):
             run([args.cc, "-std=c99", *WARNINGS, *flags, "-Isrc", "-c", probe,
@@ -109,7 +109,7 @@ def main():
                       TELEMETRY_SOURCES)
         run([sys.executable, "examples/integration/run.py", "--check",
              "--cxx", args.cxx, "--out", temp / "integration"])
-    for script in ("test/endpoint_test.py", "test/trace_core_test.py", "test/compile_out_test.py",
+    for script in ("test/core_entry_test.py", "test/core_features_test.py", "examples/core_parameters/run.py", "examples/core_features/run.py", "test/endpoint_test.py", "test/trace_core_test.py", "test/compile_out_test.py",
                    "test/style_check.py"):
         run([sys.executable, script])
     print("KymoCore native suite: PASS")

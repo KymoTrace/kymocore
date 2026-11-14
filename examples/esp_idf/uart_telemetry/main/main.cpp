@@ -17,7 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <KymoCore.h>
+#include <kymo_modules.h>
 
 static const uart_port_t kPort = UART_NUM_0;
 static const float kTwoPi = 6.28318531f;
@@ -114,6 +114,20 @@ static esp_err_t initUart()
     return result;
 }
 
+/** @brief Fixed runtime table and callbacks; no setup-time mutation. */
+static const KymoConfig runtimeConfig = {
+    sChannels,                /* channels */
+    KYMO_COUNT_OF(sChannels), /* channel_count */
+    readClockMs,              /* clock_ms */
+    readSample,               /* sample */
+    writeBytes,               /* write */
+    nullptr,                  /* busy */
+    nullptr,                  /* service */
+    nullptr,                  /* clock_user */
+    nullptr,                  /* sample_user */
+    nullptr,                  /* transport_user */
+};
+
 /**
  * @brief Stream both channels until the configuration or transport fails.
  * @details Main is called again while it sends frames; when nothing is due or the
@@ -124,20 +138,14 @@ static esp_err_t initUart()
 extern "C" void app_main(void)
 {
     KymoStatus status = KYMO_BAD_CONFIG;
-    KymoConfig config = {}; /* copied by Kymo_Init; may be local */
-    config.channels = sChannels;
-    config.channel_count = KYMO_COUNT_OF(sChannels);
-    config.clock_ms = readClockMs;
-    config.sample = readSample;
-    config.write = writeBytes;
     esp_log_level_set("*", ESP_LOG_NONE);
     if (initUart() == ESP_OK)
     {
-        status = Kymo_Init(&sContext, &config);
+        status = KymoRuntime_init(&sContext, &runtimeConfig);
     }
     while ((status != KYMO_BAD_CONFIG) && (status != KYMO_IO_ERROR))
     {
-        status = Kymo_Main(&sContext);
+        status = KymoRuntime_main(&sContext);
         if (status != KYMO_OK)
         {
             vTaskDelay(1);

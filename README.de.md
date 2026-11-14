@@ -1,3 +1,5 @@
+> Entwicklungsbranch: Die neue [Core-Schnittstelle für alle fünf Features und Ordnerstruktur](docs/CORE_ENTRY.md) ändert API-Namen und Include-Pfade. Einstieg: [vollständiges Core-Beispiel](examples/core_features/README.md).
+
 <p align="center">
   <a href="README.md"><img alt="English" src="https://img.shields.io/badge/%F0%9F%8C%90-English-A78BFA"></a>
   <a href="README.de.md"><img alt="Deutsch" src="https://img.shields.io/badge/%F0%9F%8C%90-Deutsch-15123A"></a>
@@ -34,7 +36,7 @@ Konfigurationsstände lassen sich ohne Python-Generator und ohne Qt kompilieren.
 Compilerdefinitionen haben Vorrang vor dem Projektheader und den Bibliotheksvorgaben.
 `KYMO_ENABLED=0` schaltet die Instrumentierung aus; anwendungseigene Telemetrieressourcen
 müssen mit den effektiven Feature-Makros geschützt werden. Die Fassade liegt in
-`KymoCore.h` (oder `trace/kymo_instrumentation.h`). Ungeschützte direkte API-Aufrufe werden im Off-Build
+`kymo_modules.h` (oder `features/trace/kymo_trace_instrumentation.h`). Ungeschützte direkte API-Aufrufe werden im Off-Build
 bewusst als Übersetzungsfehler erkannt.
 
 Wer Sensoren auswertet, einen Regler einstellt oder einen Motor ansteuert, will
@@ -61,7 +63,7 @@ die Signale live als Kurve, als XY-Bahn oder in 3D.
 | **Viele Kanäle, eigener Takt** | Bis zu 256 Kanäle, jeder mit eigenem Abtastintervall. Ein Round-Robin-Scheduler entscheidet, wer dran ist. |
 | **Mehr als eine Zahl** | Y, XY oder XYZ pro Messpunkt, optional mit Zeitstempel und CRC-Prüfsumme. |
 | **Kompakt auf der Leitung** | 9–21 Bytes pro Messpunkt, float32, Little Endian. Ein feststehendes, dokumentiertes [Protokoll](docs/PROTOCOL.md). |
-| **Blockiert nie** | Einmal `Kymo_Init()`, dann zyklisch `Kymo_Main()`. Läuft ohne RTOS, ohne Heap, ohne Exceptions und ohne RTTI. |
+| **Blockiert nie** | Einmal `KymoRuntime_init()`, dann zyklisch `KymoRuntime_main()`. Läuft ohne RTOS, ohne Heap, ohne Exceptions und ohne RTTI. |
 | **Jede Schnittstelle** | UART, USB-CDC, WLAN/TCP, UDP, MQTT, CAN …: Du lieferst einen `write`-Callback, KymoCore liefert die Bytes. |
 | **Langsame Leitungen inklusive** | Teilübertragungen, Rückstau und ausgeliehene DMA-Puffer werden sauber behandelt. |
 | **Nur was du brauchst** | X, Z, Zeitstempel, CRC, Decoder und C++-API lassen sich zur Compile-Zeit einzeln zuschalten. Standard ist minimal. |
@@ -111,7 +113,7 @@ reserviert; Diagnoseausgaben würden denselben Datenstrom verändern.
 
 ```cpp
 #include <Arduino.h>
-#include <KymoCore.h>
+#include <kymo_modules.h>
 
 static KymoContext context = {};
 static KymoStatus lastStatus = KYMO_BAD_CONFIG;
@@ -163,16 +165,24 @@ static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
 /**
  * setup
  */
+static const KymoConfig runtimeConfig =
+{
+    channels, /* channels */
+    KYMO_COUNT_OF(channels), /* channel_count */
+    readClockMs, /* clock_ms */
+    readSample, /* sample */
+    writeBytes, /* write */
+    nullptr, /* busy */
+    nullptr, /* service */
+    nullptr, /* clock_user */
+    nullptr, /* sample_user */
+    nullptr, /* transport_user */
+};
+
 void setup()
 {
-    KymoConfig config = {};   /* copied by Kymo_Init, may be local */
     Serial.begin(115200);
-    config.channels = channels;                     /* what */
-    config.channel_count = KYMO_COUNT_OF(channels);
-    config.clock_ms = readClockMs;                  /* when */
-    config.sample = readSample;                     /* which values */
-    config.write = writeBytes;                      /* where to */
-    lastStatus = Kymo_Init(&context, &config);
+    lastStatus = KymoRuntime_init(&context, &runtimeConfig);
 }
 
 /**
@@ -181,7 +191,7 @@ void setup()
 void loop()
 {
     if ((lastStatus != KYMO_BAD_CONFIG) && (lastStatus != KYMO_IO_ERROR)) {
-        lastStatus = Kymo_Main(&context);
+        lastStatus = KymoRuntime_main(&context);
     }
 }
 ```
@@ -198,7 +208,7 @@ Ein vollständig SDK-freies, ausführbares Beispiel liegt in
 [examples/basic](examples/basic/README.md).
 
 Vorhandene Variablen lassen sich ohne eigenen Messcallback plotten: mit
-`Kymo_SampleBound` binden, siehe
+`KymoRuntime_sampleBound` binden, siehe
 [Arduino-Quickstart](examples/arduino/quickstart/README.md).
 
 ## Unterstützte Plattformen

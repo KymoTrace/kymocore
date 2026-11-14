@@ -207,7 +207,7 @@ def verify(capture: bytes, *, with_requests: bool = True) -> dict[str, int]:
 def build(cxx: str, directory: Path, defines: dict[str, int], *, contract: str | None = None) -> Path:
     binary = directory / ("integration.exe" if os.name == "nt" else "integration")
     if contract == "tx":
-        sources = [EXAMPLE / "tests/tx_test.cpp", ROOT / "src/transport/kymo_tx.cpp"]
+        sources = [EXAMPLE / "tests/tx_test.cpp", ROOT / "src/communication/kymo_tx.cpp"]
     elif contract == "app":
         sources = [EXAMPLE / name for name in
                    ("tests/app_test.cpp", "kymo_app.cpp", "kymo_init.cpp", "demo_values.cpp")]

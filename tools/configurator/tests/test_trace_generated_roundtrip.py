@@ -52,7 +52,7 @@ class GeneratedTraceRoundTripTests(unittest.TestCase):
             snapshot = generate(project, "development", root / "generated")
             source = root / "roundtrip.cpp"
             source.write_text(r'''#include <kymo_generated_config.h>
-#include <KymoCore.h>
+#include <kymo_modules.h>
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -86,13 +86,13 @@ extern "C" void kymo_port_service(void *) {}
 int main()
 {
     assert(kymo_generated_trace_init(&frames) == KYMO_OK);
-    KymoTrace_Enter(&kymo_generated_trace_recorder, 1u, 1u);
-    KymoTrace_Exit(&kymo_generated_trace_recorder, 1u, 1u);
+    KymoTrace_enter(&kymo_generated_trace_recorder, 1u, 1u);
+    KymoTrace_exit(&kymo_generated_trace_recorder, 1u, 1u);
 
     const uint8_t legacy_frame[9] = {
         0xa5u, 0x5au, 0x40u, 7u, 0u, 0u, 0x80u, 0x3fu, 0u
     };
-    assert(KymoMuxDataSlot_Write(
+    assert(KymoMux_dataSlotWrite(
         &kymo_generated_trace_data_adapter, legacy_frame, 9u) == 9u);
 
     for (uint16_t cycle = 0u; cycle < 32u; ++cycle) {
@@ -114,15 +114,15 @@ int main()
             (static_cast<uint16_t>(frame[21]) << 8);
         const uint16_t frame_crc = static_cast<uint16_t>(frame[22u + payload_length]) |
             (static_cast<uint16_t>(frame[23u + payload_length]) << 8);
-        assert(header_crc == KymoTrace_Crc16(frame.data() + 2u, 18u));
-        assert(frame_crc == KymoTrace_Crc16(frame.data() + 2u, 20u + payload_length));
+        assert(header_crc == KymoTraceProtocol_crc16(frame.data() + 2u, 18u));
+        assert(frame_crc == KymoTraceProtocol_crc16(frame.data() + 2u, 20u + payload_length));
         saw_metadata = saw_metadata || frame[3] == KYMO_TRACE_PAYLOAD_SESSION_META;
         saw_dictionary = saw_dictionary || frame[3] == KYMO_TRACE_PAYLOAD_DICTIONARY;
         saw_batch = saw_batch || frame[3] == KYMO_TRACE_PAYLOAD_BATCH;
         saw_data = saw_data || frame[3] == KYMO_TRACE_PAYLOAD_DATA_V1;
     }
     assert(saw_metadata && saw_dictionary && saw_batch && saw_data);
-    assert(KymoMuxDataSlot_IsBusy(
+    assert(KymoMux_dataSlotIsBusy(
         &kymo_generated_trace_data_adapter) == 0u);
     return 0;
 }

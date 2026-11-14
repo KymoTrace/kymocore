@@ -7,10 +7,11 @@
  */
 #ifndef EXAMPLE_KYMO_INTERNAL_H
 #define EXAMPLE_KYMO_INTERNAL_H
-#include <endpoint/kymo_endpoint.h>
+#include <core/kymo_core_endpoint.h>
+
 /**
  * @brief Access the common base. @return Persistent Endpoint storage.
  * @par Usage Pass to the feature's library Init.
  */
-KymoEndpoint *exampleEndpoint(void);
+KymoCoreEndpoint *exampleEndpoint(void);
 #endif

@@ -153,7 +153,7 @@ Bytes: A5 5A 52 03 00 00 20 C0 87 D6 12 00 97
 Size:  13
 ```
 
-Microsecond timestamps are encoded with `KymoProtocol_Encode` and
+Microsecond timestamps are encoded with `KymoProtocol_encode` and
 `KYMO_FLAG_TIMESTAMP | KYMO_FLAG_TIMESTAMP_US` on a `KymoDataPoint`
 (`KYMO_ENABLE_TIMESTAMP=1`); `KymoDataPoint::timestamp_ms` then holds µs.
 The cyclic runtime and C++ sender keep millisecond clocks and reject the flag.
@@ -171,8 +171,8 @@ All settings and profiles live in `src/kymo_config.h`; `src/kymo_config_check.h`
 Compiler definitions may override the header.
 
 KymoCore provides a portable C++11 cyclic API. The v6.1 NO_CRC extension keeps
-wire version 1 and all frame sizes. `Kymo_Init(context, config)` validates and copies a configuration;
-`Kymo_Main(context)` schedules samples, encodes frames and resumes short
+wire version 1 and all frame sizes. `KymoRuntime_init(context, config)` validates and copies a configuration;
+`KymoRuntime_main(context)` schedules samples, encodes frames and resumes short
 writes. See [GUIDE.md](GUIDE.md) for configuration and transport ownership.
 
 The optional C++ push sender `KymoSender` remains available:
@@ -284,7 +284,7 @@ CAN uses a compact write instead, because a classic data field holds 8 bytes:
 arbitration ID = the connection's configured `tx_id`, data = parameter ID (u8)
 followed by the value as little-endian binary32 (5 bytes); CAN's own framing and
 CRC replace sync, descriptor and CRC-8. The firmware hands the data field to
-`KymoParam_FeedCompact`, which applies the same rules. The readback is an ordinary
+`KymoParam_feedCompact`, which applies the same rules. The readback is an ordinary
 CAN measurement whose arbitration ID is the parameter ID. Discovery does not fit
 into 8 bytes, so parameters on CAN are defined in the host. Golden vector, write
 parameter 7 = 1.0: `07 00 00 80 3f`.
@@ -360,7 +360,7 @@ any RTOS or allocator function itself.
 Every entry has its own DATA channel. The device describes each entry with a
 control frame (descriptor `0x60`, mandatory CRC), unsolicited: right after
 start, every `info_period_ms` and when the firmware calls
-`KymoMemory_RequestInfo`.
+`KymoMemory_requestInfo`.
 
 | Op | Direction | Payload after the operation byte | Meaning |
 |---|---|---|---|
@@ -407,12 +407,12 @@ format. New embedded firmware should emit binary v6.
 
 - Python codec: `KymoStudio/python/Receiver/binary_protocol.py`
 - Backend parser: `KymoStudio/python/Backend/backend.py::_parse_data_point`
-- Embedded codec: `src/telemetry/kymo_protocol.h/.cpp`
-- Embedded cyclic runtime: `src/telemetry/kymo_runtime.h/.cpp`
-- Optional C++ sender: `src/telemetry/kymo_sender.h/.cpp`
+- Embedded codec: `src/communication/kymo_protocol.h/.cpp`
+- Embedded cyclic runtime: `src/features/plot/kymo_runtime.h/.cpp`
+- Optional C++ sender: `src/features/plot/kymo_sender.h/.cpp`
 - Embedded golden-vector test: `test/protocol_golden_test.cpp`
-- Embedded back channel: `src/control/kymo_param.h/.cpp` (parameters),
-  `src/control/kymo_watch.h/.cpp` (live variables), tests `test/param_test.cpp`
+- Embedded back channel: `src/features/parameters/kymo_param.h/.cpp` (parameters),
+  `src/features/watch/kymo_watch.h/.cpp` (live variables), tests `test/param_test.cpp`
   and `test/watch_test.cpp`
 - Desktop golden-vector tests: `KymoStudio/tests/test_binary_protocol.py`
 

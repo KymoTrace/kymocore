@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-#include "trace/kymo_trace.h"
+#include "../src/features/trace/kymo_trace.h"
 
 static uint64_t ticks;
 static KymoTraceRecorder recorder;
@@ -26,8 +26,8 @@ static void __attribute__((noinline)) nested(void)
 {
     volatile uint8_t frame[256];
     frame[0] = 1u;
-    KymoTrace_Enter(&recorder, 1u, 2u);
-    KymoTrace_Exit(&recorder, 1u, 2u);
+    KymoTrace_enter(&recorder, 1u, 2u);
+    KymoTrace_exit(&recorder, 1u, 2u);
     frame[255] = frame[0];
 }
 
@@ -44,25 +44,27 @@ int main(void)
     config.clock_ticks = clockRead;
     config.session_id = 1u;
     config.clock_domain_id = 1u;
-    assert(KymoTrace_Init(&recorder, &config) == KYMO_OK);
-    KymoTrace_Enter(&recorder, 1u, 1u);
+    assert(KymoTrace_init(&recorder, &config) == KYMO_OK);
+    KymoTrace_enter(&recorder, 1u, 1u);
     nested();
-    KymoTrace_Exit(&recorder, 1u, 1u);
-    KymoTrace_Mark(&recorder, 1u, 3u, 7u);
-    assert(KymoTrace_Pop(&recorder, &outer) == KYMO_OK);
-    assert(KymoTrace_Pop(&recorder, &inner) == KYMO_OK);
+    KymoTrace_exit(&recorder, 1u, 1u);
+    KymoTrace_mark(&recorder, 1u, 3u, 7u);
+    assert(KymoTrace_pop(&recorder, &outer) == KYMO_OK);
+    assert(KymoTrace_pop(&recorder, &inner) == KYMO_OK);
     assert((outer.flags & KYMO_TRACE_FLAG_STACK_SAMPLE) != 0u);
     assert((inner.flags & KYMO_TRACE_FLAG_STACK_SAMPLE) != 0u);
     assert((outer.flags & KYMO_TRACE_FLAG_ARG_VALID) == 0u);
     assert((outer.arg != 0u) && (inner.arg != 0u));
+
     /* The stack grows down on the test host: the nested scope sits lower. */
     assert(inner.arg < outer.arg);
     assert((outer.arg - inner.arg) >= 256u);
-    assert(KymoTrace_Pop(&recorder, &event) == KYMO_OK);
+    assert(KymoTrace_pop(&recorder, &event) == KYMO_OK);
     assert((event.event_type == KYMO_TRACE_EVENT_EXIT) && (event.arg == inner.arg));
-    assert(KymoTrace_Pop(&recorder, &event) == KYMO_OK);
+    assert(KymoTrace_pop(&recorder, &event) == KYMO_OK);
     assert((event.event_type == KYMO_TRACE_EVENT_EXIT) && (event.arg == outer.arg));
-    assert(KymoTrace_Pop(&recorder, &event) == KYMO_OK);
+    assert(KymoTrace_pop(&recorder, &event) == KYMO_OK);
+
     /* Markers keep their own value and do not claim a stack sample. */
     assert((event.arg == 7u) && ((event.flags & KYMO_TRACE_FLAG_STACK_SAMPLE) == 0u));
     return 0;

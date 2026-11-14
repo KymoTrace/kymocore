@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Christof Seidel */
-/* Variable binding: Kymo_SampleBound plots float variables through Init/Main. */
+/* Variable binding: KymoRuntime_sampleBound plots float variables through Init/Main. */
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "KymoCore.h"
-#include "common/embedded_bytes.h"
+#include "kymo_modules.h"
+#include "../src/binary/embedded_bytes.h"
 
 static const uint8_t ID_FAST = 3u;
 static const uint8_t ID_SLOW = 9u;
@@ -20,6 +20,7 @@ static uint8_t sFrameLength = 0u;
 
 static float sFast = 1.5f;
 static float sSlow = -2.25f;
+
 /* period_ms, id, flags: deliberately non-consecutive IDs. */
 static const KymoChannel CHANNELS[] = {{10u, ID_FAST, 0u}, {30u, ID_SLOW, 0u}};
 static const float *const VALUES[] = {&sFast, &sSlow};
@@ -56,7 +57,7 @@ static void expectFrame(uint8_t id, float value)
 {
     float sent = 0.0f;
     sFrameLength = 0u;
-    assert(Kymo_Main(&sContext) == KYMO_OK);
+    assert(KymoRuntime_main(&sContext) == KYMO_OK);
     assert(sFrameLength > (FRAME_VALUE_OFFSET + sizeof(sent)));
     assert(sFrame[FRAME_ID_OFFSET] == id);
     sent = emb_read_f32_le(sFrame + FRAME_VALUE_OFFSET);
@@ -75,48 +76,48 @@ int main()
     config.channels = CHANNELS;
     config.channel_count = KYMO_COUNT_OF(CHANNELS);
     config.clock_ms = readClock;
-    config.sample = Kymo_SampleBound;
+    config.sample = KymoRuntime_sampleBound;
     config.sample_user = &sBinding;
     config.write = writeFrame;
-    assert(Kymo_Init(&sContext, &config) == KYMO_OK);
+    assert(KymoRuntime_init(&sContext, &config) == KYMO_OK);
 
     /* Both channels are due at start; each ID carries its own variable. */
     expectFrame(ID_FAST, 1.5f);
     expectFrame(ID_SLOW, -2.25f);
-    assert(Kymo_Main(&sContext) == KYMO_IDLE);
+    assert(KymoRuntime_main(&sContext) == KYMO_IDLE);
 
     /* A changed variable appears at the next due sample; periods are kept. */
     sFast = 4.0f;
     sSlow = 8.0f;
     sNowMs += 10u;
     expectFrame(ID_FAST, 4.0f);
-    assert(Kymo_Main(&sContext) == KYMO_IDLE);
+    assert(KymoRuntime_main(&sContext) == KYMO_IDLE);
     sNowMs += 20u;
+
     /* Round robin continues behind the last sent channel. */
     expectFrame(ID_SLOW, 8.0f);
     expectFrame(ID_FAST, 4.0f);
 
     /* Unbound IDs and missing tables are skipped instead of read. */
-    assert(Kymo_SampleBound(&sBinding, ID_UNBOUND, &sample) == 0u);
-    assert(Kymo_SampleBound(nullptr, ID_FAST, &sample) == 0u);
-    assert(Kymo_SampleBound(&sBinding, ID_FAST, nullptr) == 0u);
-    assert(Kymo_SampleBound(&hole, ID_FAST, &sample) == 0u);
+    assert(KymoRuntime_sampleBound(&sBinding, ID_UNBOUND, &sample) == 0u);
+    assert(KymoRuntime_sampleBound(nullptr, ID_FAST, &sample) == 0u);
+    assert(KymoRuntime_sampleBound(&sBinding, ID_FAST, nullptr) == 0u);
+    assert(KymoRuntime_sampleBound(&hole, ID_FAST, &sample) == 0u);
 
     /* Enabled X/Z channels must be skipped without emitting zero coordinates. */
 #if KYMO_EFFECTIVE_X && KYMO_EFFECTIVE_Z && KYMO_EFFECTIVE_TIMESTAMP
-    const KymoChannel scalarChannels[] = {
-        {10u, ID_FAST, KYMO_FLAG_X},
-        {10u, ID_SLOW, KYMO_FLAG_Z},
-        {10u, ID_UNBOUND, KYMO_FLAG_TIMESTAMP}};
+    const KymoChannel scalarChannels[] = {{10u, ID_FAST, KYMO_FLAG_X},
+                                          {10u, ID_SLOW, KYMO_FLAG_Z},
+                                          {10u, ID_UNBOUND, KYMO_FLAG_TIMESTAMP}};
     const float *const scalarValues[] = {&sFast, &sSlow, &sFast};
     KymoPlotBinding scalarBinding = {scalarChannels, scalarValues, KYMO_COUNT_OF(scalarChannels)};
     config.channels = scalarChannels;
     config.channel_count = KYMO_COUNT_OF(scalarChannels);
     config.sample_user = &scalarBinding;
-    assert(Kymo_Init(&sContext, &config) == KYMO_OK);
+    assert(KymoRuntime_init(&sContext, &config) == KYMO_OK);
     sFrameLength = 0u;
-    assert(Kymo_Main(&sContext) == KYMO_SKIPPED);
-    assert(Kymo_Main(&sContext) == KYMO_SKIPPED);
+    assert(KymoRuntime_main(&sContext) == KYMO_SKIPPED);
+    assert(KymoRuntime_main(&sContext) == KYMO_SKIPPED);
     assert(sFrameLength == 0u);
     expectFrame(ID_UNBOUND, sFast);
 #endif

@@ -13,14 +13,17 @@
 #ifndef EXAMPLE_NATIVE_CHUNK
 #define EXAMPLE_NATIVE_CHUNK 7u
 #endif
+
 /** @brief Cycles retaining the caller's pointer; zero copies synchronously. */
 #ifndef EXAMPLE_NATIVE_HOLD
 #define EXAMPLE_NATIVE_HOLD 2u
 #endif
+
 /** @brief Initial cycles with an unavailable transport; test override. */
 #ifndef EXAMPLE_NATIVE_STALL
 #define EXAMPLE_NATIVE_STALL 100u
 #endif
+
 /** @brief Inject one invalid accepted count to exercise fail-stop handling. */
 #ifndef EXAMPLE_NATIVE_FAULT
 #define EXAMPLE_NATIVE_FAULT 0
@@ -120,10 +123,12 @@ size_t examplePortWrite(const uint8_t *bytes, size_t length)
     {
         ++sWrites;
 #if EXAMPLE_NATIVE_FAULT
+
         /* A second write after the violation is itself an example failure. */
         sHealthy = (uint8_t)(sWrites == 1u);
         accepted = length + 1u;
 #else
+
         /* Zero acceptance is legal even after busy returned zero. */
         if ((sWrites % ZERO_WRITE_INTERVAL) != 0u)
         {

@@ -44,15 +44,15 @@ def main():
             print(f"Endpoint {name}: PASS", flush=True)
         for name, flags in FEATURES.items():
             probe = temp / (name + ".c")
-            probe.write_text(f"#include <endpoint/features/kymo_{name}.h>\n"
+            probe.write_text(f"#include <features/{'parameters' if name == 'param' else name}/kymo_core_endpoint_{name}.h>\n"
                              "int main(void) { return 0; }\n", encoding="utf-8")
             run([cc, "-std=c99", *WARNINGS, *BASE, *flags, "-Isrc", "-c", probe,
                  "-o", temp / "header.o"])
             # Even when all features are compiled, one feature header must not
             # expose another feature's facade via an umbrella include.
             unrelated = "Plot" if name == "trace" else "Trace"
-            probe.write_text(f"#include <endpoint/features/kymo_{name}.h>\n"
-                             f"KymoEndpoint{unrelated} unrelated;\n", encoding="utf-8")
+            probe.write_text(f"#include <features/{'parameters' if name == 'param' else name}/kymo_core_endpoint_{name}.h>\n"
+                             f"KymoCoreEndpoint{unrelated} unrelated;\n", encoding="utf-8")
             refused = subprocess.run([cc, "-std=c99", *BASE, *ALL, "-Isrc", "-c",
                                       str(probe), "-o", str(temp / "leak.o")],
                                      cwd=ROOT, capture_output=True)
@@ -63,7 +63,7 @@ def main():
              *sources, "-o", temp / "caller.exe"])
         run([temp / "caller.exe"])
         disabled = temp / "disabled.c"
-        disabled.write_text('''#include <endpoint/features/kymo_trace.h>
+        disabled.write_text('''#include <features/trace/kymo_core_endpoint_trace.h>
 int main(void) {
     int side_effect = 0;
     if (1) KYMO_ENDPOINT_TRACE_MARK(missing, ++side_effect, symbol, value);
@@ -85,8 +85,8 @@ int main(void) {
                  "-o", binary])
             run([binary])
         probe = temp / "disabled-api.c"
-        probe.write_text('#include <endpoint/kymo_endpoint.h>\n'
-                         'int main(void) { return KymoEndpoint_Main(0); }\n', encoding="utf-8")
+        probe.write_text('#include <core/kymo_core_endpoint.h>\n'
+                         'int main(void) { return KymoCoreEndpoint_main(0); }\n', encoding="utf-8")
         for flags in ([], ["-DKYMO_ENABLE_ENDPOINT=1"], ["-DKYMO_ENABLED=0", *BASE]):
             refused = subprocess.run([cc, "-std=c99", "-Werror=implicit-function-declaration",
                                       *flags, "-Isrc", "-c", str(probe), "-o", str(temp / "off.o")],

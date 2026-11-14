@@ -48,6 +48,7 @@ int main(int argc, char **argv)
         {
             status = KymoApp_RequestStop();
             status = (status == KYMO_OK) ? KYMO_BUSY : status;
+
             /* A host-test deadline is never permission to reuse DMA storage. */
             for (uint32_t cycle = 0u; (cycle < DRAIN_DEADLINE_CYCLES) && (status == KYMO_BUSY) &&
                                       (examplePortHealthy() != 0u);

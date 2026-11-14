@@ -3,7 +3,7 @@
  * @file tx_c_test.c
  * @brief C99 consumer linked against the C++11 transport implementation.
  */
-#include <KymoCore.h>
+#include <kymo_modules.h>
 #include <assert.h>
 #include <string.h>
 
@@ -30,9 +30,9 @@ int main(void)
     config.capacity = sizeof(storage);
     config.write = copyBytes;
     config.transport_user = received;
-    assert(KymoTx_Init(&tx, &config) == KYMO_OK);
-    assert(KymoTx_Submit(&tx, frame, sizeof(frame)) == KYMO_OK);
-    assert(KymoTx_Service(&tx) == KYMO_IDLE);
+    assert(KymoTx_init(&tx, &config) == KYMO_OK);
+    assert(KymoTx_submit(&tx, frame, sizeof(frame)) == KYMO_OK);
+    assert(KymoTx_service(&tx) == KYMO_IDLE);
     assert(memcmp(frame, received, sizeof(frame)) == 0);
     return 0;
 }

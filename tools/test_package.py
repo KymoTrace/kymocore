@@ -119,6 +119,9 @@ def main():
     run(sys.executable, unpacked / "examples/integration/run.py", "--cxx", compiler,
         "--out", workspace / "integration", cwd=workspace)
     print("Packaged integration example passed", flush=True)
+    for example in ("core_parameters", "core_features"):
+        run(sys.executable, unpacked / "examples" / example / "run.py", cwd=unpacked)
+    print("Packaged public Core examples passed", flush=True)
     if not args.skip_firmware:
         consumer = workspace / "firmware"
         (consumer / "src").mkdir(parents=True)
@@ -134,6 +137,31 @@ def main():
         # Use only the archive dependency, never the repository's symlink library.
         run(pio, "run", "-d", consumer, cwd=consumer)
         print("README example builds from archive: Uno and ESP32 passed", flush=True)
+        # Also compile the public default-Core API with all five features on a
+        # 32-bit MCU. The mock callbacks remain unchanged: this is a compile/link
+        # check, not a hardware execution or throughput claim.
+        core_consumer = workspace / "core-firmware"
+        (core_consumer / "src").mkdir(parents=True)
+        (core_consumer / "include").mkdir()
+        core_source = (unpacked / "examples/core_features/main.c").read_text(encoding="utf-8")
+        core_source = core_source.replace("int main(void)", "int CoreFirmwareExample_run(void)")
+        core_source = core_source.replace("../integration/kymo_trace_records.h", "kymo_trace_records.h")
+        (core_consumer / "src/core_example.c").write_text(core_source, encoding="utf-8")
+        shutil.copy2(unpacked / "examples/integration/kymo_trace_records.h",
+                     core_consumer / "include/kymo_trace_records.h")
+        shutil.copy2(unpacked / "examples/core_features/kymo_example_config.h",
+                     core_consumer / "include/kymo_example_config.h")
+        (core_consumer / "src/main.cpp").write_text(
+            '#include <Arduino.h>\nextern "C" int CoreFirmwareExample_run(void);\n'
+            'void setup()\n{\n    (void)CoreFirmwareExample_run();\n}\n'
+            'void loop()\n{\n}\n', encoding="utf-8")
+        (core_consumer / "platformio.ini").write_text(
+            "[env:esp32dev]\nplatform = espressif32@6.12.0\nboard = esp32dev\n"
+            "framework = arduino\nlib_deps =\n    file://" + archive.as_posix() +
+            '\nbuild_flags =\n    -Iinclude\n'
+            '    -DKYMO_USER_CONFIG_HEADER=\\\"kymo_example_config.h\\\"\n', encoding="utf-8")
+        run(pio, "run", "-d", core_consumer, cwd=core_consumer)
+        print("Public Core with all five features: ESP32 firmware compile/link passed", flush=True)
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     (output / (archive.name + ".sha256")).write_text(f"{digest}  {archive.name}\n", encoding="ascii")
     print(f"Package checks passed: {archive}\nSHA256: {digest}")

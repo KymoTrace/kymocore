@@ -11,7 +11,7 @@
  * The header is platform-independent and C/C++ compatible.
  * @par Usage
  * @code{.c}
- * if (Kymo_Init(&context, &config) != KYMO_OK) { handle_configuration_error(); }
+ * if (KymoRuntime_init(&context, &config) != KYMO_OK) { handle_configuration_error(); }
  * @endcode
  */
 #ifndef KYMO_TYPES_H
@@ -35,7 +35,7 @@ extern "C"
      * @details A plain uint8_t keeps the C ABI small and stable. Compare against
      * the KYMO_* status macros; never rely on ordering beyond KYMO_OK being zero.
      * @par Usage
-     * KymoStatus status = Kymo_Main(&context);
+     * KymoStatus status = KymoRuntime_main(&context);
      */
     typedef uint8_t KymoStatus;
 
@@ -115,6 +115,7 @@ extern "C"
  * Change the state that blocks the request before retrying.
  */
 #define KYMO_REJECTED 7u
+
     /** @} */
 
     /**
@@ -124,19 +125,42 @@ extern "C"
      * @brief Read a monotonic millisecond counter.
      *
      * @details The counter may wrap modulo 2^32; KymoCore uses unsigned differences.
-     * @param[in,out] user Application context registered with the callback; may be NULL.
+     * @param[in,out] pContext Application context registered with the callback; may be NULL.
      * @return Current uint32 millisecond tick.
      * @par Usage
      * Wrap the platform tick function, for example millis() or HAL_GetTick().
      */
-    typedef uint32_t (*KymoClockFn)(void *user);
+    typedef uint32_t (*KymoClockMsFn)(void *pContext);
+
+    /**
+     * @brief Nonblocking read of available transport bytes.
+     * @param[in,out] pContext Application transport context.
+     * @param[out] pBytesAv Destination valid for bufferSizeBytes bytes during this call.
+     * @param[in] bufferSizeBytes Maximum byte count.
+     * @return Bytes copied, 0..bufferSizeBytes; larger counts fault the core.
+     * @par Usage Supply for features receiving commands, including parameters.
+     */
+    typedef size_t (*KymoReadBytesFn)(void *pContext, uint8_t *pBytesAv, size_t bufferSizeBytes);
+
+    /**
+     * @brief Nonblocking byte writer shared by Core, frame sender and mux.
+     * @details Accept a prefix or zero for backpressure. Copy the accepted bytes
+     * before returning, or retain them only while the matching busy callback is
+     * nonzero. Message transports accept the complete frame or zero.
+     * @param[in,out] pContext Application transport context.
+     * @param[in] pBytesAv Persistent readable span owned by the caller.
+     * @param[in] byteCount Offered byte count; caller supplies a valid nonempty span.
+     * @return Accepted byte count, 0..byteCount. Larger results are an I/O error.
+     * @par Usage Forward to a UART, USB or network driver without narrowing lengths.
+     */
+    typedef size_t (*KymoWriteBytesFn)(void *pContext, const uint8_t *pBytesAv, size_t byteCount);
 
     /**
      * @brief Accept a prefix of a pending binary frame.
      *
      * @details Zero applies backpressure; short writes resume at the remaining offset.
      * Synchronous drivers copy before returning. Asynchronous drivers may retain the
-     * bytes only while the matching KymoBusyFn reports nonzero. Message transports
+     * bytes only while the matching KymoIsBusyFn reports nonzero. Message transports
      * (MQTT, CAN-FD, UDP) accept the whole frame or zero.
      * @param[in,out] user Transport context registered with the callback; may be NULL.
      * @param[in] bytes Non-null readable span owned by KymoCore; must not be modified.
@@ -152,22 +176,23 @@ extern "C"
      *
      * @details Optional for copying drivers; mandatory for drivers borrowing the pointer.
      * Also report busy while disconnected. Zero permits reuse of the buffer.
-     * @param[in,out] user Transport context registered with the callback.
+     * @param[in,out] pContext Transport context registered with the callback.
      * @return Nonzero while unavailable or in flight; zero when the buffer may be reused.
      * @par Usage
      * Read a UART DMA completion flag or USB transmit state.
      */
-    typedef uint8_t (*KymoBusyFn)(void *user);
+    typedef uint8_t (*KymoIsBusyFn)(void *pContext);
 
     /**
      * @brief Advance application-side transport maintenance once per cycle.
      *
      * @details Keep execution bounded; must not call back into KymoCore recursively.
-     * @param[in,out] user Transport context registered with the callback.
+     * @param[in,out] pContext Transport context registered with the callback.
      * @par Usage
      * Poll a network client or driver completion state.
      */
-    typedef void (*KymoServiceFn)(void *user);
+    typedef void (*KymoServiceFn)(void *pContext);
+
 /** @} */
 
 /**

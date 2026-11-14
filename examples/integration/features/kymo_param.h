@@ -7,18 +7,19 @@
  */
 #ifndef EXAMPLE_FEATURE_PARAM_H
 #define EXAMPLE_FEATURE_PARAM_H
-#include <endpoint/features/kymo_param.h>
+#include <features/parameters/kymo_core_endpoint_param.h>
+
 /**
  * @brief Construct the demonstration param configuration.
- * @return Config referring to persistent tables/callbacks.
+ * @return Reference to fixed configuration with persistent tables/callbacks.
  * @par Usage Replace demo bindings with application data.
  */
-KymoEndpointParamConfig exampleParamConfig(void);
+const KymoCoreParamConfig &exampleParamConfig(void);
 
 /**
  * @brief Initialize and register this feature completely.
  * @param[in] config Feature configuration; referenced data must persist.
  * @return Feature initialization status. @par Usage Check before starting Main.
  */
-KymoStatus KymoApp_ParamInit(const KymoEndpointParamConfig *config);
+KymoStatus KymoApp_ParamInit(const KymoCoreParamConfig *config);
 #endif

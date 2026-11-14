@@ -50,7 +50,7 @@ class CppSenderGenerationTests(unittest.TestCase):
         )
         source = root / "main.cpp"
         source.write_text(r'''#include <kymo_generated_config.h>
-#include <KymoCore.h>
+#include <kymo_modules.h>
 class TestStream : public KymoStream {
 public:
     size_t write(const uint8_t *, size_t length) override { bytes += length; return length; }

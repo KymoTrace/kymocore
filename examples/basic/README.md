@@ -1,7 +1,7 @@
 # Portable Init/Main example
 
 This example runs on a host with a C++11 compiler. It uses the default features:
-one scalar channel, no timestamp, no outgoing CRC. Ten `Kymo_Main` calls
+one scalar channel, no timestamp, no outgoing CRC. Ten `KymoRuntime_main` calls
 generate ten frames using a simulated 20 ms clock step. The transport callback
 copies each frame into application storage before returning; it does not retain
 the library's buffer. There is no terminal output. Exit code zero means success.
@@ -9,7 +9,7 @@ the library's buffer. There is no terminal output. Exit code zero means success.
 From the unpacked **library root**:
 
 ```sh
-g++ -std=c++11 -fno-exceptions -fno-rtti -Isrc examples/basic/main.cpp src/telemetry/kymo_protocol.cpp src/telemetry/kymo_runtime.cpp -o kymo-basic
+g++ -std=c++11 -fno-exceptions -fno-rtti -Isrc examples/basic/main.cpp src/communication/kymo_protocol.cpp src/features/plot/kymo_runtime.cpp -o kymo-basic
 ./kymo-basic
 ```
 

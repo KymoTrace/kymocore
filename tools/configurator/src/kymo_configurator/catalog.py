@@ -474,12 +474,12 @@ SECTIONS: list[Section] = [
         "How your values get to KymoStudio. The signals themselves are listed under 'Channels'.",
         groups=(
             Group("How values are sent", fields=(
-                _feature("runtime", "Send automatically at a fixed rhythm (Kymo_Init / Kymo_Main)",
+                _feature("runtime", "Send automatically at a fixed rhythm (KymoRuntime_init / KymoRuntime_main)",
                          "KymoCore samples your channels on schedule; recommended for most projects.",
                          "KYMO_ENABLE_RUNTIME",
                          guided="Leave ticked unless you know otherwise. KymoCore then reads your "
                                 "measurements by itself at a fixed rhythm (e.g. every 20 ms) and sends them. "
-                                "Your program only calls Kymo_Init() once and Kymo_Main() in its main loop.",
+                                "Your program only calls KymoRuntime_init() once and KymoRuntime_main() in its main loop.",
                          cost="72 B + 4 B per channel RAM"),
                 _feature("cpp", "Send values yourself, whenever you want (KymoSender)",
                          "Send single values whenever your code decides, in addition to or instead of "
@@ -577,7 +577,7 @@ SECTIONS: list[Section] = [
     Section(
         "memory", "Watch memory (stacks and heap)",
         "Shows how full your task stacks and your heap get, as named curves in KymoStudio. Nothing else "
-        "to set here. In your code you list the tasks and heaps and call KymoMemory_Init with one "
+        "to set here. In your code you list the tasks and heaps and call KymoMemory_init with one "
         "function that reads their current values (up to 8 entries by default, KYMO_MAX_MEMORY_ENTRIES).",
         diagnostic_prefixes=("profiles.{profile}.features.memory",),
         summary=_summary_on, visible_when=lambda v: v.feature("memory"), order=36),

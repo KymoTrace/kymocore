@@ -5,7 +5,7 @@
  * @file kymo_config_check.h
  * @brief Validates the settings of kymo_config.h and derives KYMO_EFFECTIVE_*.
  * @details Internal part of kymo_config.h; nothing here is a setting. Rejects
- * invalid values and unmet dependencies with #error, then publishes the
+ * invalid values and unmet dependencies with `#error`, then publishes the
  * KYMO_EFFECTIVE_* gates that the library and applications test.
  * @par Usage
  * Do not include directly; kymo_config.h includes it after all settings.
@@ -25,12 +25,16 @@
 
 /** @brief Internal token-paste step for checking literal settings. */
 #define KYMO_DETAIL_PASTE_I(prefix_, value_) prefix_##value_
+
 /** @brief Internal expansion wrapper so macro-valued settings are resolved first. */
 #define KYMO_DETAIL_PASTE(prefix_, value_) KYMO_DETAIL_PASTE_I(prefix_, value_)
+
 /** @brief Internal marker: literal 0 is a valid boolean or profile. */
 #define KYMO_DETAIL_VALID_0 1
+
 /** @brief Internal marker: literal 1 is a valid boolean or profile. */
 #define KYMO_DETAIL_VALID_1 1
+
 /** @brief Internal marker: literal 2 is a valid profile. */
 #define KYMO_DETAIL_PROFILE_2 1
 
@@ -40,6 +44,7 @@
 #endif
 
 #if !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLED) ||                \
+    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CORE) ||            \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_RUNTIME) ||         \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_ENDPOINT) ||        \
     !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TX) ||              \
@@ -67,7 +72,7 @@
 #undef KYMO_DETAIL_VALID_1
 #undef KYMO_DETAIL_PROFILE_2
 
-#if KYMO_ENABLED && KYMO_ENABLE_ENDPOINT && !KYMO_ENABLE_TX
+#if KYMO_ENABLED && KYMO_ENABLE_ENDPOINT && !KYMO_ENABLE_TX && !KYMO_ENABLE_CORE
 #error "KYMO_ENABLE_ENDPOINT requires KYMO_ENABLE_TX=1"
 #endif
 
@@ -145,14 +150,17 @@
 /** @brief Effective cooperative runtime gate. */
 #define KYMO_EFFECTIVE_RUNTIME (KYMO_ENABLED && KYMO_ENABLE_RUNTIME)
 
-/** @brief Effective modular Endpoint gate. @par Usage Guard Endpoint callers. */
-#define KYMO_EFFECTIVE_ENDPOINT (KYMO_ENABLED && KYMO_ENABLE_ENDPOINT)
+/** @brief Effective default Core gate. @par Usage Guard public Core callers. */
+#define KYMO_EFFECTIVE_CORE (KYMO_ENABLED && KYMO_ENABLE_CORE)
+
+/** @brief Dispatcher needed by either explicit instances or the default Core. */
+#define KYMO_EFFECTIVE_ENDPOINT (KYMO_ENABLED && (KYMO_ENABLE_ENDPOINT || KYMO_ENABLE_CORE))
 
 /**
  * @brief Effective shared transport gate, respecting the global switch.
  * @par Usage Gate code that uses KymoTx with this macro.
  */
-#define KYMO_EFFECTIVE_TX (KYMO_ENABLED && KYMO_ENABLE_TX)
+#define KYMO_EFFECTIVE_TX (KYMO_ENABLED && (KYMO_ENABLE_TX || KYMO_ENABLE_CORE))
 
 /** @brief Effective optional C++ sender gate. */
 #define KYMO_EFFECTIVE_CPP (KYMO_ENABLED && KYMO_ENABLE_CPP)

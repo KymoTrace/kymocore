@@ -7,6 +7,7 @@
  */
 #ifndef EXAMPLE_DEMO_VALUES_H
 #define EXAMPLE_DEMO_VALUES_H
+
 /** @brief Gain applied to synthetic measurement values. @par Usage Set via parameter 100. */
 extern float exampleGain;
 #endif

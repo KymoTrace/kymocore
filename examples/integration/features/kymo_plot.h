@@ -7,18 +7,19 @@
  */
 #ifndef EXAMPLE_FEATURE_PLOT_H
 #define EXAMPLE_FEATURE_PLOT_H
-#include <endpoint/features/kymo_plot.h>
+#include <features/plot/kymo_core_endpoint_plot.h>
+
 /**
  * @brief Construct the demonstration plot configuration.
- * @return Config referring to persistent tables/callbacks.
+ * @return Reference to fixed configuration with persistent tables/callbacks.
  * @par Usage Replace demo bindings with application data.
  */
-KymoEndpointPlotConfig examplePlotConfig(void);
+const KymoCorePlotConfig &examplePlotConfig(void);
 
 /**
  * @brief Initialize and register this feature completely.
  * @param[in] config Feature configuration; referenced data must persist.
  * @return Feature initialization status. @par Usage Check before starting Main.
  */
-KymoStatus KymoApp_PlotInit(const KymoEndpointPlotConfig *config);
+KymoStatus KymoApp_PlotInit(const KymoCorePlotConfig *config);
 #endif

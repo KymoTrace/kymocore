@@ -16,7 +16,7 @@ switched off because UART0 also carries the IDF console; boot messages before
 
 Replace `readSample` in `main/main.cpp` with your measurements and extend
 `sChannels` (period in ms, channel ID, flags). The write callback only fills the
-free UART FIFO, so `Kymo_Main` never waits for the interface.
+free UART FIFO, so `KymoRuntime_main` never waits for the interface.
 
 Inside the repository, `main/idf_component.yml` builds the local KymoCore via
 `override_path`. ESP-IDF names that component after its folder, so the

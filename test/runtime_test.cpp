@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Christof Seidel */
-/* Behavior tests for the cyclic telemetry runtime (Kymo_Init / Kymo_Main). */
+/* Behavior tests for the cyclic telemetry runtime (KymoRuntime_init / KymoRuntime_main). */
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "KymoCore.h"
+#include "kymo_modules.h"
 
 static uint32_t sNowMs = 1000u;
 static uint8_t sWriteLimit = 255u;
@@ -100,7 +100,7 @@ static KymoStatus initFromTemporary(KymoContext *context, float *values)
     config.busy = isBusy;
     config.service = service;
     config.sample_user = values;
-    KymoStatus status = Kymo_Init(context, &config);
+    KymoStatus status = KymoRuntime_init(context, &config);
     memset(&config, 0xA5, sizeof(config));
     return status;
 }
@@ -114,34 +114,34 @@ static void testValidation(void)
     KymoConfig config = {};
     static const KymoChannel duplicate[] = {{10u, 3u, 0u}, {20u, 3u, 0u}};
     static KymoChannel tooMany[KYMO_MAX_CHANNELS + 1u];
-    assert(Kymo_Init(nullptr, &config) == KYMO_BAD_CONFIG);
-    assert(Kymo_Init(&context, nullptr) == KYMO_BAD_CONFIG);
-    assert(Kymo_Init(&context, &config) == KYMO_BAD_CONFIG);
+    assert(KymoRuntime_init(nullptr, &config) == KYMO_BAD_CONFIG);
+    assert(KymoRuntime_init(&context, nullptr) == KYMO_BAD_CONFIG);
+    assert(KymoRuntime_init(&context, &config) == KYMO_BAD_CONFIG);
     config.channels = sChannels;
     config.channel_count = KYMO_COUNT_OF(sChannels);
     config.clock_ms = readClock;
     config.sample = readSample;
-    assert(Kymo_Init(&context, &config) == KYMO_BAD_CONFIG); /* write missing */
+    assert(KymoRuntime_init(&context, &config) == KYMO_BAD_CONFIG); /* write missing */
     config.write = writeBytes;
-    assert(Kymo_Init(&context, &config) == KYMO_OK);
+    assert(KymoRuntime_init(&context, &config) == KYMO_OK);
     config.channels = duplicate;
     config.channel_count = KYMO_COUNT_OF(duplicate);
-    assert(Kymo_Init(&context, &config) == KYMO_BAD_CONFIG);
-    assert(Kymo_Main(&context) == KYMO_BAD_CONFIG); /* failed Init disables */
+    assert(KymoRuntime_init(&context, &config) == KYMO_BAD_CONFIG);
+    assert(KymoRuntime_main(&context) == KYMO_BAD_CONFIG); /* failed Init disables */
     for (uint16_t i = 0u; i < KYMO_COUNT_OF(tooMany); ++i)
     {
         tooMany[i].id = (uint8_t)i;
     }
     config.channels = tooMany;
     config.channel_count = KYMO_COUNT_OF(tooMany);
-    assert(Kymo_Init(&context, &config) == KYMO_BAD_CONFIG);
+    assert(KymoRuntime_init(&context, &config) == KYMO_BAD_CONFIG);
     config.channel_count = KYMO_MAX_CHANNELS;
-    assert(Kymo_Init(&context, &config) == KYMO_OK);
+    assert(KymoRuntime_init(&context, &config) == KYMO_OK);
     config.channels = sChannels;
     config.channel_count = 1u;
     KymoChannel unsupported = {10u, 9u, KYMO_FLAG_X};
     config.channels = &unsupported;
-    assert(Kymo_Init(&context, &config) == (KYMO_ENABLE_X ? KYMO_OK : KYMO_BAD_CONFIG));
+    assert(KymoRuntime_init(&context, &config) == (KYMO_ENABLE_X ? KYMO_OK : KYMO_BAD_CONFIG));
 }
 
 /****************************************************************************************************
@@ -154,17 +154,18 @@ static void testScheduling(void)
     sByteCount = 0u;
     sServiceCalls = 0u;
     assert(initFromTemporary(&context, values) == KYMO_OK);
+
     /* Both channels are due immediately; round robin serves one per call. */
-    assert(Kymo_Main(&context) == KYMO_OK);
-    assert(Kymo_Main(&context) == KYMO_OK);
-    assert(Kymo_Main(&context) == KYMO_IDLE);
+    assert(KymoRuntime_main(&context) == KYMO_OK);
+    assert(KymoRuntime_main(&context) == KYMO_OK);
+    assert(KymoRuntime_main(&context) == KYMO_IDLE);
     assert(sServiceCalls == 3u);
     size_t frameSize = sByteCount / 2u;
     KymoDataPoint point = {};
 #if KYMO_ENABLE_DECODER
-    assert(KymoProtocol_Decode(sBytes, frameSize, &point) == KYMO_OK);
+    assert(KymoProtocol_decode(sBytes, frameSize, &point) == KYMO_OK);
     assert((point.id == 0u) && (point.value == 1.5f));
-    assert(KymoProtocol_Decode(sBytes + frameSize, frameSize, &point) == KYMO_OK);
+    assert(KymoProtocol_decode(sBytes + frameSize, frameSize, &point) == KYMO_OK);
     assert((point.id == 1u) && (point.value == -2.0f));
 #else
     (void)point;
@@ -172,22 +173,22 @@ static void testScheduling(void)
     assert(sBytes[frameSize + 3u] == 1u);
 #endif
     sNowMs += 10u;
-    assert(Kymo_Main(&context) == KYMO_OK);   /* channel 0 again */
-    assert(Kymo_Main(&context) == KYMO_IDLE); /* channel 1 waits for 30 ms */
+    assert(KymoRuntime_main(&context) == KYMO_OK);   /* channel 0 again */
+    assert(KymoRuntime_main(&context) == KYMO_IDLE); /* channel 1 waits for 30 ms */
     sNowMs += 20u;
-    assert(Kymo_Main(&context) == KYMO_OK);
-    assert(Kymo_Main(&context) == KYMO_OK);
+    assert(KymoRuntime_main(&context) == KYMO_OK);
+    assert(KymoRuntime_main(&context) == KYMO_OK);
     assert(sByteCount == 5u * frameSize);
 
     /* Short writes resume at the remaining offset without resampling. */
     sByteCount = 0u;
     sWriteLimit = 2u;
     sNowMs += 10u;
-    KymoStatus status = Kymo_Main(&context);
+    KymoStatus status = KymoRuntime_main(&context);
     unsigned calls = 1u;
     while (status == KYMO_BUSY)
     {
-        status = Kymo_Main(&context);
+        status = KymoRuntime_main(&context);
         ++calls;
     }
     assert(status == KYMO_OK);
@@ -199,25 +200,25 @@ static void testScheduling(void)
     sBusy = 1u;
     sNowMs += 10u;
     unsigned before = sServiceCalls;
-    assert(Kymo_Main(&context) == KYMO_BUSY);
+    assert(KymoRuntime_main(&context) == KYMO_BUSY);
     assert(sServiceCalls == before + 1u);
     sBusy = 0u;
 
     /* A skipped sample advances the schedule without output. */
     sSkip = 1u;
     sByteCount = 0u;
-    assert(Kymo_Main(&context) == KYMO_SKIPPED);
+    assert(KymoRuntime_main(&context) == KYMO_SKIPPED);
     assert(sByteCount == 0u);
     sSkip = 0u;
 
     /* Over-reporting drivers latch a fault until reinitialization. */
     sOverAccept = 1u;
     sNowMs += 100u;
-    assert(Kymo_Main(&context) == KYMO_IO_ERROR);
+    assert(KymoRuntime_main(&context) == KYMO_IO_ERROR);
     sOverAccept = 0u;
-    assert(Kymo_Main(&context) == KYMO_IO_ERROR);
+    assert(KymoRuntime_main(&context) == KYMO_IO_ERROR);
     assert(initFromTemporary(&context, values) == KYMO_OK);
-    assert(Kymo_Main(&context) == KYMO_OK);
+    assert(KymoRuntime_main(&context) == KYMO_OK);
 }
 
 /****************************************************************************************************
@@ -229,7 +230,7 @@ static void testNonFiniteSample(void)
     float values[2] = {0.0f, 0.0f};
     values[0] = values[0] / values[0];
     assert(initFromTemporary(&context, values) == KYMO_OK);
-    assert(Kymo_Main(&context) == KYMO_BAD_SAMPLE);
+    assert(KymoRuntime_main(&context) == KYMO_BAD_SAMPLE);
 }
 
 /****************************************************************************************************

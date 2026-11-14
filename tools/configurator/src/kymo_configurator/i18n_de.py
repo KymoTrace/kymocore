@@ -181,16 +181,16 @@ DE: dict[str, str] = {
     "How values are sent": "So werden Werte gesendet",
     "Two ways your values get to KymoStudio. Most projects need only the first one.":
         "Zwei Wege, wie deine Werte zu KymoStudio kommen. Die meisten Projekte brauchen nur den ersten.",
-    "Send automatically at a fixed rhythm (Kymo_Init / Kymo_Main)":
-        "Automatisch im festen Takt senden (Kymo_Init / Kymo_Main)",
+    "Send automatically at a fixed rhythm (KymoRuntime_init / KymoRuntime_main)":
+        "Automatisch im festen Takt senden (KymoRuntime_init / KymoRuntime_main)",
     "KymoCore samples your channels on schedule; recommended for most projects.":
         "KymoCore liest deine Kanäle nach Zeitplan; empfohlen für die meisten Projekte.",
     "Leave ticked unless you know otherwise. KymoCore then reads your measurements by itself at a fixed "
-    "rhythm (e.g. every 20 ms) and sends them. Your program only calls Kymo_Init() once and Kymo_Main() "
+    "rhythm (e.g. every 20 ms) and sends them. Your program only calls KymoRuntime_init() once and KymoRuntime_main() "
     "in its main loop.":
         "Lass das angehakt, wenn du es nicht besser weißt. KymoCore liest deine Messwerte dann selbst in "
-        "einem festen Takt (z. B. alle 20 ms) und sendet sie. Dein Programm ruft nur einmal Kymo_Init() "
-        "und in seiner Hauptschleife Kymo_Main() auf.",
+        "einem festen Takt (z. B. alle 20 ms) und sendet sie. Dein Programm ruft nur einmal KymoRuntime_init() "
+        "und in seiner Hauptschleife KymoRuntime_main() auf.",
     "Send values yourself, whenever you want (KymoSender)":
         "Werte selbst senden, wann du willst (KymoSender)",
     "Send single values whenever your code decides, in addition to or instead of the cyclic runtime.":
@@ -247,8 +247,8 @@ DE: dict[str, str] = {
     "Channel number 0..255; KymoStudio shows each ID as its own signal.":
         "Kanalnummer 0..255; KymoStudio zeigt jede ID als eigenes Signal.",
     "Readable name shown in KymoStudio.": "Lesbarer Name, der in KymoStudio angezeigt wird.",
-    "How often the value is read: 20 ms = 50 times per second. 0 = on every Kymo_Main call.":
-        "Wie oft der Wert gelesen wird: 20 ms = 50-mal pro Sekunde. 0 = bei jedem Aufruf von Kymo_Main.",
+    "How often the value is read: 20 ms = 50 times per second. 0 = on every KymoRuntime_main call.":
+        "Wie oft der Wert gelesen wird: 20 ms = 50-mal pro Sekunde. 0 = bei jedem Aufruf von KymoRuntime_main.",
     "Resulting values per second.": "Ergebnis: Werte pro Sekunde.",
     "Send an X value as well (point instead of value over time).":
         "Zusätzlich einen X-Wert senden (Punkt statt Wert über der Zeit).",
@@ -262,8 +262,8 @@ DE: dict[str, str] = {
     "Channel {id}": "Kanal {id}",
     "Enable the {key} feature under Telemetry features first.":
         "Schalte zuerst die Funktion {key} unter Telemetrie-Funktionen ein.",
-    "Estimate: {summary}. Channels with period 0 depend on how often Kymo_Main runs.":
-        "Schätzung: {summary}. Kanäle mit Periode 0 hängen davon ab, wie oft Kymo_Main läuft.",
+    "Estimate: {summary}. Channels with period 0 depend on how often KymoRuntime_main runs.":
+        "Schätzung: {summary}. Kanäle mit Periode 0 hängen davon ab, wie oft KymoRuntime_main läuft.",
     "Link load: {load}% of {budget} bytes/s.": "Verbindungsauslastung: {load} % von {budget} Bytes/s.",
     "{count} channel(s), ~{rate} frames/s, ~{traffic} bytes/s":
         "{count} Kanal/Kanäle, ~{rate} Frames/s, ~{traffic} Bytes/s",
@@ -802,7 +802,7 @@ DE: dict[str, str] = {
     'Global variables from the ELF file as curves, without code for each one.': 'Globale Variablen aus der ELF-Datei als Kurven, ohne Code je Variable.',
     'Lets KymoStudio change values in your firmware while it runs, e.g. controller gains or a setpoint. Nothing else to set here: the frame decoder is switched on automatically. In your code you register each value once with KYMO_PARAM (up to 8 by default, KYMO_MAX_PARAMETERS); the firmware checks every value it receives against the limits you give.': 'KymoStudio darf Werte in deiner Firmware ändern, während sie läuft, z. B. Reglerverstärkungen oder einen Sollwert. Hier ist sonst nichts einzustellen: Der Frame-Decoder wird automatisch eingeschaltet. In deinem Code meldest du jeden Wert einmal mit KYMO_PARAM an (standardmäßig bis zu 8, KYMO_MAX_PARAMETERS); die Firmware prüft jeden empfangenen Wert gegen die Grenzen, die du angibst.',
     'Pick global variables of your firmware in KymoStudio and see them as curves, without code for each one. Here you set which memory KymoStudio may read; nothing is ever written.': 'Globale Variablen deiner Firmware in KymoStudio auswählen und als Kurven sehen, ohne Code je Variable. Hier legst du fest, welchen Speicher KymoStudio lesen darf; geschrieben wird nie.',
-    'Shows how full your task stacks and your heap get, as named curves in KymoStudio. Nothing else to set here. In your code you list the tasks and heaps and call KymoMemory_Init with one function that reads their current values (up to 8 entries by default, KYMO_MAX_MEMORY_ENTRIES).': 'Zeigt als benannte Kurven in KymoStudio, wie voll deine Task-Stacks und dein Heap werden. Hier ist sonst nichts einzustellen. In deinem Code listest du Tasks und Heaps auf und rufst KymoMemory_Init mit einer Funktion auf, die ihre aktuellen Werte liest (standardmäßig bis zu 8 Einträge, KYMO_MAX_MEMORY_ENTRIES).',
+    'Shows how full your task stacks and your heap get, as named curves in KymoStudio. Nothing else to set here. In your code you list the tasks and heaps and call KymoMemory_init with one function that reads their current values (up to 8 entries by default, KYMO_MAX_MEMORY_ENTRIES).': 'Zeigt als benannte Kurven in KymoStudio, wie voll deine Task-Stacks und dein Heap werden. Hier ist sonst nichts einzustellen. In deinem Code listest du Tasks und Heaps auf und rufst KymoMemory_init mit einer Funktion auf, die ihre aktuellen Werte liest (standardmäßig bis zu 8 Einträge, KYMO_MAX_MEMORY_ENTRIES).',
     "Which extra fields a sample may carry next to the Y value. Each channel then chooses in 'Values over time' whether it uses them.": "Welche Zusatzfelder ein Messwert neben dem Y-Wert tragen darf. Jeder Kanal entscheidet dann unter 'Werte über der Zeit', ob er sie nutzt.",
     'memory range not set': 'Speicherbereich nicht gesetzt',
     'no extra fields': 'keine Zusatzfelder',

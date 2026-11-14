@@ -21,3 +21,8 @@ ReflowComments: false
 FixNamespaceComments: false
 IndentPPDirectives: None
 AlignEscapedNewlines: Left
+
+# Keep even previously unbraced controls explicit (clang-format 15+).
+InsertBraces: true
+SeparateDefinitionBlocks: Always
+KeepEmptyLinesAtTheStartOfBlocks: false

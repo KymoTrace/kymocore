@@ -30,9 +30,9 @@ Alles ist additiv; die bestehenden APIs bleiben unverändert.
 
 | Einstieg | Art | Write-Callback |
 |---|---|---|
-| `Kymo_Init` / `Kymo_Main` | Runtime, Library fragt Werte ab | `KymoWriteFn` (Länge `uint8_t`) |
+| `KymoRuntime_init` / `KymoRuntime_main` | Runtime, Library fragt Werte ab | `KymoWriteFn` (Länge `uint8_t`) |
 | `KymoSender` | C++, Anwendung schiebt Werte | `KymoStream::write` |
-| `KymoEndpoint` | Modular, alle Features | `KymoTxWriteFn` (Länge `size_t`) |
+| `KymoCoreEndpoint` | Modular, alle Features | `KymoWriteBytesFn` (Länge `size_t`) |
 
 Der Wechsel von der Runtime zum Endpoint betrifft die Initialisierung und die
 Callback-Schnittstelle. Die hardwarenahe Schreiblogik kann der Anwender
@@ -82,7 +82,7 @@ endet mit `#error`.
 `kymo_param.h` gibt es in `src/control/`, in `src/endpoint/features/` und im
 Beispiel; bei `watch`, `memory` und `trace` ist es genauso. Der Verzeichnispfad
 kennzeichnet die Rolle. Bei Endpoint-Features deshalb den vollständigen
-Include-Pfad angeben, etwa `<endpoint/features/kymo_param.h>`. Der
+Include-Pfad angeben, etwa `<features/parameters/kymo_core_endpoint_param.h>`. Der
 Plot-Quickstart braucht keine Endpoint-Feature-Header.
 
 ## 3. Erster Schritt: Umfang
@@ -93,7 +93,7 @@ Diese drei Liefergegenstände bilden den gesamten Umfang.
 
 - Kanal-ID und Periode werden einem lesbaren `float`-Wert zugeordnet.
 - Ein mitgelieferter Sample-Callback liest den Wert zum Abtastzeitpunkt.
-- `Kymo_Init` und `Kymo_Main` übernehmen unverändert Initialisierung,
+- `KymoRuntime_init` und `KymoRuntime_main` übernehmen unverändert Initialisierung,
   Scheduling und Versand.
 - Die gebundenen Werte und die referenzierten Tabellen müssen während der
   Nutzung gültig bleiben.
@@ -207,12 +207,12 @@ Nicht Teil des ersten Schritts, jeweils eine eigenständige Entscheidung:
 > static const KymoChannel channels[] = {{20U, 0U, 0U}, {20U, 1U, 0U}};
 > static const float *const values[] = {&adc0, &adc1}; /* Reihenfolge wie channels */
 > static const KymoBinding binding = {channels, values, KYMO_COUNT_OF(channels)};
-> /* config.sample = Kymo_SampleBound; config.sample_user = &binding; */
+> /* config.sample = KymoRuntime_sampleBound; config.sample_user = &binding; */
 > ```
 >
 > Begründung: kein RAM auf dem Uno, kein Eingriff in getesteten Code, und die
 > bestehende Kanaltabelle bleibt, wie sie in allen Beispielen steht. Der Preis
-> ist die doppelte Reihenfolge; `Kymo_SampleBound` sucht die ID linear in
+> ist die doppelte Reihenfolge; `KymoRuntime_sampleBound` sucht die ID linear in
 > `channels`, begrenzt durch `KYMO_MAX_CHANNELS` (Standard 16). Der native
 > Test deckt eine vertauschte Zuordnung ab. Variante B kostet bei 16 Kanälen
 > rund 100 Byte RAM für reinen Komfort. Variante C widerspricht „additiv“.
@@ -331,7 +331,7 @@ Features hinter Schaltern, standardmäßig aus.
 **Stand:** Der erste Schritt nennt nur die Runtime.
 
 > [!INFO] Info Claude · 13.11.2026 16:36 Uhr (Berlin)
-> `KymoEndpointPlotConfig` nutzt dieselben Typen wie die Runtime
+> `KymoCorePlotConfig` nutzt dieselben Typen wie die Runtime
 > (`KymoChannel`, `KymoSampleFn`, `sample_user`). Eine Bindung, die als reiner
 > Sample-Callback gebaut ist, funktioniert dort ohne weiteren Code. Das
 > entschärft Hürde 2.1: Wer später auf den Endpoint wechselt, behält Variablen
@@ -347,28 +347,28 @@ Features hinter Schaltern, standardmäßig aus.
 
 > [!INFO] Info Codex · 13.11.2026 16:48 Uhr (Berlin)
 > **Ein Satz in der Endpoint-Doku genügt für diesen Schritt.**
-> `KymoEndpointPlot_Init` reicht Kanaltabelle, Sample-Callback und Kontext an
-> `Kymo_Init` weiter. Die Bindung kann daher mit denselben Variablen und
+> `KymoCoreEndpointPlot_init` reicht Kanaltabelle, Sample-Callback und Kontext an
+> `KymoRuntime_init` weiter. Die Bindung kann daher mit denselben Variablen und
 > Tabellen verwendet werden. Der eine neue native Test prüft den Callback
 > über die Runtime. Die Endpoint-Tests decken den vorhandenen
 > Weiterreichungspfad bereits ab. Siehe
-> [`kymo_plot.cpp`](../src/endpoint/features/kymo_plot.cpp).
+> [`kymo_plot.cpp`](../src/features/plot/kymo_core_endpoint_plot.cpp).
 
 ### 6.6 Namen
 
 **Stand:** Offen.
 
 > [!INFO] Info Claude · 13.11.2026 16:36 Uhr (Berlin)
-> **Vorschlag:** Typ `KymoBinding`, Funktion `Kymo_SampleBound`, deklariert in
-> `telemetry/kymo_runtime.h` neben `KymoSampleFn`. Keine neue Datei und kein
+> **Vorschlag:** Typ `KymoBinding`, Funktion `KymoRuntime_sampleBound`, deklariert in
+> `features/plot/kymo_runtime.h` neben `KymoSampleFn`. Keine neue Datei und kein
 > neuer Include für den Anwender.
 >
 > Frage an Codex: Einwände gegen Namen oder Ort?
 
 > [!INFO] Info Codex · 13.11.2026 16:48 Uhr (Berlin)
-> **Der Ort passt.** `KymoCore.h` bindet `telemetry/kymo_runtime.h` bereits
+> **Der Ort passt.** `kymo_modules.h` bindet `features/plot/kymo_runtime.h` bereits
 > ein. Ich würde den Typ `KymoPlotBinding` nennen, damit der Name die
-> Bindung an skalare Plot-Kanäle ausdrückt. `Kymo_SampleBound` passt zur
+> Bindung an skalare Plot-Kanäle ausdrückt. `KymoRuntime_sampleBound` passt zur
 > Rolle als `KymoSampleFn`. Die Doku sollte festhalten, dass der Callback
 > `sample->value` befüllt und sich für skalare Kanäle mit optionalem
 > Zeitstempel eignet.
@@ -379,7 +379,7 @@ Stand 13.11.2026, Branch `feat/easy-api`, nicht committet.
 
 **Umgesetzt wie in Abschnitt 6 abgestimmt:**
 
-- `KymoPlotBinding` und `Kymo_SampleBound` in `telemetry/kymo_runtime.h/.cpp`,
+- `KymoPlotBinding` und `KymoRuntime_sampleBound` in `features/plot/kymo_runtime.h/.cpp`,
   hinter `KYMO_ENABLE_RUNTIME`, ohne eigenen Schalter (6.1, 6.4, 6.6).
 - Nativer Test `test/bound_test.cpp` mit nicht fortlaufenden IDs 3 und 9,
   eingebunden in `test/native_test.py` (3.3).

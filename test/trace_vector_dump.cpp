@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: MIT */
 #include <stdio.h>
 #include <string.h>
-#include "trace/kymo_trace_protocol.h"
+#include "../src/features/trace/kymo_trace_protocol.h"
+
 int main(void)
 {
     KymoTraceEvent event;
@@ -20,9 +21,9 @@ int main(void)
     info.session_id = 0x0102030405060708ULL;
     info.packet_seq = 7u;
     info.payload_kind = KYMO_TRACE_PAYLOAD_BATCH;
-    size_t payloadLength = KymoTrace_EncodeBatch(1u, &event, 1u, payload, sizeof(payload));
+    size_t payloadLength = KymoTraceProtocol_encodeBatch(1u, &event, 1u, payload, sizeof(payload));
     size_t frameLength =
-        KymoTrace_EncodeEnvelope(&info, payload, payloadLength, frame, sizeof(frame));
+        KymoTraceProtocol_encodeEnvelope(&info, payload, payloadLength, frame, sizeof(frame));
     for (size_t i = 0u; i < frameLength; ++i)
     {
         (void)printf("%02x", frame[i]);

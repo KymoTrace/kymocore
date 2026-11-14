@@ -7,20 +7,21 @@
  */
 #ifndef EXAMPLE_FEATURE_TRACE_H
 #define EXAMPLE_FEATURE_TRACE_H
-#include <endpoint/features/kymo_trace.h>
+#include <features/trace/kymo_core_endpoint_trace.h>
+
 /**
  * @brief Construct the demonstration trace configuration.
- * @return Config referring to persistent tables/callbacks.
+ * @return Reference to fixed configuration with persistent tables/callbacks.
  * @par Usage Replace demo bindings with application data.
  */
-KymoEndpointTraceConfig exampleTraceConfig(void);
+const KymoCoreEndpointTraceConfig &exampleTraceConfig(void);
 
 /**
  * @brief Initialize and register this feature completely.
  * @param[in] config Feature configuration; referenced data must persist.
  * @return Feature initialization status. @par Usage Check before starting Main.
  */
-KymoStatus KymoApp_TraceInit(const KymoEndpointTraceConfig *config);
+KymoStatus KymoApp_TraceInit(const KymoCoreEndpointTraceConfig *config);
 
 /**
  * @brief Record the demo marker when session descriptions are ready.

@@ -66,7 +66,7 @@ class ChannelEditor(QWidget):
     HEADERS = ["ID", "Name", "Period (ms)", "Rate", "X", "Z", "Time", "Bytes/frame"]
     TIPS = ["Channel number 0..255; KymoStudio shows each ID as its own signal.",
             "Readable name shown in KymoStudio.",
-            "How often the value is read: 20 ms = 50 times per second. 0 = on every Kymo_Main call.",
+            "How often the value is read: 20 ms = 50 times per second. 0 = on every KymoRuntime_main call.",
             "Resulting values per second.",
             "Send an X value as well (point instead of value over time).",
             "Send a Z value as well (3D point).",
@@ -143,7 +143,7 @@ class ChannelEditor(QWidget):
             widget.setEnabled(enabled)
         budget = self.session.doc.get("resources", {}).get("transport_bytes_per_second")
         summary = catalog.section("channels").summary(view) if catalog.section("channels").summary else ""
-        text = tr("Estimate: {summary}. Channels with period 0 depend on how often Kymo_Main runs.",
+        text = tr("Estimate: {summary}. Channels with period 0 depend on how often KymoRuntime_main runs.",
                   summary=summary)
         if isinstance(budget, int) and budget > 0:
             traffic = sum((1000.0 / c["period_ms"]) * (9 + 4 * sum(bool(c.get(k)) for k in ("x", "z", "timestamp")))

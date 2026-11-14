@@ -30,7 +30,7 @@ referenzierte Tabellen, Puffer und Callback-Kontexte bleiben dauerhaft gültig.
 | [run.py](run.py) / [CMakeLists.txt](CMakeLists.txt) | Native Buildwege und Prüfungen |
 
 Die Projektdateien kapseln statische Instanzen und Anwendungswerte. Die eigentliche
-Koordination liegt in [der Library](../../src/endpoint/kymo_endpoint.h), die
+Koordination liegt in [der Library](../../src/core/kymo_core_endpoint.h), die
 Feature-Adapter in `src/endpoint/features/`. Keiner der Feature-Header bindet
 die anderen Feature-Fassaden ein. Es gibt keine Dateien mit `_setup` im Namen.
 Details zur Library-Schnittstelle stehen im [Endpoint-Leitfaden](../../docs/ENDPOINT.md).

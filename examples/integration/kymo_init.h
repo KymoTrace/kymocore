@@ -7,20 +7,21 @@
  */
 #ifndef EXAMPLE_KYMO_INIT_H
 #define EXAMPLE_KYMO_INIT_H
-#include <endpoint/kymo_endpoint.h>
+#include <core/kymo_core_endpoint.h>
+
 /**
  * @brief Construct this project's base configuration.
- * @return Config pointing to persistent buffers and the port callbacks.
+ * @return Reference to fixed configuration with persistent buffers and port callbacks.
  * @par Usage Pass the result to KymoApp_Init.
  */
-KymoEndpointConfig exampleCoreConfig(void);
+const KymoCoreEndpointConfig &exampleCoreConfig(void);
 
 /**
  * @brief Initialize common resources once.
  * @param[in] config Base configuration; referenced storage must persist.
  * @return Endpoint initialization status. @par Usage Before feature Init.
  */
-KymoStatus KymoApp_Init(const KymoEndpointConfig *config);
+KymoStatus KymoApp_Init(const KymoCoreEndpointConfig *config);
 
 /**
  * @brief Run one bounded shared processing cycle.

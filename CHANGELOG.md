@@ -1,5 +1,17 @@
 # Changelog
 
+
+## Unreleased: Core and feature interfaces
+
+- Reorganize sources by feature, Core, communication and binary helpers.
+- Add library-owned Core entry points for all five features; include each feature
+  independently and register it with its Init call. Disabled features compile out.
+- Use lowercase snake_case source filenames, consistent C module names, Fn callback
+  types, Cbk callback fields and Av array spans.
+- Keep fixed example configurations outside startup functions; standardize
+  indentation, Allman braces and spacing before documentation blocks.
+- This is a breaking development prototype; see [migration notes](docs/CORE_ENTRY.md).
+
 ## Unreleased
 
 - Split `kymo_config.h`: it now holds only profile, switches and sizes. The

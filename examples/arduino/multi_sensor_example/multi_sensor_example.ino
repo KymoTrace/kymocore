@@ -11,7 +11,7 @@
  */
 #include <Arduino.h>
 #include <math.h>
-#include <KymoCore.h>
+#include <kymo_modules.h>
 
 #if KYMO_ENABLED && (!KYMO_ENABLE_X || !KYMO_ENABLE_Z || !KYMO_ENABLE_TIMESTAMP)
 #error "This example requires KYMO_ENABLE_X=1, KYMO_ENABLE_Z=1 and KYMO_ENABLE_TIMESTAMP=1"
@@ -21,6 +21,7 @@
 
 /* 1. WHAT: three channels with their own period and coordinate set. */
 static const KymoChannel channels[] = {
+
     /* period_ms, id, flags */
     {20U, 0U, KYMO_FLAG_TIMESTAMP},                         /* Y   */
     {50U, 1U, EMB_U8_OR(KYMO_FLAG_X, KYMO_FLAG_TIMESTAMP)}, /* XY  */
@@ -100,19 +101,27 @@ static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
     return result;
 }
 
+/** @brief Fixed runtime table and callbacks; no setup-time mutation. */
+static const KymoConfig runtimeConfig = {
+    channels,                /* channels */
+    KYMO_COUNT_OF(channels), /* channel_count */
+    readClockMs,             /* clock_ms */
+    readSample,              /* sample */
+    writeBytes,              /* write */
+    nullptr,                 /* busy */
+    nullptr,                 /* service */
+    nullptr,                 /* clock_user */
+    nullptr,                 /* sample_user */
+    nullptr,                 /* transport_user */
+};
+
 /**
  * setup
  */
 void setup()
 {
-    KymoConfig config = {}; /* copied by Kymo_Init; may be local */
     Serial.begin(115200);
-    config.channels = channels;
-    config.channel_count = KYMO_COUNT_OF(channels);
-    config.clock_ms = readClockMs;
-    config.sample = readSample;
-    config.write = writeBytes;
-    (void)Kymo_Init(&context, &config);
+    (void)KymoRuntime_init(&context, &runtimeConfig);
 }
 
 /**
@@ -120,7 +129,7 @@ void setup()
  */
 void loop()
 {
-    (void)Kymo_Main(&context);
+    (void)KymoRuntime_main(&context);
 }
 
 #else

@@ -6,7 +6,7 @@
  * @details Produces ten scalar frames without a board, SDK, heap or decoder.
  * The application owns every buffer. Replace the callbacks for actual hardware.
  */
-#include <KymoCore.h>
+#include <kymo_modules.h>
 
 #if KYMO_EFFECTIVE_RUNTIME
 
@@ -79,6 +79,20 @@ static uint8_t writeFrame(void *pUser, const uint8_t *pBytes, uint8_t length)
     return result;
 }
 
+/** @brief Fixed runtime table and callbacks; no setup-time mutation. */
+static const KymoConfig runtimeConfig = {
+    sChannels,                /* channels */
+    KYMO_COUNT_OF(sChannels), /* channel_count */
+    readClockMs,              /* clock_ms */
+    readSample,               /* sample */
+    writeFrame,               /* write */
+    nullptr,                  /* busy */
+    nullptr,                  /* service */
+    nullptr,                  /* clock_user */
+    nullptr,                  /* sample_user */
+    nullptr,                  /* transport_user */
+};
+
 /**
  * @brief Run ten bounded sampling steps and check a captured scalar frame.
  * @return Zero on success, one on initialization, scheduling or framing failure.
@@ -89,20 +103,14 @@ int main()
 {
     int result = 0;
     KymoStatus status = KYMO_BAD_CONFIG;
-    KymoConfig config = {}; /* copied by Kymo_Init; may be local */
-    config.channels = sChannels;
-    config.channel_count = KYMO_COUNT_OF(sChannels);
-    config.clock_ms = readClockMs;
-    config.sample = readSample;
-    config.write = writeFrame;
-    status = Kymo_Init(&sContext, &config);
+    status = KymoRuntime_init(&sContext, &runtimeConfig);
     if (status != KYMO_OK)
     {
         result = 1;
     }
     for (uint8_t step = 0U; (step < 10U) && (result == 0); ++step)
     {
-        status = Kymo_Main(&sContext);
+        status = KymoRuntime_main(&sContext);
         if ((status != KYMO_OK) || (sCapturedLength != 9U) || (sCapturedFrame[0] != KYMO_SYNC_0) ||
             (sCapturedFrame[1] != KYMO_SYNC_1) || (sCapturedFrame[3] != 7U))
         {

@@ -13,7 +13,7 @@ Applies to active first-party C/C++ code, including examples and native tests.
   comment block; preserve Doxygen.
 - Use explicit initialized result/status variables and small helper functions
   for error paths. Do not replace early returns with goto or exit macros.
-- Reuse `src/common/` for bit masks, bitsets, wire byte conversion
+- Reuse `src/binary/` for bit masks, bitsets, wire byte conversion
   and CRC. Keep protocol constants/semantics in the protocol layer.
 - Use unsigned fixed-width operands for bit operations. Check runtime shift
   counts. Macros must parenthesize operands and evaluate each argument once;
@@ -48,3 +48,37 @@ Applies to active first-party C/C++ code, including examples and native tests.
   KymoProbe retains its examples against its pinned official release; do not
   change library source or the consumer's library pin for demo development.
 - Run `python test/native_test.py`, the configurator pytest suite, and `python tools/test_package.py` before a release.
+
+## Library naming rules
+
+- Callback typedefs end in `Fn`; callback variables/fields end in `Cbk`.
+  C callback implementations use the regular `Module_lowerCamelAction` scheme.
+- C/C++ filenames use lowercase snake_case with a shared header/source stem.
+  Module prefixes use UpperCamelCase; functions use
+  `ModuleName_lowerCamelAction`, including C interfaces implemented in .cpp.
+  Private helpers use the same module prefix. C++ classes use UpperCamelCase,
+  class methods use lowerCamelCase; constructors/destructors follow C++ syntax.
+- C configuration structures list all callback fields first, then data parameters.
+- Arrays and pointers to array spans end in `Av`; pointers also use the `p` prefix.
+- Use descriptive lowerCamelCase names and full parameter names. Boolean names
+  begin with `is`, `has`, `can` or `should`; use explicit true/false comparisons
+  when testing actual bool values. Status codes and byte counts are not booleans.
+- Name sizes by unit (`txBufferSizeBytes`) and counts by contents (`parameterCount`).
+- Give nontrivial limits, channel IDs, test bounds and initial/target values named
+  constants. Exact documented protocol golden byte arrays are test fixtures,
+  not unexplained algorithm constants. Zero/one for initialization and iteration
+  do not need artificial aliases.
+- Explicit-instance interfaces remain available under migrated names. Keep different
+  callback contracts distinct (for example the legacy 8-bit write length).
+
+## Layout and example configuration
+
+- Use Allman braces: opening braces for functions and control blocks are on their
+  own line below the controlling statement, with consistent four-space indentation.
+- Separate declarations, typedefs, structs and preprocessor definitions from the
+  next documentation/comment block by a blank line. Do not join unrelated sections.
+- Keep fixed example configurations and tables at file scope as static constants;
+  entry functions initialize and process. Assign genuinely runtime-dependent values
+  only once those values exist. C examples may use C99 designated initializers;
+  C++11 examples use documented aggregate initializers.
+- `python tools/format_sources.py` applies .clang-format plus comment spacing.

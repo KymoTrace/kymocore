@@ -2,7 +2,7 @@
 
 Plots the raw ADC readings of A0 and A1 on channels 0 and 1, 115200 baud/8N1.
 You declare two `float` variables, list them next to the channel table and
-update them in `loop()`. `Kymo_SampleBound` reads them when a channel is due,
+update them in `loop()`. `KymoRuntime_sampleBound` reads them when a channel is due,
 so there is no sample callback to write.
 
 Everything lives in `quickstart.ino`:
@@ -16,7 +16,7 @@ From the KymoCore root: `pio run -d examples/arduino/quickstart -e uno`.
 Other environments: `nano`, `mega`.
 
 The two tables must have the same order: `values[i]` is plotted on
-`channels[i]`. Update the variables from the code that calls `Kymo_Main()`,
+`channels[i]`. Update the variables from the code that calls `KymoRuntime_main()`,
 not from an interrupt.
 
 ## With device timestamps

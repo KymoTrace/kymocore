@@ -5,7 +5,7 @@
  */
 #include "kymo_plot.h"
 #include "../detail/kymo_internal.h"
-static KymoEndpointPlot sFeature;
+static KymoCoreEndpointPlot sFeature;
 #include "../demo_values.h"
 #include "../kymo_port.h"
 static const uint8_t MEASUREMENT_CHANNEL = 0u;
@@ -29,22 +29,22 @@ static uint8_t readSample(void *user, uint8_t id, KymoSample *sample)
     return result;
 }
 
+/** @brief Fixed plot resources, callbacks and feature settings. */
+static const KymoCorePlotConfig sPlotConfig = {readSample, nullptr, CHANNELS,
+                                               KYMO_COUNT_OF(CHANNELS)};
+
 /****************************************************************************************************
  * examplePlotConfig
  ***************************************************************************************************/
-KymoEndpointPlotConfig examplePlotConfig(void)
+const KymoCorePlotConfig &examplePlotConfig(void)
 {
-    KymoEndpointPlotConfig config = {};
-    config.channels = CHANNELS;
-    config.channel_count = KYMO_COUNT_OF(CHANNELS);
-    config.sample = readSample;
-    return config;
+    return sPlotConfig;
 }
 
 /****************************************************************************************************
  * KymoApp_PlotInit
  ***************************************************************************************************/
-KymoStatus KymoApp_PlotInit(const KymoEndpointPlotConfig *config)
+KymoStatus KymoApp_PlotInit(const KymoCorePlotConfig *config)
 {
-    return KymoEndpointPlot_Init(exampleEndpoint(), &sFeature, config);
+    return KymoCoreEndpointPlot_init(exampleEndpoint(), &sFeature, config);
 }

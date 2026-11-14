@@ -7,14 +7,14 @@
 #include "detail/kymo_internal.h"
 #include "kymo_port.h"
 static const size_t RX_BUDGET_BYTES = 16u;
-static KymoEndpoint sEndpoint;
+static KymoCoreEndpoint sEndpoint;
 static uint8_t sTxBuffer[EXAMPLE_TX_CAPACITY];
 static uint8_t sRxBuffer[RX_BUDGET_BYTES];
 
 /****************************************************************************************************
  * exampleEndpoint
  ***************************************************************************************************/
-KymoEndpoint *exampleEndpoint(void)
+KymoCoreEndpoint *exampleEndpoint(void)
 {
     return &sEndpoint;
 }
@@ -55,30 +55,30 @@ static void servicePort(void *user)
     examplePortService();
 }
 
+/** @brief Fixed core resources, callbacks and feature settings. */
+static const KymoCoreEndpointConfig sCoreConfig = {
+    {sTxBuffer, sizeof(sTxBuffer), writePort, busyPort, nullptr}, /* TX */
+    readPort,
+    servicePort,
+    sRxBuffer,
+    sizeof(sRxBuffer),
+    examplePortClockMs,
+    nullptr};
+
 /****************************************************************************************************
  * exampleCoreConfig
  ***************************************************************************************************/
-KymoEndpointConfig exampleCoreConfig(void)
+const KymoCoreEndpointConfig &exampleCoreConfig(void)
 {
-    KymoEndpointConfig config = {};
-    config.tx.buffer = sTxBuffer;
-    config.tx.capacity = sizeof(sTxBuffer);
-    config.tx.write = writePort;
-    config.tx.busy = busyPort;
-    config.read = readPort;
-    config.service = servicePort;
-    config.rx_buffer = sRxBuffer;
-    config.rx_capacity = sizeof(sRxBuffer);
-    config.clock_ms = examplePortClockMs;
-    return config;
+    return sCoreConfig;
 }
 
 /****************************************************************************************************
  * KymoApp_Init
  ***************************************************************************************************/
-KymoStatus KymoApp_Init(const KymoEndpointConfig *config)
+KymoStatus KymoApp_Init(const KymoCoreEndpointConfig *config)
 {
-    return KymoEndpoint_Init(&sEndpoint, config);
+    return KymoCoreEndpoint_init(&sEndpoint, config);
 }
 
 /****************************************************************************************************
@@ -86,7 +86,7 @@ KymoStatus KymoApp_Init(const KymoEndpointConfig *config)
  ***************************************************************************************************/
 KymoStatus KymoApp_Main(void)
 {
-    return KymoEndpoint_Main(&sEndpoint);
+    return KymoCoreEndpoint_main(&sEndpoint);
 }
 
 /****************************************************************************************************
@@ -94,5 +94,5 @@ KymoStatus KymoApp_Main(void)
  ***************************************************************************************************/
 KymoStatus KymoApp_RequestStop(void)
 {
-    return KymoEndpoint_RequestStop(&sEndpoint);
+    return KymoCoreEndpoint_requestStop(&sEndpoint);
 }

@@ -3,15 +3,15 @@
  * @file endpoint_test.cpp
  * @brief Public Endpoint tests, built with each feature independently and together.
  */
-#include <endpoint/kymo_endpoint.h>
-#include <endpoint/features/kymo_plot.h>
-#include <endpoint/features/kymo_param.h>
-#include <endpoint/features/kymo_watch.h>
-#include <endpoint/features/kymo_memory.h>
-#include <endpoint/features/kymo_trace.h>
-#include <common/embedded_bytes.h>
-#include <endpoint/detail/kymo_internal.h>
-#include <common/embedded_crc.h>
+#include <core/kymo_core_endpoint.h>
+#include <features/plot/kymo_core_endpoint_plot.h>
+#include <features/parameters/kymo_core_endpoint_param.h>
+#include <features/watch/kymo_core_endpoint_watch.h>
+#include <features/memory/kymo_core_endpoint_memory.h>
+#include <features/trace/kymo_core_endpoint_trace.h>
+#include <binary/embedded_bytes.h>
+#include <core/detail/kymo_core_endpoint_internal.h>
+#include <binary/embedded_crc.h>
 #include <assert.h>
 #include <string.h>
 #include <math.h>
@@ -27,7 +27,7 @@ static const uint8_t MEMORY_CHANNEL = 6u;
 
 struct Fixture
 {
-    KymoEndpoint endpoint;
+    KymoCoreEndpoint endpoint;
     uint8_t storage[FRAME_CAPACITY];
     uint8_t rx[16];
     uint8_t input[64];
@@ -50,21 +50,21 @@ struct Fixture
     size_t borrowed_length;
     uint8_t snapshot[FRAME_CAPACITY];
 #if KYMO_EFFECTIVE_RUNTIME
-    KymoEndpointPlot plot;
+    KymoCoreEndpointPlot plot;
 #endif
 #if KYMO_EFFECTIVE_PARAMETERS
-    KymoEndpointParam param;
+    KymoCoreEndpointParam param;
     float gain;
     KymoParameter parameter;
 #endif
 #if KYMO_EFFECTIVE_WATCH
-    KymoEndpointWatch watch;
+    KymoCoreEndpointWatch watch;
 #endif
 #if KYMO_EFFECTIVE_MEMORY
-    KymoEndpointMemory memory;
+    KymoCoreEndpointMemory memory;
 #endif
 #if KYMO_EFFECTIVE_TRACE
-    KymoEndpointTrace trace;
+    KymoCoreEndpointTrace trace;
 #endif
 };
 
@@ -144,9 +144,9 @@ static void servicePort(void *user)
 /****************************************************************************************************
  * baseConfig
  ***************************************************************************************************/
-static KymoEndpointConfig baseConfig(Fixture *fixture)
+static KymoCoreEndpointConfig baseConfig(Fixture *fixture)
 {
-    KymoEndpointConfig config = {};
+    KymoCoreEndpointConfig config = {};
     config.tx.buffer = fixture->storage;
     config.tx.capacity = sizeof(fixture->storage);
     config.tx.write = writeBytes;
@@ -208,6 +208,7 @@ static uint64_t clockTicks(void *user)
 }
 #endif
 #if KYMO_EFFECTIVE_PARAMETERS || KYMO_EFFECTIVE_WATCH
+
 /****************************************************************************************************
  * appendControl
  ***************************************************************************************************/
@@ -224,13 +225,14 @@ static void appendControl(Fixture *fixture, const uint8_t *payload, uint8_t leng
     fixture->input_length += 5u + length;
 }
 #endif
+
 /****************************************************************************************************
  * initFeatures
  ***************************************************************************************************/
 static void initFeatures(Fixture *fixture)
 {
 #if KYMO_EFFECTIVE_TRACE
-    KymoEndpointTraceConfig trace = {};
+    KymoCoreEndpointTraceConfig trace = {};
     trace.recorder.clock_ticks = clockTicks;
     trace.recorder.user = fixture;
     trace.recorder.session_id = 1u;
@@ -240,48 +242,49 @@ static void initFeatures(Fixture *fixture)
     trace.dictionary_length = sizeof(TEST_METADATA) - 1u;
     trace.generation = 1u;
     trace.health_period_ticks = 1u;
-    assert(KymoEndpointTrace_Init(&fixture->endpoint, &fixture->trace, &trace) == KYMO_OK);
+    assert(KymoCoreEndpointTrace_init(&fixture->endpoint, &fixture->trace, &trace) == KYMO_OK);
+
     /* Events before first Main must follow both administrative records on wire. */
     KYMO_ENDPOINT_TRACE_MARK(&fixture->trace, 1u, 1u, 1u);
 #endif
 #if KYMO_EFFECTIVE_MEMORY
-    KymoEndpointMemoryConfig memory = {};
-    memory.entries = ENTRIES;
-    memory.count = KYMO_COUNT_OF(ENTRIES);
-    memory.period_ms = 1u;
-    memory.info_period_ms = 1u;
-    memory.read = sampleMemory;
-    assert(KymoEndpointMemory_Init(&fixture->endpoint, &fixture->memory, &memory) == KYMO_OK);
+    KymoCoreMemoryConfig memory = {};
+    memory.pEntriesAv = ENTRIES;
+    memory.entryCount = KYMO_COUNT_OF(ENTRIES);
+    memory.samplePeriodMs = 1u;
+    memory.infoPeriodMs = 1u;
+    memory.readBytesCbk = sampleMemory;
+    assert(KymoCoreEndpointMemory_init(&fixture->endpoint, &fixture->memory, &memory) == KYMO_OK);
 #endif
 #if KYMO_EFFECTIVE_WATCH
     static const KymoWatchRange ranges[] = {{0x20000000u, sizeof(float)}};
-    KymoEndpointWatchConfig watch = {};
+    KymoCoreEndpointWatchConfig watch = {};
     watch.watch.ranges = ranges;
     watch.watch.range_count = KYMO_COUNT_OF(ranges);
     watch.first_channel = WATCH_CHANNEL;
     watch.last_channel = WATCH_CHANNEL;
-    assert(KymoEndpointWatch_Init(&fixture->endpoint, &fixture->watch, &watch) == KYMO_OK);
+    assert(KymoCoreEndpointWatch_init(&fixture->endpoint, &fixture->watch, &watch) == KYMO_OK);
     const uint8_t info = KYMO_WATCH_OP_INFO;
     appendControl(fixture, &info, sizeof(info));
 #endif
 #if KYMO_EFFECTIVE_PARAMETERS
-    KymoEndpointParamConfig param = {};
+    KymoCoreParamConfig param = {};
     fixture->parameter.id = PARAM_CHANNEL;
-    fixture->parameter.target = &fixture->gain;
+    fixture->parameter.pTarget = &fixture->gain;
     fixture->parameter.maximum = 10.0f;
-    param.table = &fixture->parameter;
-    param.count = 1u;
-    assert(KymoEndpointParam_Init(&fixture->endpoint, &fixture->param, &param) == KYMO_OK);
+    param.pParametersAv = &fixture->parameter;
+    param.parameterCount = 1u;
+    assert(KymoCoreEndpointParam_init(&fixture->endpoint, &fixture->param, &param) == KYMO_OK);
     const uint8_t list = KYMO_PARAM_OP_LIST;
     appendControl(fixture, &list, sizeof(list));
 #endif
 #if KYMO_EFFECTIVE_RUNTIME
-    KymoEndpointPlotConfig plot = {};
-    plot.channels = CHANNELS;
-    plot.channel_count = KYMO_COUNT_OF(CHANNELS);
-    plot.sample = samplePlot;
-    plot.sample_user = fixture;
-    assert(KymoEndpointPlot_Init(&fixture->endpoint, &fixture->plot, &plot) == KYMO_OK);
+    KymoCorePlotConfig plot = {};
+    plot.pChannelsAv = CHANNELS;
+    plot.channelCount = KYMO_COUNT_OF(CHANNELS);
+    plot.sampleCbk = samplePlot;
+    plot.pSampleContext = fixture;
+    assert(KymoCoreEndpointPlot_init(&fixture->endpoint, &fixture->plot, &plot) == KYMO_OK);
 #endif
 }
 
@@ -292,7 +295,7 @@ static KymoStatus runCycle(Fixture *fixture)
 {
     size_t writes = fixture->writes;
     size_t services = fixture->services;
-    KymoStatus status = KymoEndpoint_Main(&fixture->endpoint);
+    KymoStatus status = KymoCoreEndpoint_main(&fixture->endpoint);
     assert(fixture->writes <= writes + 1u);
     assert(fixture->services <= services + 1u);
     return status;
@@ -321,11 +324,11 @@ static void releaseBorrow(Fixture *fixture)
 static void testLifecycle(uint8_t borrow)
 {
     Fixture fixture = {};
-    KymoEndpointConfig config = baseConfig(&fixture);
+    KymoCoreEndpointConfig config = baseConfig(&fixture);
     fixture.borrow = borrow;
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_BAD_CONFIG);
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
-    assert(KymoEndpoint_RequestStop(&fixture.endpoint) == KYMO_REJECTED);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_BAD_CONFIG);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_OK);
+    assert(KymoCoreEndpoint_requestStop(&fixture.endpoint) == KYMO_REJECTED);
     initFeatures(&fixture);
     assert(fixture.writes == 0u && fixture.services == 0u && fixture.reads == 0u);
     for (uint32_t cycle = 0u; cycle < TEST_CYCLES; ++cycle)
@@ -339,8 +342,8 @@ static void testLifecycle(uint8_t borrow)
             releaseBorrow(&fixture);
         }
     }
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_REJECTED);
-    assert(KymoEndpoint_RequestStop(&fixture.endpoint) == KYMO_OK);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_REJECTED);
+    assert(KymoCoreEndpoint_requestStop(&fixture.endpoint) == KYMO_OK);
     size_t reads = fixture.reads;
     uint32_t cycles = 0u;
     while ((fixture.endpoint.phase != KYMO_ENDPOINT_STOPPED) && (cycles < DRAIN_LIMIT))
@@ -353,11 +356,11 @@ static void testLifecycle(uint8_t borrow)
     assert(fixture.endpoint.phase == KYMO_ENDPOINT_STOPPED);
     assert(fixture.reads == reads && fixture.borrowed == nullptr);
     size_t services = fixture.services;
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_IDLE);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_IDLE);
     assert(fixture.services == services);
 #if KYMO_EFFECTIVE_TRACE
     assert(fixture.trace.end_queued != 0u);
-    assert(KymoEndpointTrace_Recorder(&fixture.trace) == nullptr);
+    assert(KymoCoreEndpointTrace_recorder(&fixture.trace) == nullptr);
 #if !KYMO_EFFECTIVE_RUNTIME && !KYMO_EFFECTIVE_PARAMETERS && !KYMO_EFFECTIVE_WATCH && \
     !KYMO_EFFECTIVE_MEMORY
     size_t offset = 0u;
@@ -399,14 +402,14 @@ static void testInvalidAndIndependent(void)
 {
     Fixture first = {};
     Fixture second = {};
-    KymoEndpointConfig one = baseConfig(&first);
-    KymoEndpointConfig two = baseConfig(&second);
-    assert(KymoEndpoint_Init(nullptr, &one) == KYMO_BAD_CONFIG);
-    assert(KymoEndpoint_Init(&first.endpoint, nullptr) == KYMO_BAD_CONFIG);
-    assert(KymoEndpoint_Init(&first.endpoint, &one) == KYMO_OK);
-    assert(KymoEndpoint_Main(&first.endpoint) == KYMO_BAD_CONFIG); /* No features. */
+    KymoCoreEndpointConfig one = baseConfig(&first);
+    KymoCoreEndpointConfig two = baseConfig(&second);
+    assert(KymoCoreEndpoint_init(nullptr, &one) == KYMO_BAD_CONFIG);
+    assert(KymoCoreEndpoint_init(&first.endpoint, nullptr) == KYMO_BAD_CONFIG);
+    assert(KymoCoreEndpoint_init(&first.endpoint, &one) == KYMO_OK);
+    assert(KymoCoreEndpoint_main(&first.endpoint) == KYMO_BAD_CONFIG); /* No features. */
     assert(first.services == 0u && first.writes == 0u);
-    assert(KymoEndpoint_Init(&second.endpoint, &two) == KYMO_OK);
+    assert(KymoCoreEndpoint_init(&second.endpoint, &two) == KYMO_OK);
     initFeatures(&second);
     for (uint32_t cycle = 0u; cycle < TEST_CYCLES; ++cycle)
     {
@@ -422,15 +425,15 @@ static KymoStatus invalidFeature(Fixture *fixture)
 {
     KymoStatus status = KYMO_BAD_CONFIG;
 #if KYMO_EFFECTIVE_RUNTIME
-    status = KymoEndpointPlot_Init(&fixture->endpoint, &fixture->plot, nullptr);
+    status = KymoCoreEndpointPlot_init(&fixture->endpoint, &fixture->plot, nullptr);
 #elif KYMO_EFFECTIVE_PARAMETERS
-    status = KymoEndpointParam_Init(&fixture->endpoint, &fixture->param, nullptr);
+    status = KymoCoreEndpointParam_init(&fixture->endpoint, &fixture->param, nullptr);
 #elif KYMO_EFFECTIVE_WATCH
-    status = KymoEndpointWatch_Init(&fixture->endpoint, &fixture->watch, nullptr);
+    status = KymoCoreEndpointWatch_init(&fixture->endpoint, &fixture->watch, nullptr);
 #elif KYMO_EFFECTIVE_MEMORY
-    status = KymoEndpointMemory_Init(&fixture->endpoint, &fixture->memory, nullptr);
+    status = KymoCoreEndpointMemory_init(&fixture->endpoint, &fixture->memory, nullptr);
 #elif KYMO_EFFECTIVE_TRACE
-    status = KymoEndpointTrace_Init(&fixture->endpoint, &fixture->trace, nullptr);
+    status = KymoCoreEndpointTrace_init(&fixture->endpoint, &fixture->trace, nullptr);
 #endif
     return status;
 }
@@ -441,15 +444,15 @@ static KymoStatus invalidFeature(Fixture *fixture)
 static void testSetupErrors(void)
 {
     Fixture fixture = {};
-    KymoEndpointConfig config = baseConfig(&fixture);
+    KymoCoreEndpointConfig config = baseConfig(&fixture);
     assert(invalidFeature(&fixture) == KYMO_BAD_CONFIG);
     assert(fixture.endpoint.phase == KYMO_ENDPOINT_UNINITIALIZED);
     config.rx_buffer = config.tx.buffer;
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_BAD_CONFIG);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_BAD_CONFIG);
     config.rx_buffer = fixture.rx;
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_OK);
     assert(invalidFeature(&fixture) == KYMO_BAD_CONFIG);
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_BAD_CONFIG);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_BAD_CONFIG);
     assert(fixture.endpoint.phase == KYMO_ENDPOINT_FAULT && fixture.services == 0u);
 }
 
@@ -459,8 +462,8 @@ static void testSetupErrors(void)
 static void testBackpressureAndFault(void)
 {
     Fixture fixture = {};
-    KymoEndpointConfig config = baseConfig(&fixture);
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
+    KymoCoreEndpointConfig config = baseConfig(&fixture);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_OK);
     initFeatures(&fixture);
     fixture.busy = 1u;
     for (uint32_t cycle = 0u; cycle < TEST_CYCLES; ++cycle)
@@ -484,40 +487,42 @@ static void testBackpressureAndFault(void)
     assert(fixture.endpoint.error_feature == KYMO_ENDPOINT_TRANSPORT);
     size_t calls = fixture.services;
     size_t writes = fixture.writes;
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_IO_ERROR);
-    assert(KymoEndpoint_RequestStop(&fixture.endpoint) == KYMO_IO_ERROR);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_IO_ERROR);
+    assert(KymoCoreEndpoint_requestStop(&fixture.endpoint) == KYMO_IO_ERROR);
     assert(fixture.services == calls && fixture.writes == writes);
 }
 #if KYMO_EFFECTIVE_PARAMETERS || KYMO_EFFECTIVE_WATCH
+
 /****************************************************************************************************
  * testReadViolation
  ***************************************************************************************************/
 static void testReadViolation(void)
 {
     Fixture fixture = {};
-    KymoEndpointConfig config = baseConfig(&fixture);
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
+    KymoCoreEndpointConfig config = baseConfig(&fixture);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_OK);
     initFeatures(&fixture);
     fixture.bad_read = 1u;
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_IO_ERROR);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_IO_ERROR);
     assert(fixture.writes == 0u);
 }
 #endif
 #if KYMO_EFFECTIVE_WATCH
+
 /****************************************************************************************************
  * testWatchChannelPolicy
  ***************************************************************************************************/
 static void testWatchChannelPolicy(void)
 {
     Fixture fixture = {};
-    KymoEndpointConfig config = baseConfig(&fixture);
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
+    KymoCoreEndpointConfig config = baseConfig(&fixture);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_OK);
     initFeatures(&fixture);
     fixture.input_length = 0u;
     uint8_t request[] = {
         KYMO_WATCH_OP_SET, 0u, PLOT_CHANNEL, 0u, 0u, 0u, 0x20u, KYMO_WATCH_TYPE_F32, 100u, 0u};
     appendControl(&fixture, request, sizeof(request));
-    (void)KymoEndpoint_Main(&fixture.endpoint);
+    (void)KymoCoreEndpoint_main(&fixture.endpoint);
     assert(fixture.watch.watch.rejected == 1u);
     assert(fixture.watch.watch.slots[0].type == 0u);
     assert(fixture.watch.watch.ack_status[0] == KYMO_WATCH_STATUS_OUT_OF_RANGE);
@@ -525,24 +530,26 @@ static void testWatchChannelPolicy(void)
     fixture.input_length = 0u;
     fixture.input_offset = 0u;
     appendControl(&fixture, request, sizeof(request));
+
     /* Do not sample the fake physical address: keep the physical TX occupied. */
     fixture.busy = 1u;
-    (void)KymoEndpoint_Main(&fixture.endpoint);
+    (void)KymoCoreEndpoint_main(&fixture.endpoint);
     assert(fixture.watch.watch.accepted == 1u);
     assert(fixture.watch.watch.slots[0].channel == WATCH_CHANNEL);
 }
 #endif
 #if KYMO_EFFECTIVE_RUNTIME
+
 /****************************************************************************************************
  * plotConfig
  ***************************************************************************************************/
-static KymoEndpointPlotConfig plotConfig(Fixture *fixture)
+static KymoCorePlotConfig plotConfig(Fixture *fixture)
 {
-    KymoEndpointPlotConfig config = {};
-    config.channels = CHANNELS;
-    config.channel_count = KYMO_COUNT_OF(CHANNELS);
-    config.sample = samplePlot;
-    config.sample_user = fixture;
+    KymoCorePlotConfig config = {};
+    config.pChannelsAv = CHANNELS;
+    config.channelCount = KYMO_COUNT_OF(CHANNELS);
+    config.sampleCbk = samplePlot;
+    config.pSampleContext = fixture;
     return config;
 }
 
@@ -552,74 +559,77 @@ static KymoEndpointPlotConfig plotConfig(Fixture *fixture)
 static void testPlotConfigurationAndRecovery(void)
 {
     Fixture small = {};
-    KymoEndpointConfig base = baseConfig(&small);
-    KymoEndpointPlotConfig plot = plotConfig(&small);
+    KymoCoreEndpointConfig base = baseConfig(&small);
+    KymoCorePlotConfig plot = plotConfig(&small);
     base.tx.capacity = KYMO_FRAME_MAX_SIZE - 1u;
-    assert(KymoEndpoint_Init(&small.endpoint, &base) == KYMO_OK);
-    assert(KymoEndpointPlot_Init(&small.endpoint, &small.plot, &plot) == KYMO_BAD_CONFIG);
+    assert(KymoCoreEndpoint_init(&small.endpoint, &base) == KYMO_OK);
+    assert(KymoCoreEndpointPlot_init(&small.endpoint, &small.plot, &plot) == KYMO_BAD_CONFIG);
     assert(small.endpoint.phase == KYMO_ENDPOINT_FAULT && small.writes == 0u);
     Fixture fixture = {};
     base = baseConfig(&fixture);
     plot = plotConfig(&fixture);
-    assert(KymoEndpoint_Init(&fixture.endpoint, &base) == KYMO_OK);
-    assert(KymoEndpointPlot_Init(&fixture.endpoint, &fixture.plot, &plot) == KYMO_OK);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &base) == KYMO_OK);
+    assert(KymoCoreEndpointPlot_init(&fixture.endpoint, &fixture.plot, &plot) == KYMO_OK);
     fixture.bad_sample = 1u;
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_BAD_SAMPLE);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_BAD_SAMPLE);
     assert(fixture.endpoint.phase == KYMO_ENDPOINT_RUNNING);
     fixture.bad_sample = 0u;
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_BUSY);
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_BUSY);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_BUSY);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_BUSY);
     assert(fixture.writes == 1u);
     Fixture duplicate = {};
     base = baseConfig(&duplicate);
     plot = plotConfig(&duplicate);
-    KymoEndpointPlot other = {};
-    assert(KymoEndpoint_Init(&duplicate.endpoint, &base) == KYMO_OK);
-    assert(KymoEndpointPlot_Init(&duplicate.endpoint, &duplicate.plot, &plot) == KYMO_OK);
-    assert(KymoEndpointPlot_Init(&duplicate.endpoint, &other, &plot) == KYMO_REJECTED);
+    KymoCoreEndpointPlot other = {};
+    assert(KymoCoreEndpoint_init(&duplicate.endpoint, &base) == KYMO_OK);
+    assert(KymoCoreEndpointPlot_init(&duplicate.endpoint, &duplicate.plot, &plot) == KYMO_OK);
+    assert(KymoCoreEndpointPlot_init(&duplicate.endpoint, &other, &plot) == KYMO_REJECTED);
     assert(duplicate.endpoint.phase == KYMO_ENDPOINT_FAULT && other.binding.endpoint == nullptr);
 }
 #if KYMO_EFFECTIVE_WATCH
+
 /****************************************************************************************************
  * testChannelCollision
  ***************************************************************************************************/
 static void testChannelCollision(uint8_t watchFirst)
 {
     Fixture fixture = {};
-    KymoEndpointConfig base = baseConfig(&fixture);
-    KymoEndpointPlotConfig plot = plotConfig(&fixture);
+    KymoCoreEndpointConfig base = baseConfig(&fixture);
+    KymoCorePlotConfig plot = plotConfig(&fixture);
     static const KymoWatchRange ranges[] = {{0x20000000u, sizeof(float)}};
-    KymoEndpointWatchConfig watch = {};
+    KymoCoreEndpointWatchConfig watch = {};
     watch.watch.ranges = ranges;
     watch.watch.range_count = KYMO_COUNT_OF(ranges);
     watch.first_channel = PLOT_CHANNEL;
     watch.last_channel = PLOT_CHANNEL;
-    assert(KymoEndpoint_Init(&fixture.endpoint, &base) == KYMO_OK);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &base) == KYMO_OK);
     if (watchFirst != 0u)
     {
-        assert(KymoEndpointWatch_Init(&fixture.endpoint, &fixture.watch, &watch) == KYMO_OK);
-        assert(KymoEndpointPlot_Init(&fixture.endpoint, &fixture.plot, &plot) == KYMO_BAD_CONFIG);
+        assert(KymoCoreEndpointWatch_init(&fixture.endpoint, &fixture.watch, &watch) == KYMO_OK);
+        assert(KymoCoreEndpointPlot_init(&fixture.endpoint, &fixture.plot, &plot) ==
+               KYMO_BAD_CONFIG);
     }
     else
     {
-        assert(KymoEndpointPlot_Init(&fixture.endpoint, &fixture.plot, &plot) == KYMO_OK);
-        assert(KymoEndpointWatch_Init(&fixture.endpoint, &fixture.watch, &watch) ==
+        assert(KymoCoreEndpointPlot_init(&fixture.endpoint, &fixture.plot, &plot) == KYMO_OK);
+        assert(KymoCoreEndpointWatch_init(&fixture.endpoint, &fixture.watch, &watch) ==
                KYMO_BAD_CONFIG);
     }
-    assert(KymoEndpoint_Main(&fixture.endpoint) == KYMO_BAD_CONFIG);
+    assert(KymoCoreEndpoint_main(&fixture.endpoint) == KYMO_BAD_CONFIG);
     assert(fixture.services == 0u && fixture.writes == 0u);
 }
 #endif
 #endif
 #if KYMO_EFFECTIVE_TRACE
+
 /****************************************************************************************************
  * testMetadataRepeat
  ***************************************************************************************************/
 static void testMetadataRepeat(uint32_t period, uint8_t borrow)
 {
     Fixture fixture = {};
-    KymoEndpointConfig base = baseConfig(&fixture);
-    KymoEndpointTraceConfig config = {};
+    KymoCoreEndpointConfig base = baseConfig(&fixture);
+    KymoCoreEndpointTraceConfig config = {};
     static const uint8_t largeRecord[500] = {'{', '}'};
     fixture.borrow = borrow;
     config.recorder.clock_ticks = clockTicks;
@@ -631,8 +641,8 @@ static void testMetadataRepeat(uint32_t period, uint8_t borrow)
     config.dictionary_length = sizeof(largeRecord);
     config.generation = 1u;
     config.metadata_period_ticks = period;
-    assert(KymoEndpoint_Init(&fixture.endpoint, &base) == KYMO_OK);
-    assert(KymoEndpointTrace_Init(&fixture.endpoint, &fixture.trace, &config) == KYMO_OK);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &base) == KYMO_OK);
+    assert(KymoCoreEndpointTrace_init(&fixture.endpoint, &fixture.trace, &config) == KYMO_OK);
     uint8_t wasReady = 0u;
     uint32_t pairs = 0u;
     uint8_t previousStage = 0u;
@@ -645,7 +655,7 @@ static void testMetadataRepeat(uint32_t period, uint8_t borrow)
         }
         (void)runCycle(&fixture);
         releaseBorrow(&fixture);
-        uint8_t ready = KymoEndpointTrace_IsReady(&fixture.trace);
+        uint8_t ready = KymoCoreEndpointTrace_isReady(&fixture.trace);
         assert(wasReady == 0u || ready != 0u);
         wasReady = ready;
         if (fixture.trace.metadata_stage == 2u && previousStage != 2u)
@@ -656,6 +666,7 @@ static void testMetadataRepeat(uint32_t period, uint8_t borrow)
     }
     assert(wasReady != 0u);
     assert(period == 0u ? pairs == 1u : pairs >= 2u);
+
     /* Stop during the next refresh: finite drain, no new repetition. */
     if (period != 0u)
     {
@@ -668,7 +679,7 @@ static void testMetadataRepeat(uint32_t period, uint8_t borrow)
         }
         assert(wait < DRAIN_LIMIT);
     }
-    assert(KymoEndpoint_RequestStop(&fixture.endpoint) == KYMO_OK);
+    assert(KymoCoreEndpoint_requestStop(&fixture.endpoint) == KYMO_OK);
     for (uint32_t cycle = 0u;
          cycle < DRAIN_LIMIT && fixture.endpoint.phase != KYMO_ENDPOINT_STOPPED; ++cycle)
     {
@@ -676,7 +687,7 @@ static void testMetadataRepeat(uint32_t period, uint8_t borrow)
         releaseBorrow(&fixture);
     }
     assert(fixture.endpoint.phase == KYMO_ENDPOINT_STOPPED);
-    assert(KymoEndpointTrace_IsReady(&fixture.trace) == 0u);
+    assert(KymoCoreEndpointTrace_isReady(&fixture.trace) == 0u);
     size_t offset = 0u;
     size_t events = 0u;
     uint8_t lastKind = 0u;
@@ -686,7 +697,7 @@ static void testMetadataRepeat(uint32_t period, uint8_t borrow)
         assert(fixture.wire_length - offset >= KYMO_TRACE_ENVELOPE_SIZE);
         size_t length = KYMO_TRACE_ENVELOPE_SIZE + (emb_read_u32_le(frame + 4u) & UINT32_C(0xffff));
         assert(length <= fixture.wire_length - offset);
-        assert(KymoTrace_Crc16(frame + 2u, length - 4u) ==
+        assert(KymoTraceProtocol_crc16(frame + 2u, length - 4u) ==
                (uint16_t)(frame[length - 2u] | ((uint16_t)frame[length - 1u] << 8u)));
         lastKind = frame[3];
         if (lastKind == KYMO_TRACE_PAYLOAD_BATCH)
@@ -698,21 +709,23 @@ static void testMetadataRepeat(uint32_t period, uint8_t borrow)
     assert(events > 0u && lastKind == KYMO_TRACE_PAYLOAD_SESSION_END);
 }
 #endif
+
 /****************************************************************************************************
  * testControlSampleTime
  ***************************************************************************************************/
 static void testControlSampleTime(void)
 {
     Fixture fixture = {};
-    KymoEndpointConfig config = baseConfig(&fixture);
+    KymoCoreEndpointConfig config = baseConfig(&fixture);
     KymoDataPoint point = {};
     const uint32_t SAMPLE_TIME_MS = 123456u;
     point.id = WATCH_CHANNEL;
     point.value = 1.25f;
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
-    assert(kymoEndpointSample(&fixture.endpoint, KYMO_IDLE, &point, SAMPLE_TIME_MS) == KYMO_IDLE);
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_OK);
+    assert(KymoCoreEndpoint_sample(&fixture.endpoint, KYMO_IDLE, &point, SAMPLE_TIME_MS) ==
+           KYMO_IDLE);
     assert(fixture.endpoint.tx.length == 0u);
-    assert(kymoEndpointSample(&fixture.endpoint, KYMO_OK, &point, SAMPLE_TIME_MS) == KYMO_OK);
+    assert(KymoCoreEndpoint_sample(&fixture.endpoint, KYMO_OK, &point, SAMPLE_TIME_MS) == KYMO_OK);
 #if KYMO_EFFECTIVE_TIMESTAMP
     assert((fixture.storage[2] & KYMO_FLAG_TIMESTAMP) != 0u);
     const size_t TIMESTAMP_OFFSET = 8u;
@@ -723,16 +736,17 @@ static void testControlSampleTime(void)
     assert(point.flags == 0u); /* The caller's point remains unchanged. */
 }
 #if KYMO_EFFECTIVE_TIMESTAMP && KYMO_EFFECTIVE_RUNTIME && KYMO_EFFECTIVE_PARAMETERS
+
 /****************************************************************************************************
  * testSharedDeviceClock
  ***************************************************************************************************/
 static void testSharedDeviceClock(uint32_t initializedAt, uint32_t sampledAt)
 {
     Fixture fixture = {};
-    KymoEndpointConfig config = baseConfig(&fixture);
+    KymoCoreEndpointConfig config = baseConfig(&fixture);
     const KymoChannel channel = {0u, PLOT_CHANNEL, KYMO_FLAG_TIMESTAMP};
-    KymoEndpointPlotConfig plot = {};
-    KymoEndpointParamConfig param = {};
+    KymoCorePlotConfig plot = {};
+    KymoCoreParamConfig param = {};
     const uint8_t list = KYMO_PARAM_OP_LIST;
     const size_t TIMESTAMP_OFFSET = 8u;
     size_t offset = 0u;
@@ -740,18 +754,18 @@ static void testSharedDeviceClock(uint32_t initializedAt, uint32_t sampledAt)
     uint8_t seenParam = 0u;
     fixture.ticks = initializedAt;
     config.service = nullptr; /* Hold the clock fixed while dispatching both features. */
-    plot.channels = &channel;
-    plot.channel_count = 1u;
-    plot.sample = samplePlot;
-    plot.sample_user = &fixture;
+    plot.pChannelsAv = &channel;
+    plot.channelCount = 1u;
+    plot.sampleCbk = samplePlot;
+    plot.pSampleContext = &fixture;
     fixture.parameter.id = PARAM_CHANNEL;
-    fixture.parameter.target = &fixture.gain;
+    fixture.parameter.pTarget = &fixture.gain;
     fixture.parameter.maximum = 10.0f;
-    param.table = &fixture.parameter;
-    param.count = 1u;
-    assert(KymoEndpoint_Init(&fixture.endpoint, &config) == KYMO_OK);
-    assert(KymoEndpointPlot_Init(&fixture.endpoint, &fixture.plot, &plot) == KYMO_OK);
-    assert(KymoEndpointParam_Init(&fixture.endpoint, &fixture.param, &param) == KYMO_OK);
+    param.pParametersAv = &fixture.parameter;
+    param.parameterCount = 1u;
+    assert(KymoCoreEndpoint_init(&fixture.endpoint, &config) == KYMO_OK);
+    assert(KymoCoreEndpointPlot_init(&fixture.endpoint, &fixture.plot, &plot) == KYMO_OK);
+    assert(KymoCoreEndpointParam_init(&fixture.endpoint, &fixture.param, &param) == KYMO_OK);
     appendControl(&fixture, &list, sizeof(list));
     fixture.ticks = sampledAt;
     for (uint32_t cycle = 0u; cycle < TEST_CYCLES; ++cycle)
@@ -761,7 +775,7 @@ static void testSharedDeviceClock(uint32_t initializedAt, uint32_t sampledAt)
     while (offset < fixture.wire_length)
     {
         const uint8_t *frame = fixture.wire + offset;
-        size_t length = KymoProtocol_FrameLength(frame[2]);
+        size_t length = KymoProtocol_frameLength(frame[2]);
         if (frame[2] == KYMO_DESCRIPTOR_PARAM)
         {
             length = (size_t)frame[3] + 5u;
@@ -779,6 +793,7 @@ static void testSharedDeviceClock(uint32_t initializedAt, uint32_t sampledAt)
     assert(seenPlot != 0u && seenParam != 0u);
 }
 #endif
+
 /****************************************************************************************************
  * main
  ***************************************************************************************************/

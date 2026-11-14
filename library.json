@@ -29,9 +29,35 @@
   "frameworks": "*",
   "platforms": "*",
   "headers": [
-    "KymoCore.h"
+    "kymo_core.h",
+    "kymo_core_plot.h",
+    "kymo_core_param.h",
+    "kymo_core_watch.h",
+    "kymo_core_memory.h",
+    "kymo_core_trace.h",
+    "kymo_modules.h"
   ],
   "examples": [
+    {
+      "name": "Core with all five features",
+      "base": "examples/core_features",
+      "files": [
+        "main.c",
+        "kymo_example_config.h",
+        "run.py",
+        "README.md"
+      ]
+    },
+    {
+      "name": "Core and parameters",
+      "base": "examples/core_parameters",
+      "files": [
+        "main.c",
+        "kymo_example_config.h",
+        "run.py",
+        "README.md"
+      ]
+    },
     {
       "name": "Portable Init/Main",
       "base": "examples/basic",
@@ -86,7 +112,9 @@
       "README.de.md",
       "docs/PROTOCOL.md",
       "library.properties",
-      "docs/COMPILE_OUT.md"
+      "docs/COMPILE_OUT.md",
+      "docs/CORE_ENTRY.md",
+      "Doxyfile"
     ],
     "exclude": [
       "**/.pio/**",

@@ -1,6 +1,6 @@
 # Arduino
 
-Start with `quickstart`: it plots two variables through `Kymo_SampleBound` and
+Start with `quickstart`: it plots two variables through `KymoRuntime_sampleBound` and
 needs no sample callback or build flags.
 
 Use `simple_analog_example` for two waveform channels, or

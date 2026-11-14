@@ -6,16 +6,19 @@ the optional header named by `KYMO_USER_CONFIG_HEADER`, then the selected
 setting so a build profile can override it. Pass the include token as a quoted
 macro value, for example `-DKYMO_USER_CONFIG_HEADER=\"kymo_user_config.h\"`.
 
+The new `KYMO_ENABLE_CORE` entry and its implicit internal transport are described
+in [CORE_ENTRY.md](CORE_ENTRY.md). All feature flags remain independent.
+
 `KYMO_ENABLE_TX` defaults to `0` in every profile. Set it to `1` to use
-`KymoTx_Init`, `KymoTx_Submit` and `KymoTx_Service`. The sender requires no other
+`KymoTx_init`, `KymoTx_submit` and `KymoTx_service`. The sender requires no other
 feature and uses a caller-owned buffer with a runtime capacity. With TX disabled,
 its implementation and callable declarations are absent. The global switch also
 overrides TX. The configurator build audit checks TX consistency across sources;
 the configurator UI does not yet generate shared-sender wiring.
 
 `KYMO_ENABLE_ENDPOINT` defaults to `0` and requires `KYMO_ENABLE_TX=1` when
-KymoCore is enabled. The base API is in `endpoint/kymo_endpoint.h`; feature APIs
-are in `endpoint/features/kymo_<feature>.h`. Each needs its original module flag
+KymoCore is enabled. The base API is in `core/kymo_core_endpoint.h`; feature APIs
+are in `features/<feature>/KymoCoreEndpoint<Feature>.h`. Each needs its original module flag
 as well. Plot uses RUNTIME; Param/Watch retain their DECODER dependency. There is
 no automatic feature enabling or aggregate feature configuration. All sources
 must use the same switches; the build audit checks Endpoint consistency too.
@@ -37,10 +40,10 @@ trace with ISR, scheduler and flow events. Invalid profiles stop the build. `KYM
 requested `KYMO_ENABLE_*` values remain intact when `KYMO_ENABLED=0`.
 Scheduler tracing requires ISR tracing, and ISR tracing requires trace.
 
-Use `KymoCore.h` (or `trace/kymo_instrumentation.h`) for trace call sites. With trace disabled, all
+Use `kymo_modules.h` (or `features/trace/kymo_trace_instrumentation.h`) for trace call sites. With trace disabled, all
 `KYMO_TRACE_*` macros become valid no-op statements that discard their
 arguments, including in C99 and in `if/else` statements. With trace enabled,
-the facade includes `trace/kymo_trace.h` and forwards to the trace API.
+the facade includes `features/trace/kymo_trace.h` and forwards to the trace API.
 `KYMO_TRACE_SCOPE` is a C++ RAII scope and is independent of the optional
 `KYMO_ENABLE_CPP` telemetry sender.
 

@@ -10,37 +10,32 @@
 #include "features/kymo_watch.h"
 #include "features/kymo_memory.h"
 #include "features/kymo_trace.h"
+
 /****************************************************************************************************
  * exampleAppInit
  ***************************************************************************************************/
 KymoStatus exampleAppInit(void)
 {
-    KymoEndpointConfig core = exampleCoreConfig();
-    KymoEndpointPlotConfig plot = examplePlotConfig();
-    KymoEndpointParamConfig param = exampleParamConfig();
-    KymoEndpointWatchConfig watch = exampleWatchConfig();
-    KymoEndpointMemoryConfig memory = exampleMemoryConfig();
-    KymoEndpointTraceConfig trace = exampleTraceConfig();
-    KymoStatus status = KymoApp_Init(&core);
+    KymoStatus status = KymoApp_Init(&exampleCoreConfig());
     if (status == KYMO_OK)
     {
-        status = KymoApp_PlotInit(&plot);
+        status = KymoApp_PlotInit(&examplePlotConfig());
     }
     if (status == KYMO_OK)
     {
-        status = KymoApp_ParamInit(&param);
+        status = KymoApp_ParamInit(&exampleParamConfig());
     }
     if (status == KYMO_OK)
     {
-        status = KymoApp_WatchInit(&watch);
+        status = KymoApp_WatchInit(&exampleWatchConfig());
     }
     if (status == KYMO_OK)
     {
-        status = KymoApp_MemoryInit(&memory);
+        status = KymoApp_MemoryInit(&exampleMemoryConfig());
     }
     if (status == KYMO_OK)
     {
-        status = KymoApp_TraceInit(&trace);
+        status = KymoApp_TraceInit(&exampleTraceConfig());
     }
     return status;
 }

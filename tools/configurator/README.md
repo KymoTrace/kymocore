@@ -59,7 +59,7 @@ The generated user header is intended to be selected project-wide using `KYMO_US
 
 If the Make export's include path contains spaces, set `KYMO_SNAPSHOT_DIR` to the snapshot directory before including the export.
 
-An enabled trace profile emits canonical `kymo_trace_metadata.json` and `kymo_trace_dictionary.json` bodies plus a C-compatible `kymo_trace_metadata.h`. Its byte arrays can be passed to `KymoMux_QueueAdmin`; that API appends the CRC32 trailer. The dictionary SHA-256 is included in both metadata and the header. Buffer sizes and core count become compile-time settings in `kymo_user_config.h`, and the admin staging bound is sized for the generated records (up to Core's 8192-byte limit). Scheduler/ISR/core-state completeness stays false unless the project explicitly sets the corresponding `trace.port.*_complete` claim and marks its top-level port capabilities as verified. Port names do not create capability or RAM claims.
+An enabled trace profile emits canonical `kymo_trace_metadata.json` and `kymo_trace_dictionary.json` bodies plus a C-compatible `kymo_trace_metadata.h`. Its byte arrays can be passed to `KymoMux_queueAdmin`; that API appends the CRC32 trailer. The dictionary SHA-256 is included in both metadata and the header. Buffer sizes and core count become compile-time settings in `kymo_user_config.h`, and the admin staging bound is sized for the generated records (up to Core's 8192-byte limit). Scheduler/ISR/core-state completeness stays false unless the project explicitly sets the corresponding `trace.port.*_complete` claim and marks its top-level port capabilities as verified. Port names do not create capability or RAM claims.
 
 ## Extending
 

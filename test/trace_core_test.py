@@ -9,8 +9,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TRACE_SOURCES = ["src/trace/kymo_trace.cpp", "src/trace/kymo_trace_protocol.cpp"]
-MUX_SOURCE = "src/transport/kymo_mux.cpp"
+TRACE_SOURCES = ["src/features/trace/kymo_trace.cpp", "src/features/trace/kymo_trace_protocol.cpp"]
+MUX_SOURCE = "src/communication/kymo_mux.cpp"
 TRACE_FLAGS = ["-DKYMO_ENABLE_TRACE=1", "-DKYMO_ENABLE_TRACE_ISR=1",
                "-DKYMO_ENABLE_TRACE_SCHEDULER=1", "-DKYMO_ENABLE_TRACE_FLOW=1"]
 
@@ -43,7 +43,7 @@ def main():
              TRACE_SOURCES + [MUX_SOURCE]),
             ("crc_table_test", "test/crc_table_test.cpp",
              ["-DKYMO_ENABLE_TRACE=1", "-DKYMO_ENABLE_CRC=1", "-DKYMO_ENABLE_CRC_TABLE=1"],
-             TRACE_SOURCES + ["src/telemetry/kymo_protocol.cpp"]),
+             TRACE_SOURCES + ["src/communication/kymo_protocol.cpp"]),
             ("trace_stack_test", "test/trace_stack_test.cpp",
              ["-DKYMO_ENABLE_TRACE=1", "-DKYMO_ENABLE_TRACE_STACK_POINTER=1"], TRACE_SOURCES),
         ):
@@ -75,7 +75,7 @@ def main():
         vector_binary = temp / "trace_vector_dump"
         vector_command = [args.cxx, "-std=c++11", "-Wall", "-Wextra", "-Werror",
                           "-DKYMO_ENABLE_TRACE=1", "-Isrc",
-                          "test/trace_vector_dump.cpp", "src/trace/kymo_trace_protocol.cpp",
+                          "test/trace_vector_dump.cpp", "src/features/trace/kymo_trace_protocol.cpp",
                           "-o", str(vector_binary)]
         run(vector_command, env)
         encoded = subprocess.run([str(vector_binary)], cwd=ROOT, check=True,

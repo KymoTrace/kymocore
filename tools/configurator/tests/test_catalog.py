@@ -109,7 +109,7 @@ class MigrationTests(unittest.TestCase):
         files = _render(default_project(), "development")
         self.assertIn(b"KYMO_CONFIG_API_VERSION != 2", files["kymo_user_config.h"])
         self.assertIn(b"KYMO_MAX_CHANNELS", files["kymo_user_config.h"])
-        self.assertIn(b"#include <KymoCore.h>", files["kymo_generated_config.h"])
+        self.assertIn(b"#include <kymo_modules.h>", files["kymo_generated_config.h"])
 
 
 class ExtensionTests(unittest.TestCase):

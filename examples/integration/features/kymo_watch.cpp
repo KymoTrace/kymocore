@@ -5,7 +5,7 @@
  */
 #include "kymo_watch.h"
 #include "../detail/kymo_internal.h"
-static KymoEndpointWatch sFeature;
+static KymoCoreEndpointWatch sFeature;
 #include "../demo_values.h"
 #include <string.h>
 static const uint32_t WATCH_GAIN_ADDRESS = 0x20000000u;
@@ -27,24 +27,22 @@ static uint8_t readWatch(void *user, uint32_t address, uint8_t size, uint8_t *ou
     return result;
 }
 
+/** @brief Fixed watch resources, callbacks and feature settings. */
+static const KymoCoreEndpointWatchConfig sWatchConfig = {
+    {RANGES, KYMO_COUNT_OF(RANGES), nullptr, 0u, readWatch, nullptr}, WATCH_CHANNEL, WATCH_CHANNEL};
+
 /****************************************************************************************************
  * exampleWatchConfig
  ***************************************************************************************************/
-KymoEndpointWatchConfig exampleWatchConfig(void)
+const KymoCoreEndpointWatchConfig &exampleWatchConfig(void)
 {
-    KymoEndpointWatchConfig config = {};
-    config.watch.ranges = RANGES;
-    config.watch.range_count = KYMO_COUNT_OF(RANGES);
-    config.watch.read = readWatch;
-    config.first_channel = WATCH_CHANNEL;
-    config.last_channel = WATCH_CHANNEL;
-    return config;
+    return sWatchConfig;
 }
 
 /****************************************************************************************************
  * KymoApp_WatchInit
  ***************************************************************************************************/
-KymoStatus KymoApp_WatchInit(const KymoEndpointWatchConfig *config)
+KymoStatus KymoApp_WatchInit(const KymoCoreEndpointWatchConfig *config)
 {
-    return KymoEndpointWatch_Init(exampleEndpoint(), &sFeature, config);
+    return KymoCoreEndpointWatch_init(exampleEndpoint(), &sFeature, config);
 }

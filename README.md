@@ -1,3 +1,5 @@
+> Development branch: the new [Core interface for all five features and source layout](docs/CORE_ENTRY.md) changes API names and include paths. Start with the [complete Core example](examples/core_features/README.md).
+
 <p align="center">
   <a href="README.md"><img alt="English" src="https://img.shields.io/badge/%F0%9F%8C%90-English-15123A"></a>
   <a href="README.de.md"><img alt="Deutsch" src="https://img.shields.io/badge/%F0%9F%8C%90-Deutsch-A78BFA"></a>
@@ -54,7 +56,7 @@ CLI for versioned project profiles. Generated
 configuration snapshots can be compiled without running Python or installing Qt.
 Compiler definitions override the project header, which overrides library defaults.
 Use `KYMO_ENABLED=0` for production and guard application-owned telemetry resources
-with the effective feature macros. Include `KymoCore.h` (or `trace/kymo_instrumentation.h`) for compile-out
+with the effective feature macros. Include `kymo_modules.h` (or `features/trace/kymo_trace_instrumentation.h`) for compile-out
 instrumentation; unguarded low-level API calls deliberately fail in an off build.
 
 | | |
@@ -62,7 +64,7 @@ instrumentation; unguarded low-level API calls deliberately fail in an off build
 | **Many channels, own rate** | Up to 256 channels, each with its own sampling interval. A round-robin scheduler decides whose turn it is. |
 | **More than one number** | Y, XY or XYZ per data point, optionally with a timestamp and CRC checksum. |
 | **Compact on the wire** | 9–21 bytes per data point, float32, little endian. A fixed, documented [protocol](docs/PROTOCOL.md). |
-| **Never blocks** | Call `Kymo_Init()` once, then `Kymo_Main()` cyclically. Runs without RTOS, heap, exceptions or RTTI. |
+| **Never blocks** | Call `KymoRuntime_init()` once, then `KymoRuntime_main()` cyclically. Runs without RTOS, heap, exceptions or RTTI. |
 | **Any interface** | UART, USB CDC, Wi-Fi/TCP, UDP, MQTT, CAN …: you provide a `write` callback, KymoCore provides the bytes. |
 | **Slow links included** | Partial transfers, backpressure and borrowed DMA buffers are handled cleanly. |
 | **Only what you need** | X, Z, timestamp, CRC, decoder and the C++ API can each be enabled at compile time. The default is minimal. |
@@ -111,7 +113,7 @@ corrupt the same data stream.
 
 ```cpp
 #include <Arduino.h>
-#include <KymoCore.h>
+#include <kymo_modules.h>
 
 static KymoContext context = {};
 static KymoStatus lastStatus = KYMO_BAD_CONFIG;
@@ -163,16 +165,24 @@ static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
 /**
  * setup
  */
+static const KymoConfig runtimeConfig =
+{
+    channels, /* channels */
+    KYMO_COUNT_OF(channels), /* channel_count */
+    readClockMs, /* clock_ms */
+    readSample, /* sample */
+    writeBytes, /* write */
+    nullptr, /* busy */
+    nullptr, /* service */
+    nullptr, /* clock_user */
+    nullptr, /* sample_user */
+    nullptr, /* transport_user */
+};
+
 void setup()
 {
-    KymoConfig config = {};   /* copied by Kymo_Init, may be local */
     Serial.begin(115200);
-    config.channels = channels;                     /* what */
-    config.channel_count = KYMO_COUNT_OF(channels);
-    config.clock_ms = readClockMs;                  /* when */
-    config.sample = readSample;                     /* which values */
-    config.write = writeBytes;                      /* where to */
-    lastStatus = Kymo_Init(&context, &config);
+    lastStatus = KymoRuntime_init(&context, &runtimeConfig);
 }
 
 /**
@@ -181,7 +191,7 @@ void setup()
 void loop()
 {
     if ((lastStatus != KYMO_BAD_CONFIG) && (lastStatus != KYMO_IO_ERROR)) {
-        lastStatus = Kymo_Main(&context);
+        lastStatus = KymoRuntime_main(&context);
     }
 }
 ```
@@ -192,7 +202,7 @@ Close any open serial monitor first. A completely SDK-free, executable example
 is in [examples/basic](examples/basic/README.md).
 
 To plot existing variables without writing a sample callback, bind them with
-`Kymo_SampleBound`: see the [Arduino quickstart](examples/arduino/quickstart/README.md).
+`KymoRuntime_sampleBound`: see the [Arduino quickstart](examples/arduino/quickstart/README.md).
 
 ## Supported platforms
 
