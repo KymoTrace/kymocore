@@ -38,9 +38,9 @@ static const uint16_t kCrc16Table[256] = {
     0x4E55u, 0x5E74u, 0x2E93u, 0x3EB2u, 0x0ED1u, 0x1EF0u};
 #endif
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoTrace_Crc16
- ******************************************************************************/
+ ***************************************************************************************************/
 uint16_t KymoTrace_Crc16(const uint8_t *data, size_t length)
 {
 #if KYMO_ENABLE_CRC_TABLE
@@ -56,9 +56,9 @@ uint16_t KymoTrace_Crc16(const uint8_t *data, size_t length)
     return crc;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoTrace_EncodeEnvelope
- ******************************************************************************/
+ ***************************************************************************************************/
 size_t KymoTrace_EncodeEnvelope(const KymoTraceEnvelopeInfo *info, const uint8_t *payload,
                                 size_t payload_length, uint8_t *output, size_t capacity)
 {
@@ -87,9 +87,9 @@ size_t KymoTrace_EncodeEnvelope(const KymoTraceEnvelopeInfo *info, const uint8_t
     return result;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoTrace_EncodeBatch
- ******************************************************************************/
+ ***************************************************************************************************/
 size_t KymoTrace_EncodeBatch(uint16_t domain, const KymoTraceEvent *events, size_t count,
                              uint8_t *output, size_t capacity)
 {
@@ -120,9 +120,9 @@ size_t KymoTrace_EncodeBatch(uint16_t domain, const KymoTraceEvent *events, size
     return result;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoTrace_EncodeAdminFragment
- ******************************************************************************/
+ ***************************************************************************************************/
 size_t KymoTrace_EncodeAdminFragment(uint8_t kind, uint32_t generation, uint32_t transfer,
                                      uint32_t total, uint32_t offset, const uint8_t *record,
                                      size_t length, uint8_t *output, size_t capacity)

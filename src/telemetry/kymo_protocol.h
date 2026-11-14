@@ -39,7 +39,8 @@ extern "C"
 {
 #endif
 
-/** @name Protocol constants
+/**
+ * @name Protocol constants
  * @{ */
 /**
  * @brief Human-facing major protocol revision.
@@ -283,7 +284,8 @@ extern "C"
         uint32_t timestamp_ms;
     } KymoDataPoint;
 
-/** @name Codec operations
+/**
+ * @name Codec operations
  * @{ */
 #if KYMO_ENABLED && (KYMO_ENABLE_CRC || KYMO_ENABLE_DECODER || defined(DOXYGEN))
     /**

@@ -57,7 +57,9 @@ class KymoStream
         return false;
     }
 
-    /** @brief Virtual destructor for polymorphic adapters. */
+    /**
+     * @brief Virtual destructor for polymorphic adapters.
+     */
     virtual ~KymoStream()
     {
     }
@@ -89,7 +91,9 @@ class KymoSender
      */
     explicit KymoSender(KymoStream &stream, bool enableTimestamp = true);
 
-    /** @brief Non-copyable: the frame buffer may be borrowed by the stream. */
+    /**
+     * @brief Non-copyable: the frame buffer may be borrowed by the stream.
+     */
     KymoSender(const KymoSender &other) = delete;
 
     /**

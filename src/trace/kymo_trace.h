@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Christof Seidel */
 
-/** @file kymo_trace.h
+/**
+ * @file kymo_trace.h
  * @brief Fixed-storage execution trace recorder.
  * @details Hook calls never allocate or transport; the mux (kymo_mux.h) drains the
  * recorder. Concurrent callers require paired critical callbacks that serialize all
@@ -40,7 +41,8 @@ extern "C"
 /** @brief Event flag: ENTER/EXIT arg holds the stack address (KYMO_ENABLE_TRACE_STACK_POINTER). */
 #define KYMO_TRACE_FLAG_STACK_SAMPLE 0x0010u
 
-    /** @brief Recorder clock and synchronization bindings.
+    /**
+     * @brief Recorder clock and synchronization bindings.
      * @details Only clock_ticks is required. When critical callbacks are absent the
      * application serializes every recorder access. Supplied callbacks are not presumed
      * ISR-safe. Start from a zero-initialized object and assign fields by name.
@@ -108,28 +110,32 @@ extern "C"
         uint8_t pop_core;
     } KymoTraceRecorder;
 
-    /** @brief Initialize persistent recorder storage.
+    /**
+     * @brief Initialize persistent recorder storage.
      * @param[out] recorder Caller-owned object to initialize.
      * @param[in] config Required time and context callbacks and synchronization contract.
      * @return KYMO_OK on success; KYMO_BAD_CONFIG on invalid pointers or callback pairing.
      */
     KymoStatus KymoTrace_Init(KymoTraceRecorder *recorder, const KymoTraceConfig *config);
 
-    /** @brief Record a function or scope entry; bounded and allocation-free.
+    /**
+     * @brief Record a function or scope entry; bounded and allocation-free.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Active application context ID.
      * @param[in] symbol_id Registered symbol ID; zero is invalid.
      */
     void KymoTrace_Enter(KymoTraceRecorder *recorder, uint32_t context_id, uint16_t symbol_id);
 
-    /** @brief Record scope exit and validate it against the context stack.
+    /**
+     * @brief Record scope exit and validate it against the context stack.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Active application context ID.
      * @param[in] symbol_id Symbol ID that must match the top scope.
      */
     void KymoTrace_Exit(KymoTraceRecorder *recorder, uint32_t context_id, uint16_t symbol_id);
 
-    /** @brief Record a marker and its value.
+    /**
+     * @brief Record a marker and its value.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Active application context ID.
      * @param[in] marker_id Registered marker symbol ID.
@@ -140,13 +146,15 @@ extern "C"
 
 #if KYMO_EFFECTIVE_TRACE_ISR
 
-    /** @brief Record ISR entry and save interrupted-context identity.
+    /**
+     * @brief Record ISR entry and save interrupted-context identity.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] irq_context Registered ISR context ID.
      */
     void KymoTrace_IsrEnter(KymoTraceRecorder *recorder, uint32_t irq_context);
 
-    /** @brief Record ISR exit and restore the interrupted-context identity.
+    /**
+     * @brief Record ISR exit and restore the interrupted-context identity.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] irq_context Must match the current ISR context ID.
      */
@@ -155,14 +163,16 @@ extern "C"
 
 #if KYMO_EFFECTIVE_TRACE_SCHEDULER
 
-    /** @brief Record an explicit task switch; no scheduler hook is installed.
+    /**
+     * @brief Record an explicit task switch; no scheduler hook is installed.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Outgoing context ID, or zero if unknown/idle.
      * @param[in] task_id Incoming context ID.
      */
     void KymoTrace_Scheduler(KymoTraceRecorder *recorder, uint32_t context_id, uint32_t task_id);
 
-    /** @brief Record task creation.
+    /**
+     * @brief Record task creation.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id New task context ID.
      * @param[in] generation Task generation stored in the event argument.
@@ -170,14 +180,16 @@ extern "C"
     void KymoTrace_TaskCreate(KymoTraceRecorder *recorder, uint32_t context_id,
                               uint32_t generation);
 
-    /** @brief Record task termination.
+    /**
+     * @brief Record task termination.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Terminated task context ID.
      * @param[in] generation Task generation stored in the event argument.
      */
     void KymoTrace_TaskEnd(KymoTraceRecorder *recorder, uint32_t context_id, uint32_t generation);
 
-    /** @brief Record a per-core running-context checkpoint.
+    /**
+     * @brief Record a per-core running-context checkpoint.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Running context ID, or zero when unknown/idle.
      * @param[in] state 0 unknown, 1 running task, or 2 idle.
@@ -189,7 +201,8 @@ extern "C"
 
 #if KYMO_EFFECTIVE_TRACE_FLOW
 
-    /** @brief Record a flow correlation send.
+    /**
+     * @brief Record a flow correlation send.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Sending context ID.
      * @param[in] symbol_id Optional registered operation symbol ID (zero if absent).
@@ -198,7 +211,8 @@ extern "C"
     void KymoTrace_FlowSend(KymoTraceRecorder *recorder, uint32_t context_id, uint16_t symbol_id,
                             uint32_t correlation_id);
 
-    /** @brief Record a flow correlation receive.
+    /**
+     * @brief Record a flow correlation receive.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Receiving context ID.
      * @param[in] symbol_id Optional registered operation symbol ID (zero if absent).
@@ -208,7 +222,8 @@ extern "C"
                                uint32_t correlation_id);
 #endif
 
-    /** @brief Emit a context recovery event when the caller confirms depth is zero.
+    /**
+     * @brief Emit a context recovery event when the caller confirms depth is zero.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context_id Context to recover.
      * @param[in] generation New application-supplied context generation.
@@ -218,7 +233,8 @@ extern "C"
     KymoStatus KymoTrace_ContextReset(KymoTraceRecorder *recorder, uint32_t context_id,
                                       uint32_t generation);
 
-    /** @brief Pop one event in round-robin core order.
+    /**
+     * @brief Pop one event in round-robin core order.
      * @param[in,out] recorder Initialized recorder.
      * @param[out] event Receives the next event if available.
      * @return KYMO_OK if copied; KYMO_IDLE if no event is queued; KYMO_BAD_CONFIG for
@@ -226,7 +242,8 @@ extern "C"
      */
     KymoStatus KymoTrace_Pop(KymoTraceRecorder *recorder, KymoTraceEvent *event);
 
-    /** @brief Read cumulative dropped events for one core under recorder locking.
+    /**
+     * @brief Read cumulative dropped events for one core under recorder locking.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] core_id Core index.
      * @return Cumulative overflow drops, or zero for an invalid core/recorder.
@@ -236,13 +253,15 @@ extern "C"
 #ifdef __cplusplus
 }
 
-/** @brief C++ RAII scope that emits Enter on construction and Exit on destruction.
+/**
+ * @brief C++ RAII scope that emits Enter on construction and Exit on destruction.
  * @details Copy and move operations are disabled to prevent duplicate exits.
  */
 class KymoTraceScope
 {
   public:
-    /** @brief Begin a measured scope.
+    /**
+     * @brief Begin a measured scope.
      * @param[in,out] recorder Initialized recorder.
      * @param[in] context Context ID to associate with the scope.
      * @param[in] symbol Registered symbol ID.
@@ -253,7 +272,9 @@ class KymoTraceScope
         KymoTrace_Enter(m_recorder, m_context, m_symbol);
     }
 
-    /** @brief End the measured scope. */
+    /**
+     * @brief End the measured scope.
+     */
     ~KymoTraceScope()
     {
         KymoTrace_Exit(m_recorder, m_context, m_symbol);

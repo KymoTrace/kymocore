@@ -31,8 +31,10 @@ blockiert Pull Requests ohne diese Bestätigung.
 - C/C++-Dateien in `src/`, `examples/` und `test/` mit der `.clang-format` im
   Wurzelverzeichnis formatieren (geprüft mit clang-format 23.1.1): vier Leerzeichen,
   Allman-Klammern und höchstens 100 Spalten für Code. Include-Reihenfolge und
-  Doxygen-Texte bleiben erhalten; Funktionstrennlinien bleiben einschließlich
-  Einrückung 80 Spalten breit. Formatieren mit
+  Doxygen-Texte bleiben erhalten; in `.cpp`-Dateien erhält jede Funktion einen
+  Trenner aus 100 Sternen mit ihrem Namen, andere Kommentarblöcke beginnen mit `/**`
+  in einer eigenen Zeile; beide folgen der vorigen Funktion nach einer Leerzeile.
+  Formatieren mit
   `clang-format --style=file -i path/to/file.cpp`; nur prüfen mit
   `clang-format --style=file --dry-run --Werror path/to/file.cpp`.
 - Neue Quelldateien beginnen mit der SPDX-Zeile

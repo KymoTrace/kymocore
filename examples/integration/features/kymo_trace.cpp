@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_trace.cpp
+/**
+ * @file kymo_trace.cpp
  * @brief Trace-specific bindings and complete initialization.
  */
 #include "kymo_trace.h"
@@ -13,9 +14,10 @@ static const uint32_t TRACE_CONTEXT_ID = 1u;
 static const uint16_t TRACE_MARKER_ID = 1u;
 static const uint32_t TRACE_RECORD_GENERATION = 1u;
 static const uint32_t TRACE_MARKER_PERIOD_CYCLES = 200u;
-/*******************************************************************************
+
+/****************************************************************************************************
  * exampleTraceConfig
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoEndpointTraceConfig exampleTraceConfig(void)
 {
     KymoEndpointTraceConfig config = {};
@@ -29,16 +31,18 @@ KymoEndpointTraceConfig exampleTraceConfig(void)
     config.generation = TRACE_RECORD_GENERATION;
     return config;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * KymoApp_TraceInit
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoApp_TraceInit(const KymoEndpointTraceConfig *config)
 {
     return KymoEndpointTrace_Init(exampleEndpoint(), &sFeature, config);
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * exampleTraceCycle
- ******************************************************************************/
+ ***************************************************************************************************/
 void exampleTraceCycle(uint32_t cycle)
 {
     if ((KymoEndpointTrace_IsReady(&sFeature) != 0u) &&

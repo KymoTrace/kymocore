@@ -24,13 +24,13 @@ static const float kTwoPi = 6.28318531f;
 static KymoContext sContext = {};
 static const KymoChannel sChannels[] = {{20U, 0U, 0U}, {20U, 1U, 0U}};
 
-/** @brief Read the monotonic millisecond clock.
+/**
+ * @brief Read the monotonic millisecond clock.
  * @param[in] pUser Unused; pass nullptr.
  * @return Milliseconds since boot, wrapping modulo 2^32.
- */
-/*******************************************************************************
+ *
  * readClockMs
- ******************************************************************************/
+ */
 static uint32_t readClockMs(void *pUser)
 {
     uint32_t result = static_cast<uint32_t>(esp_timer_get_time() / 1000);
@@ -38,15 +38,15 @@ static uint32_t readClockMs(void *pUser)
     return result;
 }
 
-/** @brief Supply the test signal of a channel; replace with your measurements.
+/**
+ * @brief Supply the test signal of a channel; replace with your measurements.
  * @param[in] pUser Unused; pass nullptr.
  * @param[in] channelId 0 for the sine, 1 for the sawtooth.
  * @param[out] pSample Destination; null is rejected.
  * @return One for a valid sample, otherwise zero.
- */
-/*******************************************************************************
+ *
  * readSample
- ******************************************************************************/
+ */
 static uint8_t readSample(void *pUser, uint8_t channelId, KymoSample *pSample)
 {
     uint8_t result = 0U;
@@ -67,15 +67,15 @@ static uint8_t readSample(void *pUser, uint8_t channelId, KymoSample *pSample)
     return result;
 }
 
-/** @brief Hand frame bytes to the free UART FIFO without blocking.
+/**
+ * @brief Hand frame bytes to the free UART FIFO without blocking.
  * @param[in] pUser Unused; pass nullptr.
  * @param[in] pBytes Readable frame bytes; null is rejected.
  * @param[in] length Requested byte count.
  * @return Bytes accepted by the FIFO; KymoCore sends the rest later.
- */
-/*******************************************************************************
+ *
  * writeBytes
- ******************************************************************************/
+ */
 static uint8_t writeBytes(void *pUser, const uint8_t *pBytes, uint8_t length)
 {
     uint8_t result = 0U;
@@ -91,12 +91,12 @@ static uint8_t writeBytes(void *pUser, const uint8_t *pBytes, uint8_t length)
     return result;
 }
 
-/** @brief Configure UART0 for 115200 baud, 8N1, without a TX ring buffer.
+/**
+ * @brief Configure UART0 for 115200 baud, 8N1, without a TX ring buffer.
  * @return ESP_OK on success, otherwise the first driver error.
- */
-/*******************************************************************************
+ *
  * initUart
- ******************************************************************************/
+ */
 static esp_err_t initUart()
 {
     uart_config_t uartConfig = {};
@@ -114,13 +114,13 @@ static esp_err_t initUart()
     return result;
 }
 
-/** @brief Stream both channels until the configuration or transport fails.
+/**
+ * @brief Stream both channels until the configuration or transport fails.
  * @details Main is called again while it sends frames; when nothing is due or the
  * FIFO is full, the task sleeps one tick so the idle task can feed the watchdog.
- */
-/*******************************************************************************
+ *
  * app_main
- ******************************************************************************/
+ */
 extern "C" void app_main(void)
 {
     KymoStatus status = KYMO_BAD_CONFIG;

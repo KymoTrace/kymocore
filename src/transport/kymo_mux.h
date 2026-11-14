@@ -162,7 +162,8 @@ extern "C"
      */
     KymoStatus KymoMux_Service(KymoMux *mux);
 
-    /** @brief Service only queued administrative records, holding event/DATA lanes.
+    /**
+     * @brief Service only queued administrative records, holding event/DATA lanes.
      * @details For startup ordering before event batches. Uses the same partial-write
      * and borrowed-buffer contract as Service. Never mix this with a pending non-admin
      * frame: that request is rejected without discarding bytes. No periodic health is

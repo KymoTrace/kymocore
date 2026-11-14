@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_app.cpp
+/**
+ * @file kymo_app.cpp
  * @brief Select the features used by this demonstration; no RX/TX coordination.
  */
 #include "kymo_app.h"
@@ -9,9 +10,9 @@
 #include "features/kymo_watch.h"
 #include "features/kymo_memory.h"
 #include "features/kymo_trace.h"
-/*******************************************************************************
+/****************************************************************************************************
  * exampleAppInit
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus exampleAppInit(void)
 {
     KymoEndpointConfig core = exampleCoreConfig();

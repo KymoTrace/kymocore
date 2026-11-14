@@ -1,21 +1,23 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_watch.cpp
+/**
+ * @file kymo_watch.cpp
  * @brief Restricted Watch reception and shared output scheduling.
  */
 #include "kymo_watch.h"
 #include "../detail/kymo_internal.h"
 #if KYMO_EFFECTIVE_ENDPOINT && KYMO_EFFECTIVE_WATCH
-/*******************************************************************************
+/****************************************************************************************************
  * feedWatch
- ******************************************************************************/
+ ***************************************************************************************************/
 static void feedWatch(void *user, const uint8_t *bytes, size_t length)
 {
     KymoEndpointWatch *feature = static_cast<KymoEndpointWatch *>(user);
     (void)KymoWatch_Feed(&feature->watch, bytes, length);
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * produceWatch
- ******************************************************************************/
+ ***************************************************************************************************/
 static KymoStatus produceWatch(void *user, uint8_t source, uint32_t now, uint8_t draining)
 {
     KymoEndpointWatch *feature = static_cast<KymoEndpointWatch *>(user);
@@ -39,9 +41,10 @@ static KymoStatus produceWatch(void *user, uint8_t source, uint32_t now, uint8_t
     }
     return status;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * KymoEndpointWatch_Init
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoEndpointWatch_Init(KymoEndpoint *endpoint, KymoEndpointWatch *feature,
                                   const KymoEndpointWatchConfig *config)
 {

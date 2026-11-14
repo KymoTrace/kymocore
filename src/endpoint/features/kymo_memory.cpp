@@ -1,22 +1,24 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_memory.cpp
+/**
+ * @file kymo_memory.cpp
  * @brief Memory description/sample sources with a finite stop sequence.
  */
 #include "kymo_memory.h"
 #include "../detail/kymo_internal.h"
 #if KYMO_EFFECTIVE_ENDPOINT && KYMO_EFFECTIVE_MEMORY
-/*******************************************************************************
+/****************************************************************************************************
  * stopMemory
- ******************************************************************************/
+ ***************************************************************************************************/
 static void stopMemory(void *user)
 {
     KymoEndpointMemory *feature = static_cast<KymoEndpointMemory *>(user);
     /* Finish the current description round, but never begin a periodic one. */
     feature->memory.config.info_period_ms = 0u;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * produceMemory
- ******************************************************************************/
+ ***************************************************************************************************/
 static KymoStatus produceMemory(void *user, uint8_t source, uint32_t now, uint8_t draining)
 {
     KymoEndpointMemory *feature = static_cast<KymoEndpointMemory *>(user);
@@ -40,9 +42,10 @@ static KymoStatus produceMemory(void *user, uint8_t source, uint32_t now, uint8_
     }
     return status;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * KymoEndpointMemory_Init
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoEndpointMemory_Init(KymoEndpoint *endpoint, KymoEndpointMemory *feature,
                                    const KymoEndpointMemoryConfig *config)
 {

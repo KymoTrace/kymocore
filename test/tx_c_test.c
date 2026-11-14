@@ -1,23 +1,24 @@
 /* SPDX-License-Identifier: MIT */
-/** @file tx_c_test.c
+/**
+ * @file tx_c_test.c
  * @brief C99 consumer linked against the C++11 transport implementation.
  */
 #include <KymoCore.h>
 #include <assert.h>
 #include <string.h>
 
-/*******************************************************************************
+/**
  * copyBytes
- ******************************************************************************/
+ */
 static size_t copyBytes(void *user, const uint8_t *bytes, size_t length)
 {
     memcpy(user, bytes, length);
     return length;
 }
 
-/*******************************************************************************
+/**
  * main
- ******************************************************************************/
+ */
 int main(void)
 {
     const uint8_t frame[] = {1u, 2u, 3u};

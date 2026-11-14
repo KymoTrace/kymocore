@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_user_config.h
+/**
+ * @file kymo_user_config.h
  * @brief Build settings shared by ALL application and library translation units.
  * @details This reference intentionally enables all five integrated modules.
  * @par Usage Pass KYMO_USER_CONFIG_HEADER=\"kymo_user_config.h\" to the whole build.
@@ -7,7 +8,8 @@
 #ifndef EXAMPLE_KYMO_USER_CONFIG_H
 #define EXAMPLE_KYMO_USER_CONFIG_H
 
-/** @brief Capacity of this application's shared frame storage, in bytes.
+/**
+ * @brief Capacity of this application's shared frame storage, in bytes.
  * @par Usage Size both the application buffer and the native borrow snapshot.
  */
 #define EXAMPLE_TX_CAPACITY 240u

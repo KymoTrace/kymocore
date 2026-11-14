@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_memory.cpp
+/**
+ * @file kymo_memory.cpp
  * @brief Memory-specific bindings and complete initialization.
  */
 #include "kymo_memory.h"
@@ -13,9 +14,10 @@ static const uint16_t MEMORY_SAMPLE_PERIOD_MS = 200u;
 static const uint16_t MEMORY_INFO_PERIOD_MS = 1000u;
 static const KymoMemoryEntry ENTRIES[] = {
     {"demo free", DEMO_MEMORY_TOTAL_BYTES, KYMO_MEMORY_HEAP_FREE, MEMORY_CHANNEL}};
-/*******************************************************************************
+
+/****************************************************************************************************
  * readMemory
- ******************************************************************************/
+ ***************************************************************************************************/
 static uint8_t readMemory(void *user, size_t index, uint32_t *bytes)
 {
     uint8_t result = 0u;
@@ -27,9 +29,10 @@ static uint8_t readMemory(void *user, size_t index, uint32_t *bytes)
     }
     return result;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * exampleMemoryConfig
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoEndpointMemoryConfig exampleMemoryConfig(void)
 {
     KymoEndpointMemoryConfig config = {};
@@ -40,9 +43,10 @@ KymoEndpointMemoryConfig exampleMemoryConfig(void)
     config.read = readMemory;
     return config;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * KymoApp_MemoryInit
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoApp_MemoryInit(const KymoEndpointMemoryConfig *config)
 {
     return KymoEndpointMemory_Init(exampleEndpoint(), &sFeature, config);

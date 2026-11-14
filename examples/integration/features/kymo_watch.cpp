@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_watch.cpp
+/**
+ * @file kymo_watch.cpp
  * @brief Watch-specific bindings and complete initialization.
  */
 #include "kymo_watch.h"
@@ -10,9 +11,10 @@ static KymoEndpointWatch sFeature;
 static const uint32_t WATCH_GAIN_ADDRESS = 0x20000000u;
 static const uint8_t WATCH_CHANNEL = 150u;
 static const KymoWatchRange RANGES[] = {{WATCH_GAIN_ADDRESS, sizeof(exampleGain)}};
-/*******************************************************************************
+
+/****************************************************************************************************
  * readWatch
- ******************************************************************************/
+ ***************************************************************************************************/
 static uint8_t readWatch(void *user, uint32_t address, uint8_t size, uint8_t *output)
 {
     uint8_t result = 0u;
@@ -24,9 +26,10 @@ static uint8_t readWatch(void *user, uint32_t address, uint8_t size, uint8_t *ou
     }
     return result;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * exampleWatchConfig
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoEndpointWatchConfig exampleWatchConfig(void)
 {
     KymoEndpointWatchConfig config = {};
@@ -37,9 +40,10 @@ KymoEndpointWatchConfig exampleWatchConfig(void)
     config.last_channel = WATCH_CHANNEL;
     return config;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * KymoApp_WatchInit
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoApp_WatchInit(const KymoEndpointWatchConfig *config)
 {
     return KymoEndpointWatch_Init(exampleEndpoint(), &sFeature, config);

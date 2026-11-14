@@ -118,9 +118,9 @@ static KymoStatus lastStatus = KYMO_BAD_CONFIG;
 /* period_ms, id, flags: channel 0, every 20 ms, scalar value only. */
 static const KymoChannel channels[] = {{20U, 0U, 0U}};
 
-/*******************************************************************************
+/**
  * readClockMs
- ******************************************************************************/
+ */
 static uint32_t readClockMs(void *user)
 {
     uint32_t result = static_cast<uint32_t>(millis());
@@ -128,9 +128,9 @@ static uint32_t readClockMs(void *user)
     return result;
 }
 
-/*******************************************************************************
+/**
  * readSample
- ******************************************************************************/
+ */
 static uint8_t readSample(void *user, uint8_t id, KymoSample *out)
 {
     uint8_t result = 0U;
@@ -143,9 +143,9 @@ static uint8_t readSample(void *user, uint8_t id, KymoSample *out)
     return result;
 }
 
-/*******************************************************************************
+/**
  * writeBytes
- ******************************************************************************/
+ */
 static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
 {
     uint8_t result = 0U;
@@ -160,9 +160,9 @@ static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
     return result;
 }
 
-/*******************************************************************************
+/**
  * setup
- ******************************************************************************/
+ */
 void setup()
 {
     KymoConfig config = {};   /* copied by Kymo_Init, may be local */
@@ -175,9 +175,9 @@ void setup()
     lastStatus = Kymo_Init(&context, &config);
 }
 
-/*******************************************************************************
+/**
  * loop
- ******************************************************************************/
+ */
 void loop()
 {
     if ((lastStatus != KYMO_BAD_CONFIG) && (lastStatus != KYMO_IO_ERROR)) {

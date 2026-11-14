@@ -26,7 +26,8 @@ extern "C"
 {
 #endif
 
-    /** @name Status codes
+    /**
+     * @name Status codes
      * @{ */
     /**
      * @brief Result of a KymoCore operation.
@@ -116,7 +117,8 @@ extern "C"
 #define KYMO_REJECTED 7u
     /** @} */
 
-    /** @name Shared callback types
+    /**
+     * @name Shared callback types
      * @{ */
     /**
      * @brief Read a monotonic millisecond counter.

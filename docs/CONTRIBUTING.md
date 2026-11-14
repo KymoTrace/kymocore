@@ -32,7 +32,9 @@ If the English and German versions differ, the German version prevails.
 - Format C/C++ files in `src/`, `examples/` and `test/` using the root
   `.clang-format` (verified with clang-format 23.1.1): four spaces, Allman braces
   and a 100-column code limit. Include order and Doxygen text stay unchanged;
-  function separator rules remain 80 columns including indentation.
+  in `.cpp` files each function gets a 100-asterisk separator with its name, other
+  comment blocks open with `/**` on its own line; both follow the previous
+  function after one blank line.
   Run `clang-format --style=file -i path/to/file.cpp`, or check without edits
   using `clang-format --style=file --dry-run --Werror path/to/file.cpp`.
 - New source files start with the SPDX line

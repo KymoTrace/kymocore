@@ -30,13 +30,13 @@ static const KymoChannel channels[] = {
 /** @brief Runtime state: schedule and the single transmit buffer. */
 static KymoContext context = {};
 
-/** @brief 2. WHEN: Arduino millisecond counter.
+/**
+ * @brief 2. WHEN: Arduino millisecond counter.
  * @param[in] user Unused; nullptr.
  * @return Current millis() tick.
- */
-/*******************************************************************************
+ *
  * readClockMs
- ******************************************************************************/
+ */
 static uint32_t readClockMs(void *user)
 {
     uint32_t result = static_cast<uint32_t>(millis());
@@ -44,15 +44,15 @@ static uint32_t readClockMs(void *user)
     return result;
 }
 
-/** @brief 3. VALUE: phase as X, sine/sawtooth as Y and cosine as Z.
+/**
+ * @brief 3. VALUE: phase as X, sine/sawtooth as Y and cosine as Z.
  * @param[in] user Unused; nullptr.
  * @param[in] id Channel ID from the table.
  * @param[out] out Zero-initialized sample to fill.
  * @return One when a sample was written.
- */
-/*******************************************************************************
+ *
  * readSample
- ******************************************************************************/
+ */
 static uint8_t readSample(void *user, uint8_t id, KymoSample *out)
 {
     uint8_t result = 0U;
@@ -75,15 +75,15 @@ static uint8_t readSample(void *user, uint8_t id, KymoSample *out)
     return result;
 }
 
-/** @brief 4. WHERE: copy as many bytes as Serial can take right now.
+/**
+ * @brief 4. WHERE: copy as many bytes as Serial can take right now.
  * @param[in] user Unused; nullptr.
  * @param[in] bytes Frame bytes; not retained.
  * @param[in] length Requested byte count.
  * @return Bytes accepted by Serial, zero when its buffer is full.
- */
-/*******************************************************************************
+ *
  * writeBytes
- ******************************************************************************/
+ */
 static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
 {
     uint8_t result = 0U;
@@ -100,9 +100,9 @@ static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
     return result;
 }
 
-/*******************************************************************************
+/**
  * setup
- ******************************************************************************/
+ */
 void setup()
 {
     KymoConfig config = {}; /* copied by Kymo_Init; may be local */
@@ -115,9 +115,9 @@ void setup()
     (void)Kymo_Init(&context, &config);
 }
 
-/*******************************************************************************
+/**
  * loop
- ******************************************************************************/
+ */
 void loop()
 {
     (void)Kymo_Main(&context);
@@ -125,16 +125,16 @@ void loop()
 
 #else
 
-/*******************************************************************************
+/**
  * setup
- ******************************************************************************/
+ */
 void setup()
 {
 }
 
-/*******************************************************************************
+/**
  * loop
- ******************************************************************************/
+ */
 void loop()
 {
 }

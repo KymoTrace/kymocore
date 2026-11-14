@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_memory.h
+/**
+ * @file kymo_memory.h
  * @brief Memory feature initialization for the shared Endpoint.
  * @details No unrelated feature interfaces. All calls are serialized; tables and
  * callback contexts must outlive the feature. State is caller-owned and must be
@@ -15,10 +16,12 @@
 extern "C"
 {
 #endif
-    /** @brief Memory settings, using the existing module configuration.
+    /**
+     * @brief Memory settings, using the existing module configuration.
      * @par Usage Assign entries, reader and periods; the Endpoint supplies time. */
     typedef KymoMemoryConfig KymoEndpointMemoryConfig;
-    /** @brief Persistent Memory context; exposed solely for static allocation.
+    /**
+     * @brief Persistent Memory context; exposed solely for static allocation.
      * @details Internal fields are read-only; never move/reinitialize a bound feature.
      * @par Usage Declare static storage or zero-initialize before the first Init. */
     typedef struct
@@ -26,7 +29,9 @@ extern "C"
         KymoEndpointFeature binding; /**< Internal ownership and dispatch. */
         KymoMemory memory;           /**< Owned memory sampler. */
     } KymoEndpointMemory;
-    /** @brief Initialize and register Memory completely, without physical I/O.
+
+    /**
+     * @brief Initialize and register Memory completely, without physical I/O.
      * @details One instance per feature type per Endpoint. Failed setup latches a
      * configuration error on a configuring Endpoint; late setup leaves a running
      * Endpoint unchanged. Shared channel reservations reject cross-feature overlap.
@@ -35,7 +40,8 @@ extern "C"
      * @param[in] config Memory settings; NULL is invalid.
      * @return OK, BAD_CONFIG for invalid resources, REJECTED for duplicate/late
      * initialization, or the existing terminal error.
-     * @par Usage Check success before starting the common Main loop. */
+     * @par Usage Check success before starting the common Main loop.
+     */
     KymoStatus KymoEndpointMemory_Init(KymoEndpoint *endpoint, KymoEndpointMemory *feature,
                                        const KymoEndpointMemoryConfig *config);
 #ifdef __cplusplus

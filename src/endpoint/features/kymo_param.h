@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_param.h
+/**
+ * @file kymo_param.h
  * @brief Param feature initialization for the shared Endpoint.
  * @details No unrelated feature interfaces. All calls are serialized; tables and
  * callback contexts must outlive the feature. State is caller-owned and must be
@@ -15,7 +16,8 @@
 extern "C"
 {
 #endif
-    /** @brief Param-only settings; no physical writer or other feature configs.
+    /**
+     * @brief Param-only settings; no physical writer or other feature configs.
      * @details Copied by Init; referenced arrays and contexts remain caller-owned.
      * @par Usage Zero-initialize and assign named fields. */
     typedef struct
@@ -23,7 +25,8 @@ extern "C"
         const KymoParameter *table; /**< Persistent parameter table. */
         size_t count;               /**< Number of parameters. */
     } KymoEndpointParamConfig;
-    /** @brief Persistent Param context; exposed solely for static allocation.
+    /**
+     * @brief Persistent Param context; exposed solely for static allocation.
      * @details Internal fields are read-only; never move/reinitialize a bound feature.
      * @par Usage Declare static storage or zero-initialize before the first Init. */
     typedef struct
@@ -31,7 +34,9 @@ extern "C"
         KymoEndpointFeature binding; /**< Internal ownership and dispatch. */
         KymoParamReceiver receiver;  /**< Owned parameter receiver. */
     } KymoEndpointParam;
-    /** @brief Initialize and register Param completely, without physical I/O.
+
+    /**
+     * @brief Initialize and register Param completely, without physical I/O.
      * @details One instance per feature type per Endpoint. Failed setup latches a
      * configuration error on a configuring Endpoint; late setup leaves a running
      * Endpoint unchanged. Shared channel reservations reject cross-feature overlap.
@@ -40,7 +45,8 @@ extern "C"
      * @param[in] config Param settings; NULL is invalid.
      * @return OK, BAD_CONFIG for invalid resources, REJECTED for duplicate/late
      * initialization, or the existing terminal error.
-     * @par Usage Check success before starting the common Main loop. */
+     * @par Usage Check success before starting the common Main loop.
+     */
     KymoStatus KymoEndpointParam_Init(KymoEndpoint *endpoint, KymoEndpointParam *feature,
                                       const KymoEndpointParamConfig *config);
 #ifdef __cplusplus

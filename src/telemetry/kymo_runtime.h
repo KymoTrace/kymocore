@@ -43,7 +43,8 @@ extern "C"
 {
 #endif
 
-    /** @name Channel and sample data
+    /**
+     * @name Channel and sample data
      * @{ */
     /**
      * @brief Immutable scheduling and wire selection for one channel.
@@ -153,7 +154,8 @@ extern "C"
     } KymoPlotBinding;
     /** @} */
 
-    /** @name Configuration and runtime storage
+    /**
+     * @name Configuration and runtime storage
      * @{ */
     /**
      * @brief Runtime wiring: required fields first, optional fields may stay zero.
@@ -265,9 +267,10 @@ extern "C"
     /** @} */
 
 #if KYMO_EFFECTIVE_RUNTIME || defined(DOXYGEN)
-    /** @name Lifecycle
-     * @{ */
     /**
+     * @name Lifecycle
+     * @{
+     *
      * @brief Validate and copy a configuration and enable a runtime instance.
      *
      * @details Checks required callbacks, channel count, unique IDs, build-supported

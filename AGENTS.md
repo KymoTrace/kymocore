@@ -4,10 +4,13 @@ Applies to active first-party C/C++ code, including examples and native tests.
 
 - Every function has at most one `return`, as its last statement at function
   body scope. Void functions, constructors and destructors may have none.
-- Precede function definitions in C/C++ sources and Arduino sketches with a
-  three-line block-comment separator: an asterisk rule, the function name
-  (class-qualified for out-of-class methods), and a closing asterisk rule.
-  Keep separator rules at 80 columns including indentation; preserve Doxygen.
+- Precede function definitions in `.cpp` files with a three-line separator:
+  `/` plus 100 asterisks, ` * <function name>` (class-qualified for out-of-class
+  methods), and ` ` plus 99 asterisks plus `/`. A description follows as a
+  `/* ... */` comment. In `.c`, `.h` and `.ino` files use one block comment
+  that opens with `/**` alone on its line, ` * ` lines and a closing ` */`.
+  Leave exactly one blank line between the end of a function and the next
+  comment block; preserve Doxygen.
 - Use explicit initialized result/status variables and small helper functions
   for error paths. Do not replace early returns with goto or exit macros.
 - Reuse `src/common/` for bit masks, bitsets, wire byte conversion
@@ -19,7 +22,8 @@ Applies to active first-party C/C++ code, including examples and native tests.
   buffer ownership. Do not claim safety-standard compliance from style checks.
 - Keep optional KymoCore features behind documented platform-independent
   build switches in kymo_config.h, disabled by default (profiles only change
-  defaults). kymo_config.h loads and validates them; explicit compiler
+  defaults). kymo_config.h holds only settings; kymo_config_check.h validates
+  them and derives KYMO_EFFECTIVE_*, kymo_version.h holds the version; explicit compiler
   definitions may override the internal settings. The default core
   is scalar C++11 encoding with a C-compatible API plus Init/Main scheduling and bounded transport handling.
   Compile disabled implementations out, reject unsupported requests explicitly,

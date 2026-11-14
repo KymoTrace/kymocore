@@ -1,21 +1,23 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_param.cpp
+/**
+ * @file kymo_param.cpp
  * @brief Parameter reception and two bounded output sources.
  */
 #include "kymo_param.h"
 #include "../detail/kymo_internal.h"
 #if KYMO_EFFECTIVE_ENDPOINT && KYMO_EFFECTIVE_PARAMETERS
-/*******************************************************************************
+/****************************************************************************************************
  * feedParameters
- ******************************************************************************/
+ ***************************************************************************************************/
 static void feedParameters(void *user, const uint8_t *bytes, size_t length)
 {
     KymoEndpointParam *feature = static_cast<KymoEndpointParam *>(user);
     (void)KymoParam_Feed(&feature->receiver, bytes, length);
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * produceParameters
- ******************************************************************************/
+ ***************************************************************************************************/
 static KymoStatus produceParameters(void *user, uint8_t source, uint32_t now, uint8_t draining)
 {
     KymoEndpointParam *feature = static_cast<KymoEndpointParam *>(user);
@@ -41,9 +43,10 @@ static KymoStatus produceParameters(void *user, uint8_t source, uint32_t now, ui
     }
     return status;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * KymoEndpointParam_Init
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoEndpointParam_Init(KymoEndpoint *endpoint, KymoEndpointParam *feature,
                                   const KymoEndpointParamConfig *config)
 {

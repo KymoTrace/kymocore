@@ -303,7 +303,8 @@ extern "C"
      */
     KymoStatus KymoWatch_Init(KymoWatch *watch, const KymoWatchConfig *config);
 
-    /** @brief Initialize Watch with an inclusive allowed DATA-channel range.
+    /**
+     * @brief Initialize Watch with an inclusive allowed DATA-channel range.
      * @details Requests outside this range receive OUT_OF_RANGE before any slot is
      * activated. Period-zero stop requests remain valid. Ordinary Init permits all
      * channels; this entry point is useful when several features share a stream.

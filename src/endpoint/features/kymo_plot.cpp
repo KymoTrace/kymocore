@@ -1,20 +1,22 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_plot.cpp
+/**
+ * @file kymo_plot.cpp
  * @brief Plot runtime binding to the common sender.
  */
 #include "kymo_plot.h"
 #include "../detail/kymo_internal.h"
 #if KYMO_EFFECTIVE_ENDPOINT && KYMO_EFFECTIVE_RUNTIME
-/*******************************************************************************
+/****************************************************************************************************
  * copyPlot
- ******************************************************************************/
+ ***************************************************************************************************/
 static uint8_t copyPlot(void *user, const uint8_t *bytes, uint8_t length)
 {
     return (uint8_t)kymoEndpointCopy(user, bytes, length);
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * producePlot
- ******************************************************************************/
+ ***************************************************************************************************/
 static KymoStatus producePlot(void *user, uint8_t source, uint32_t now, uint8_t draining)
 {
     KymoEndpointPlot *feature = static_cast<KymoEndpointPlot *>(user);
@@ -27,9 +29,10 @@ static KymoStatus producePlot(void *user, uint8_t source, uint32_t now, uint8_t 
     }
     return status;
 }
-/*******************************************************************************
+
+/****************************************************************************************************
  * KymoEndpointPlot_Init
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoEndpointPlot_Init(KymoEndpoint *endpoint, KymoEndpointPlot *feature,
                                  const KymoEndpointPlotConfig *config)
 {

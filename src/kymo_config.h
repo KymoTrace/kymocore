@@ -4,9 +4,11 @@
 /**
  * @file kymo_config.h
  * @brief The one place for every KymoCore build setting.
- * @details Resolves version, profile, feature switches and resource sizes, validates
- * them and derives the KYMO_EFFECTIVE_* macros that the library and applications
- * test. All settings are preprocessor-only and create no firmware resources.
+ * @details Contains only settings: profile, feature switches and resource sizes.
+ * The version lives in kymo_version.h; kymo_config_check.h validates the settings
+ * and derives the KYMO_EFFECTIVE_* macros that the library and applications test.
+ * Both are included from here, so this stays the only header to include.
+ * All settings are preprocessor-only and create no firmware resources.
  *
  * Precedence: compiler definitions (-D...) override the optional project header
  * named by KYMO_USER_CONFIG_HEADER, which overrides the profile, which overrides
@@ -57,23 +59,7 @@
 #ifndef KYMO_CONFIG_H
 #define KYMO_CONFIG_H
 
-#if defined(__cplusplus) && (__cplusplus < 201103L)
-#error "KymoCore requires C++11 or newer"
-#endif
-
-/* ---- Version ------------------------------------------------------------ */
-
-/** @brief Library major version; incremented for incompatible API changes. */
-#define KYMO_VERSION_MAJOR 7
-/** @brief Library minor version; incremented for compatible additions. */
-#define KYMO_VERSION_MINOR 4
-/** @brief Library patch version; incremented for compatible fixes. */
-#define KYMO_VERSION_PATCH 0
-/** @brief Library version as a string literal. */
-#define KYMO_VERSION_STRING "7.4.0"
-
-/** @brief Version of the compile-time configuration contract consumed by tools. */
-#define KYMO_CONFIG_API_VERSION 2
+#include "kymo_version.h"
 
 #if defined(KYMO_USER_CONFIG_HEADER)
 #include KYMO_USER_CONFIG_HEADER
@@ -98,22 +84,6 @@
 #define KYMO_PROFILE KYMO_PROFILE_MINIMAL
 #endif
 
-/** @brief Internal token-paste step for checking literal settings. */
-#define KYMO_DETAIL_PASTE_I(prefix_, value_) prefix_##value_
-/** @brief Internal expansion wrapper so macro-valued settings are resolved first. */
-#define KYMO_DETAIL_PASTE(prefix_, value_) KYMO_DETAIL_PASTE_I(prefix_, value_)
-/** @brief Internal marker: literal 0 is a valid boolean or profile. */
-#define KYMO_DETAIL_VALID_0 1
-/** @brief Internal marker: literal 1 is a valid boolean or profile. */
-#define KYMO_DETAIL_VALID_1 1
-/** @brief Internal marker: literal 2 is a valid profile. */
-#define KYMO_DETAIL_PROFILE_2 1
-
-#if !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_PROFILE) && \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_PROFILE_, KYMO_PROFILE)
-#error "KYMO_PROFILE must be KYMO_PROFILE_MINIMAL, KYMO_PROFILE_XYZ or KYMO_PROFILE_TRACE"
-#endif
-
 /* ---- 1. Telemetry API --------------------------------------------------- */
 
 /** @brief Enable cooperative Init/Main scheduling; defaults to enabled. */
@@ -126,7 +96,8 @@
 #define KYMO_ENABLE_CPP 0
 #endif
 
-/** @brief Enable the shared single-frame transport sender; disabled by default.
+/**
+ * @brief Enable the shared single-frame transport sender; disabled by default.
  * @details Independent of runtime and trace; storage is supplied by the caller.
  * @par Usage Set KYMO_ENABLE_TX=1 for all application and library sources.
  */
@@ -134,7 +105,8 @@
 #define KYMO_ENABLE_TX 0
 #endif
 
-/** @brief Enable modular Endpoint Init/Main; disabled by default.
+/**
+ * @brief Enable modular Endpoint Init/Main; disabled by default.
  * @details Requires TX; each feature is still selected by its own build switch.
  * @par Usage Define KYMO_ENABLE_ENDPOINT=1 and KYMO_ENABLE_TX=1 project-wide.
  */
@@ -176,7 +148,8 @@
 #define KYMO_ENABLE_CRC 0
 #endif
 
-/** @brief Compute CRC-8 and the trace CRC-16 with lookup tables; defaults to disabled.
+/**
+ * @brief Compute CRC-8 and the trace CRC-16 with lookup tables; defaults to disabled.
  * @details Same results, about eight times fewer operations per byte, for 256 bytes
  * (CRC-8, when CRC or the decoder is compiled in) plus 512 bytes (CRC-16, when trace
  * is compiled in) of flash. Worth it on fast transports such as USB or Wi-Fi.
@@ -204,7 +177,8 @@
 #define KYMO_ENABLE_WATCH 0
 #endif
 
-/** @brief Report stack peaks and heap levels (KymoMemory); defaults to disabled.
+/**
+ * @brief Report stack peaks and heap levels (KymoMemory); defaults to disabled.
  * @details Needs no decoder: the device describes its entries with MEMORY_INFO
  * frames by itself and samples them as ordinary DATA points.
  * @par Usage
@@ -252,7 +226,8 @@
 #endif
 #endif
 
-/** @brief Record the stack pointer in ENTER/EXIT events; requires trace; defaults to disabled.
+/**
+ * @brief Record the stack pointer in ENTER/EXIT events; requires trace; defaults to disabled.
  * @details The value goes into the otherwise unused arg field and sets
  * KYMO_TRACE_FLAG_STACK_SAMPLE, so events keep their 32 bytes. The host derives the
  * stack depth per context from it. Reading costs one compiler builtin per event.
@@ -266,7 +241,8 @@
 
 /* ---- 4. Resource sizes -------------------------------------------------- */
 
-/** @brief Telemetry channels a single KymoContext can schedule (1..256).
+/**
+ * @brief Telemetry channels a single KymoContext can schedule (1..256).
  * @details Each channel costs four bytes of scheduling state inside KymoContext.
  */
 #ifndef KYMO_MAX_CHANNELS
@@ -303,7 +279,8 @@
 #define KYMO_MUX_ADMIN_RECORD_MAX 512u
 #endif
 
-/** @brief Parameters one KymoParamReceiver can hold (1..256).
+/**
+ * @brief Parameters one KymoParamReceiver can hold (1..256).
  * @details Each parameter costs one bit of pending-readback state inside the receiver;
  * the parameter table itself is owned by the application.
  */
@@ -311,21 +288,24 @@
 #define KYMO_MAX_PARAMETERS 8u
 #endif
 
-/** @brief Live-variable slots one KymoWatch can sample (1..64).
+/**
+ * @brief Live-variable slots one KymoWatch can sample (1..64).
  * @details Each slot costs 16 bytes inside KymoWatch.
  */
 #ifndef KYMO_MAX_WATCHES
 #define KYMO_MAX_WATCHES 8u
 #endif
 
-/** @brief Shortest live-variable sampling period in milliseconds (1..60000).
+/**
+ * @brief Shortest live-variable sampling period in milliseconds (1..60000).
  * @details Reported to the host; shorter requests are rejected.
  */
 #ifndef KYMO_WATCH_MIN_PERIOD_MS
 #define KYMO_WATCH_MIN_PERIOD_MS 5u
 #endif
 
-/** @brief Most entries one KymoMemory reports (1..32).
+/**
+ * @brief Most entries one KymoMemory reports (1..32).
  * @details Costs nothing per entry inside KymoCore; the entries live in the application.
  * @par Usage
  * -DKYMO_MAX_MEMORY_ENTRIES=16 for many tasks.
@@ -334,177 +314,7 @@
 #define KYMO_MAX_MEMORY_ENTRIES 8u
 #endif
 
-/* ---- Validation --------------------------------------------------------- */
-
-#if !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLED) ||                \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_RUNTIME) ||         \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_ENDPOINT) ||        \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TX) ||              \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CPP) ||             \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_X) ||               \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_Z) ||               \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TIMESTAMP) ||       \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CRC) ||             \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_CRC_TABLE) ||       \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_DECODER) ||         \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_PARAMETERS) ||      \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_WATCH) ||           \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_MEMORY) ||          \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE) ||           \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_ISR) ||       \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_SCHEDULER) || \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_FLOW) ||      \
-    !KYMO_DETAIL_PASTE(KYMO_DETAIL_VALID_, KYMO_ENABLE_TRACE_STACK_POINTER)
-#error "Kymo feature switches must be 0 or 1 (literal tokens only)"
-#endif
-
-#undef KYMO_DETAIL_PASTE
-#undef KYMO_DETAIL_PASTE_I
-#undef KYMO_DETAIL_VALID_0
-#undef KYMO_DETAIL_VALID_1
-#undef KYMO_DETAIL_PROFILE_2
-
-#if KYMO_ENABLED && KYMO_ENABLE_ENDPOINT && !KYMO_ENABLE_TX
-#error "KYMO_ENABLE_ENDPOINT requires KYMO_ENABLE_TX=1"
-#endif
-
-#if KYMO_ENABLED && KYMO_ENABLE_TRACE_SCHEDULER && !KYMO_ENABLE_TRACE_ISR
-#error "KYMO_ENABLE_TRACE_SCHEDULER requires KYMO_ENABLE_TRACE_ISR=1"
-#endif
-
-#if KYMO_ENABLED && KYMO_ENABLE_TRACE_ISR && !KYMO_ENABLE_TRACE
-#error "KYMO_ENABLE_TRACE_ISR requires KYMO_ENABLE_TRACE=1"
-#endif
-
-#if KYMO_ENABLED && KYMO_ENABLE_TRACE_FLOW && !KYMO_ENABLE_TRACE
-#error "KYMO_ENABLE_TRACE_FLOW requires KYMO_ENABLE_TRACE=1"
-#endif
-
-#if KYMO_ENABLED && KYMO_ENABLE_TRACE_STACK_POINTER && !KYMO_ENABLE_TRACE
-#error "KYMO_ENABLE_TRACE_STACK_POINTER requires KYMO_ENABLE_TRACE=1"
-#endif
-
-#if KYMO_ENABLED && KYMO_ENABLE_PARAMETERS && !KYMO_ENABLE_DECODER
-#error "KYMO_ENABLE_PARAMETERS requires KYMO_ENABLE_DECODER=1"
-#endif
-
-#if KYMO_ENABLED && KYMO_ENABLE_WATCH && !KYMO_ENABLE_DECODER
-#error "KYMO_ENABLE_WATCH requires KYMO_ENABLE_DECODER=1"
-#endif
-
-#if (KYMO_MAX_WATCHES < 1u) || (KYMO_MAX_WATCHES > 64u)
-#error "KYMO_MAX_WATCHES must be from 1 through 64"
-#endif
-
-#if (KYMO_MAX_MEMORY_ENTRIES < 1u) || (KYMO_MAX_MEMORY_ENTRIES > 32u)
-#error "KYMO_MAX_MEMORY_ENTRIES must be from 1 through 32"
-#endif
-
-#if (KYMO_WATCH_MIN_PERIOD_MS < 1u) || (KYMO_WATCH_MIN_PERIOD_MS > 60000u)
-#error "KYMO_WATCH_MIN_PERIOD_MS must be from 1 through 60000"
-#endif
-
-#if (KYMO_MAX_PARAMETERS < 1u) || (KYMO_MAX_PARAMETERS > 256u)
-#error "KYMO_MAX_PARAMETERS must be from 1 through 256"
-#endif
-
-#if (KYMO_MAX_CHANNELS < 1u) || (KYMO_MAX_CHANNELS > 256u)
-#error "KYMO_MAX_CHANNELS must be from 1 through 256"
-#endif
-
-#if (KYMO_TRACE_EVENTS_PER_CORE < 16u) || (KYMO_TRACE_EVENTS_PER_CORE > 4096u) || \
-    ((KYMO_TRACE_EVENTS_PER_CORE & (KYMO_TRACE_EVENTS_PER_CORE - 1u)) != 0u)
-#error "KYMO_TRACE_EVENTS_PER_CORE must be a power of two from 16 through 4096"
-#endif
-
-#if (KYMO_TRACE_CORE_COUNT < 1u) || (KYMO_TRACE_CORE_COUNT > 2u)
-#error "KYMO_TRACE_CORE_COUNT must be 1 or 2"
-#endif
-
-#if (KYMO_TRACE_MAX_CONTEXTS < 1u) || (KYMO_TRACE_MAX_CONTEXTS > 256u)
-#error "KYMO_TRACE_MAX_CONTEXTS must be from 1 through 256"
-#endif
-
-#if (KYMO_TRACE_MAX_DEPTH < 1u) || (KYMO_TRACE_MAX_DEPTH > 255u)
-#error "KYMO_TRACE_MAX_DEPTH must be from 1 through 255"
-#endif
-
-#if (KYMO_TRACE_MAX_ISR_DEPTH < 1u) || (KYMO_TRACE_MAX_ISR_DEPTH > 16u)
-#error "KYMO_TRACE_MAX_ISR_DEPTH must be from 1 through 16"
-#endif
-
-#if (KYMO_MUX_ADMIN_RECORD_MAX < 64u) || (KYMO_MUX_ADMIN_RECORD_MAX > 8192u)
-#error "KYMO_MUX_ADMIN_RECORD_MAX must be from 64 through 8192"
-#endif
-
-/* ---- Effective features ------------------------------------------------- */
-
-/** @brief Effective cooperative runtime gate. */
-#define KYMO_EFFECTIVE_RUNTIME (KYMO_ENABLED && KYMO_ENABLE_RUNTIME)
-
-/** @brief Effective modular Endpoint gate. @par Usage Guard Endpoint callers. */
-#define KYMO_EFFECTIVE_ENDPOINT (KYMO_ENABLED && KYMO_ENABLE_ENDPOINT)
-
-/** @brief Effective shared transport gate, respecting the global switch.
- * @par Usage Gate code that uses KymoTx with this macro.
- */
-#define KYMO_EFFECTIVE_TX (KYMO_ENABLED && KYMO_ENABLE_TX)
-
-/** @brief Effective optional C++ sender gate. */
-#define KYMO_EFFECTIVE_CPP (KYMO_ENABLED && KYMO_ENABLE_CPP)
-
-/** @brief Effective X-coordinate gate. */
-#define KYMO_EFFECTIVE_X (KYMO_ENABLED && KYMO_ENABLE_X)
-
-/** @brief Effective Z-coordinate gate. */
-#define KYMO_EFFECTIVE_Z (KYMO_ENABLED && KYMO_ENABLE_Z)
-
-/** @brief Effective DATA timestamp gate. */
-#define KYMO_EFFECTIVE_TIMESTAMP (KYMO_ENABLED && KYMO_ENABLE_TIMESTAMP)
-
-/** @brief Effective encoder CRC gate. */
-#define KYMO_EFFECTIVE_CRC (KYMO_ENABLED && KYMO_ENABLE_CRC)
-
-/** @brief Effective MCU decoder gate. */
-#define KYMO_EFFECTIVE_DECODER (KYMO_ENABLED && KYMO_ENABLE_DECODER)
-
-/** @brief Effective parameter receiver gate (back channel). */
-#define KYMO_EFFECTIVE_PARAMETERS (KYMO_ENABLED && KYMO_ENABLE_PARAMETERS)
-
-/** @brief Effective live-variable gate (back channel, sampling by address). */
-#define KYMO_EFFECTIVE_WATCH (KYMO_ENABLED && KYMO_ENABLE_WATCH)
-
-/** @brief Effective memory telemetry gate. */
-#define KYMO_EFFECTIVE_MEMORY (KYMO_ENABLED && KYMO_ENABLE_MEMORY)
-
-/** @brief Effective trace recorder gate. */
-#define KYMO_EFFECTIVE_TRACE (KYMO_ENABLED && KYMO_ENABLE_TRACE)
-
-/** @brief Effective trace ISR gate. */
-#define KYMO_EFFECTIVE_TRACE_ISR (KYMO_EFFECTIVE_TRACE && KYMO_ENABLE_TRACE_ISR)
-
-/** @brief Effective scheduler trace gate. */
-#define KYMO_EFFECTIVE_TRACE_SCHEDULER (KYMO_EFFECTIVE_TRACE_ISR && KYMO_ENABLE_TRACE_SCHEDULER)
-
-/** @brief Effective flow trace gate. */
-#define KYMO_EFFECTIVE_TRACE_FLOW (KYMO_EFFECTIVE_TRACE && KYMO_ENABLE_TRACE_FLOW)
-
-/** @brief Effective stack-pointer sampling gate. */
-#define KYMO_EFFECTIVE_TRACE_STACK_POINTER (KYMO_EFFECTIVE_TRACE && KYMO_ENABLE_TRACE_STACK_POINTER)
-
-/** @brief Current stack address as uint32_t; override for compilers without the builtin.
- * @details Platform independent by default: the frame address of the recording
- * function sits a constant distance from the caller's stack pointer, which is all
- * a depth comparison needs.
- * @par Usage
- * #define KYMO_TRACE_READ_STACK_POINTER() my_read_sp()
- */
-#if KYMO_EFFECTIVE_TRACE_STACK_POINTER && !defined(KYMO_TRACE_READ_STACK_POINTER)
-#if defined(__GNUC__) || defined(__clang__)
-#define KYMO_TRACE_READ_STACK_POINTER() ((uint32_t)(uintptr_t)__builtin_frame_address(0))
-#else
-#error "KYMO_ENABLE_TRACE_STACK_POINTER needs KYMO_TRACE_READ_STACK_POINTER() on this compiler"
-#endif
-#endif
+/* Validation and the derived KYMO_EFFECTIVE_* gates. */
+#include "kymo_config_check.h"
 
 #endif /* KYMO_CONFIG_H */

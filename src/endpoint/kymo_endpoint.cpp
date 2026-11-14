@@ -1,14 +1,15 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_endpoint.cpp
+/**
+ * @file kymo_endpoint.cpp
  * @brief Serialized feature coordination using the existing KymoTx sender.
  */
 #include "detail/kymo_internal.h"
 #if KYMO_EFFECTIVE_ENDPOINT
 #include "../common/embedded_bits.h"
 
-/*******************************************************************************
+/****************************************************************************************************
  * kymoEndpointFault
- ******************************************************************************/
+ ***************************************************************************************************/
 void kymoEndpointFault(KymoEndpoint *endpoint, KymoStatus status, uint8_t feature)
 {
     if ((endpoint != nullptr) && (endpoint->phase != KYMO_ENDPOINT_UNINITIALIZED) &&
@@ -20,9 +21,9 @@ void kymoEndpointFault(KymoEndpoint *endpoint, KymoStatus status, uint8_t featur
     }
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * kymoEndpointPrepare
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus kymoEndpointPrepare(KymoEndpoint *endpoint, KymoEndpointFeature *binding, uint8_t id,
                                size_t capacity, uint8_t needsClock, uint8_t needsRead)
 {
@@ -75,9 +76,9 @@ KymoStatus kymoEndpointPrepare(KymoEndpoint *endpoint, KymoEndpointFeature *bind
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * kymoEndpointFinish
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus kymoEndpointFinish(KymoEndpoint *endpoint, KymoEndpointFeature *binding,
                               KymoStatus status)
 {
@@ -106,9 +107,9 @@ KymoStatus kymoEndpointFinish(KymoEndpoint *endpoint, KymoEndpointFeature *bindi
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * kymoEndpointReserve
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus kymoEndpointReserve(KymoEndpoint *endpoint, uint8_t channel)
 {
     KymoStatus status = KYMO_BAD_CONFIG;
@@ -120,9 +121,9 @@ KymoStatus kymoEndpointReserve(KymoEndpoint *endpoint, uint8_t channel)
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * kymoEndpointCopy
- ******************************************************************************/
+ ***************************************************************************************************/
 size_t kymoEndpointCopy(void *user, const uint8_t *bytes, size_t length)
 {
     KymoEndpoint *endpoint = static_cast<KymoEndpoint *>(user);
@@ -141,9 +142,9 @@ size_t kymoEndpointCopy(void *user, const uint8_t *bytes, size_t length)
     return accepted;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * kymoEndpointSample
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus kymoEndpointSample(KymoEndpoint *endpoint, KymoStatus status, const KymoDataPoint *point,
                               uint32_t now)
 {
@@ -169,9 +170,9 @@ KymoStatus kymoEndpointSample(KymoEndpoint *endpoint, KymoStatus status, const K
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * buffersOverlap
- ******************************************************************************/
+ ***************************************************************************************************/
 static uint8_t buffersOverlap(const KymoEndpointConfig *config)
 {
     uintptr_t rx = (uintptr_t)config->rx_buffer;
@@ -186,9 +187,9 @@ static uint8_t buffersOverlap(const KymoEndpointConfig *config)
     return overlap;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoEndpoint_Init
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoEndpoint_Init(KymoEndpoint *endpoint, const KymoEndpointConfig *config)
 {
     KymoStatus status = KYMO_BAD_CONFIG;
@@ -213,9 +214,9 @@ KymoStatus KymoEndpoint_Init(KymoEndpoint *endpoint, const KymoEndpointConfig *c
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * receiveBytes
- ******************************************************************************/
+ ***************************************************************************************************/
 static uint8_t receiveBytes(KymoEndpoint *endpoint)
 {
     uint8_t hasReceiver = 0u;
@@ -249,9 +250,9 @@ static uint8_t receiveBytes(KymoEndpoint *endpoint)
     return worked;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * produceFrame
- ******************************************************************************/
+ ***************************************************************************************************/
 static KymoStatus produceFrame(KymoEndpoint *endpoint)
 {
     KymoEndpointFeature *binding = endpoint->features[endpoint->cursor];
@@ -290,9 +291,9 @@ static KymoStatus produceFrame(KymoEndpoint *endpoint)
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoEndpoint_Main
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoEndpoint_Main(KymoEndpoint *endpoint)
 {
     KymoStatus status = KYMO_BAD_CONFIG;
@@ -362,9 +363,9 @@ KymoStatus KymoEndpoint_Main(KymoEndpoint *endpoint)
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoEndpoint_RequestStop
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoEndpoint_RequestStop(KymoEndpoint *endpoint)
 {
     KymoStatus status = KYMO_BAD_CONFIG;

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file main_native.cpp
+/**
+ * @file main_native.cpp
  * @brief File startup, simulated runtime and bounded shutdown of the host demo.
  */
 #include "kymo_app.h"
@@ -17,14 +18,14 @@ static const int CAPTURE_FILE_ARGUMENT = 2;
 static const uint32_t SIMULATION_CYCLES = 5000u;
 static const uint32_t DRAIN_DEADLINE_CYCLES = 10000u;
 
-/** @brief Run the same application cycle that firmware would schedule.
+/**
+ * @brief Run the same application cycle that firmware would schedule.
  * @param[in] argc Must be three.
  * @param[in] argv Program, request file, capture file.
  * @return 0 success, 1 startup/I/O/drain failure, 2 latched TX contract fault.
- */
-/*******************************************************************************
+ *
  * main
- ******************************************************************************/
+ */
 int main(int argc, char **argv)
 {
     int result = EXIT_RUN_FAILURE;

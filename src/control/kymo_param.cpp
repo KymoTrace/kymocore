@@ -8,9 +8,9 @@
 #include "../common/embedded_bytes.h"
 #include <math.h>
 
-/*******************************************************************************
+/****************************************************************************************************
  * text_length
- ******************************************************************************/
+ ***************************************************************************************************/
 /* Bounded strlen: returns limit + 1 for longer text, zero for NULL. */
 static size_t text_length(const char *text, size_t limit)
 {
@@ -25,9 +25,9 @@ static size_t text_length(const char *text, size_t limit)
     return length;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * entry_valid
- ******************************************************************************/
+ ***************************************************************************************************/
 static uint8_t entry_valid(const KymoParameter *entry)
 {
     uint8_t valid =
@@ -38,9 +38,9 @@ static uint8_t entry_valid(const KymoParameter *entry)
     return valid;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * ids_unique
- ******************************************************************************/
+ ***************************************************************************************************/
 static uint8_t ids_unique(const KymoParameter *table, size_t count)
 {
     uint8_t seen[32] = {};
@@ -53,9 +53,9 @@ static uint8_t ids_unique(const KymoParameter *table, size_t count)
     return unique;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoParam_Init
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoParam_Init(KymoParamReceiver *receiver, const KymoParameter *table, size_t count)
 {
     KymoStatus result = KYMO_BAD_CONFIG;
@@ -80,9 +80,9 @@ KymoStatus KymoParam_Init(KymoParamReceiver *receiver, const KymoParameter *tabl
     return result;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * find_index
- ******************************************************************************/
+ ***************************************************************************************************/
 /* Returns count when the ID is not registered. */
 static size_t find_index(const KymoParamReceiver *receiver, uint8_t id)
 {
@@ -97,9 +97,9 @@ static size_t find_index(const KymoParamReceiver *receiver, uint8_t id)
     return found;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * apply_request
- ******************************************************************************/
+ ***************************************************************************************************/
 /* LIST queues every description and a readback of every current value. Operations
  * of the other back-channel modules are ignored; unknown ones count as invalid. */
 static void apply_request(KymoParamReceiver *receiver, const uint8_t *frame, size_t length)
@@ -126,9 +126,9 @@ static void apply_request(KymoParamReceiver *receiver, const uint8_t *frame, siz
     }
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * apply_write
- ******************************************************************************/
+ ***************************************************************************************************/
 /* One validated write: registered ID and a value within the limits. */
 static size_t apply_write(KymoParamReceiver *receiver, uint8_t id, float value)
 {
@@ -156,9 +156,9 @@ static size_t apply_write(KymoParamReceiver *receiver, uint8_t id, float value)
     return applied;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * apply_frame
- ******************************************************************************/
+ ***************************************************************************************************/
 /* A write must be CRC-protected and carry only an ID and a value. */
 static size_t apply_frame(KymoParamReceiver *receiver, const uint8_t *frame, size_t length)
 {
@@ -180,9 +180,9 @@ static size_t apply_frame(KymoParamReceiver *receiver, const uint8_t *frame, siz
     return applied;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoParam_Feed
- ******************************************************************************/
+ ***************************************************************************************************/
 size_t KymoParam_Feed(KymoParamReceiver *receiver, const uint8_t *bytes, size_t length)
 {
     size_t applied = 0u;
@@ -201,9 +201,9 @@ size_t KymoParam_Feed(KymoParamReceiver *receiver, const uint8_t *bytes, size_t 
     return applied;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoParam_FeedCompact
- ******************************************************************************/
+ ***************************************************************************************************/
 size_t KymoParam_FeedCompact(KymoParamReceiver *receiver, const uint8_t *data, size_t length)
 {
     size_t applied = 0u;
@@ -222,9 +222,9 @@ size_t KymoParam_FeedCompact(KymoParamReceiver *receiver, const uint8_t *data, s
     return applied;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoParam_NextReadback
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoParam_NextReadback(KymoParamReceiver *receiver, KymoDataPoint *point)
 {
     KymoStatus result = KYMO_BAD_CONFIG;
@@ -248,9 +248,9 @@ KymoStatus KymoParam_NextReadback(KymoParamReceiver *receiver, KymoDataPoint *po
     return result;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * write_text
- ******************************************************************************/
+ ***************************************************************************************************/
 /* Length byte plus text; text was bounded by KymoParam_Init. */
 static size_t write_text(uint8_t *output, const char *text, size_t limit)
 {
@@ -263,9 +263,9 @@ static size_t write_text(uint8_t *output, const char *text, size_t limit)
     return length + 1u;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoParam_NextDescription
- ******************************************************************************/
+ ***************************************************************************************************/
 size_t KymoParam_NextDescription(KymoParamReceiver *receiver, uint8_t *output, size_t capacity)
 {
     size_t length = 0u;

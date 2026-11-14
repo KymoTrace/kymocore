@@ -15,13 +15,13 @@
 
 /* ------------------------- Arduino adapter ------------------------------- */
 
-/** @brief Arduino millisecond counter.
+/**
+ * @brief Arduino millisecond counter.
  * @param[in] user Unused; nullptr.
  * @return Current millis() tick.
- */
-/*******************************************************************************
+ *
  * readClockMs
- ******************************************************************************/
+ */
 static uint32_t readClockMs(void *user)
 {
     uint32_t result = static_cast<uint32_t>(millis());
@@ -29,17 +29,17 @@ static uint32_t readClockMs(void *user)
     return result;
 }
 
-/** @brief Copy as many bytes as Serial can take right now.
+/**
+ * @brief Copy as many bytes as Serial can take right now.
  * @details Reporting fewer bytes than offered is fine; the runtime resumes
  * the rest on the next Kymo_Main() call without blocking loop().
  * @param[in] user Unused; nullptr.
  * @param[in] bytes Frame bytes; not retained.
  * @param[in] length Requested byte count.
  * @return Bytes accepted by Serial, zero when its buffer is full.
- */
-/*******************************************************************************
+ *
  * writeBytes
- ******************************************************************************/
+ */
 static uint8_t writeBytes(void *user, const uint8_t *bytes, uint8_t length)
 {
     uint8_t result = 0U;
@@ -72,9 +72,9 @@ static KymoPlotBinding binding = {channels, values, KYMO_COUNT_OF(channels)};
 static KymoContext context = {};
 static KymoStatus initStatus = KYMO_BAD_CONFIG;
 
-/*******************************************************************************
+/**
  * setup
- ******************************************************************************/
+ */
 void setup()
 {
     KymoConfig config = {}; /* copied by Kymo_Init; may be local */
@@ -88,9 +88,9 @@ void setup()
     initStatus = Kymo_Init(&context, &config);
 }
 
-/*******************************************************************************
+/**
  * loop
- ******************************************************************************/
+ */
 void loop()
 {
     adc0 = static_cast<float>(analogRead(A0));
@@ -103,16 +103,16 @@ void loop()
 
 #else
 
-/*******************************************************************************
+/**
  * setup
- ******************************************************************************/
+ */
 void setup()
 {
 }
 
-/*******************************************************************************
+/**
  * loop
- ******************************************************************************/
+ */
 void loop()
 {
 }

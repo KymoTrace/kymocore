@@ -129,7 +129,8 @@ int main(void) { return 0; }
         fake = temp / "fake"
         fake.mkdir()
         (fake / "trace").mkdir()
-        shutil.copy2(ROOT / "src" / "kymo_config.h", fake / "kymo_config.h")
+        for name in ("kymo_config.h", "kymo_version.h", "kymo_config_check.h"):
+            shutil.copy2(ROOT / "src" / name, fake / name)
         shutil.copy2(ROOT / "src" / "trace" / "kymo_instrumentation.h",
                      fake / "trace" / "kymo_instrumentation.h")
         (fake / "trace" / "kymo_trace.h").write_text(r'''#ifndef TEST_KYMO_TRACE_H

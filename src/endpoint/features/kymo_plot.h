@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_plot.h
+/**
+ * @file kymo_plot.h
  * @brief Plot feature initialization for the shared Endpoint.
  * @details No unrelated feature interfaces. All calls are serialized; tables and
  * callback contexts must outlive the feature. State is caller-owned and must be
@@ -15,7 +16,8 @@
 extern "C"
 {
 #endif
-    /** @brief Plot-only settings; no physical writer or other feature configs.
+    /**
+     * @brief Plot-only settings; no physical writer or other feature configs.
      * @details Copied by Init; referenced arrays and contexts remain caller-owned.
      * @par Usage Zero-initialize and assign named fields. */
     typedef struct
@@ -25,7 +27,8 @@ extern "C"
         KymoSampleFn sample;         /**< Required sample reader. */
         void *sample_user;           /**< Sample reader context. */
     } KymoEndpointPlotConfig;
-    /** @brief Persistent Plot context; exposed solely for static allocation.
+    /**
+     * @brief Persistent Plot context; exposed solely for static allocation.
      * @details Internal fields are read-only; never move/reinitialize a bound feature.
      * @par Usage Declare static storage or zero-initialize before the first Init. */
     typedef struct
@@ -33,7 +36,9 @@ extern "C"
         KymoEndpointFeature binding; /**< Internal ownership and dispatch. */
         KymoContext runtime;         /**< Owned telemetry runtime. */
     } KymoEndpointPlot;
-    /** @brief Initialize and register Plot completely, without physical I/O.
+
+    /**
+     * @brief Initialize and register Plot completely, without physical I/O.
      * @details One instance per feature type per Endpoint. Failed setup latches a
      * configuration error on a configuring Endpoint; late setup leaves a running
      * Endpoint unchanged. Shared channel reservations reject cross-feature overlap.
@@ -44,7 +49,8 @@ extern "C"
      * @param[in] config Plot settings; NULL is invalid.
      * @return OK, BAD_CONFIG for invalid resources, REJECTED for duplicate/late
      * initialization, or the existing terminal error.
-     * @par Usage Check success before starting the common Main loop. */
+     * @par Usage Check success before starting the common Main loop.
+     */
     KymoStatus KymoEndpointPlot_Init(KymoEndpoint *endpoint, KymoEndpointPlot *feature,
                                      const KymoEndpointPlotConfig *config);
 #ifdef __cplusplus

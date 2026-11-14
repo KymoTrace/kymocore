@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_feature.h
+/**
+ * @file kymo_feature.h
  * @brief Storage declarations shared by Endpoint feature contexts.
  * @details Internal fields are exposed for static allocation, not registration.
  * @par Usage Include a public feature header; never fill this structure manually.
@@ -12,10 +13,12 @@
 extern "C"
 {
 #endif
-    /** @brief Forward declaration of the shared coordinator.
+    /**
+     * @brief Forward declaration of the shared coordinator.
      * @par Usage Pass its address to a feature Init. */
     typedef struct KymoEndpoint KymoEndpoint;
-    /** @brief Internal feature binding; zero-initialize with its owning feature.
+    /**
+     * @brief Internal feature binding; zero-initialize with its owning feature.
      * @details All fields belong to the library after a successful feature Init.
      * @par Usage Do not modify, copy or move a bound feature. */
     typedef struct KymoEndpointFeature

@@ -18,13 +18,13 @@ static KymoContext sContext = {};
 /* period_ms, id, flags: channel 7, every 20 ms, scalar value only. */
 static const KymoChannel sChannels[] = {{20U, 7U, 0U}};
 
-/** @brief Read the simulated monotonic clock.
+/**
+ * @brief Read the simulated monotonic clock.
  * @param[in] pUser Unused; pass nullptr.
  * @return Simulated milliseconds since program start.
- */
-/*******************************************************************************
+ *
  * readClockMs
- ******************************************************************************/
+ */
 static uint32_t readClockMs(void *pUser)
 {
     uint32_t result = sTickMs;
@@ -32,15 +32,15 @@ static uint32_t readClockMs(void *pUser)
     return result;
 }
 
-/** @brief Supply a scalar value for channel seven.
+/**
+ * @brief Supply a scalar value for channel seven.
  * @param[in] pUser Unused; pass nullptr.
  * @param[in] channelId Configured channel identifier.
  * @param[out] pSample Destination; null is rejected.
  * @return One for a valid sample, otherwise zero.
- */
-/*******************************************************************************
+ *
  * readSample
- ******************************************************************************/
+ */
 static uint8_t readSample(void *pUser, uint8_t channelId, KymoSample *pSample)
 {
     uint8_t result = 0U;
@@ -53,16 +53,16 @@ static uint8_t readSample(void *pUser, uint8_t channelId, KymoSample *pSample)
     return result;
 }
 
-/** @brief Copy a complete frame into application-owned capture storage.
+/**
+ * @brief Copy a complete frame into application-owned capture storage.
  * @details The pointer is never retained; no busy callback is necessary.
  * @param[in] pUser Unused; pass nullptr.
  * @param[in] pBytes Readable frame bytes; null is rejected.
  * @param[in] length Requested bytes; must fit the capture buffer.
  * @return Number of bytes copied, or zero if rejected.
- */
-/*******************************************************************************
+ *
  * writeFrame
- ******************************************************************************/
+ */
 static uint8_t writeFrame(void *pUser, const uint8_t *pBytes, uint8_t length)
 {
     uint8_t result = 0U;
@@ -79,12 +79,12 @@ static uint8_t writeFrame(void *pUser, const uint8_t *pBytes, uint8_t length)
     return result;
 }
 
-/** @brief Run ten bounded sampling steps and check a captured scalar frame.
+/**
+ * @brief Run ten bounded sampling steps and check a captured scalar frame.
  * @return Zero on success, one on initialization, scheduling or framing failure.
- */
-/*******************************************************************************
+ *
  * main
- ******************************************************************************/
+ */
 int main()
 {
     int result = 0;
@@ -115,9 +115,9 @@ int main()
 
 #else
 
-/*******************************************************************************
+/****************************************************************************************************
  * main
- ******************************************************************************/
+ ***************************************************************************************************/
 int main()
 {
     int result = 0;

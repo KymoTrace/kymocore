@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file endpoint_c_test.c
+/**
+ * @file endpoint_c_test.c
  * @brief C99 consumer of independent base and Plot headers.
  */
 #include <endpoint/kymo_endpoint.h>
@@ -8,17 +9,19 @@
 static size_t writes;
 static uint8_t storage[KYMO_FRAME_MAX_SIZE];
 static const KymoChannel channels[] = {{0u, 7u, 0u}};
-/*******************************************************************************
+
+/**
  * clockMs
- ******************************************************************************/
+ */
 static uint32_t clockMs(void *user)
 {
     (void)user;
     return 1u;
 }
-/*******************************************************************************
+
+/**
  * sample
- ******************************************************************************/
+ */
 static uint8_t sample(void *user, uint8_t id, KymoSample *output)
 {
     (void)user;
@@ -26,9 +29,10 @@ static uint8_t sample(void *user, uint8_t id, KymoSample *output)
     output->value = 1.0f;
     return 1u;
 }
-/*******************************************************************************
+
+/**
  * writeBytes
- ******************************************************************************/
+ */
 static size_t writeBytes(void *user, const uint8_t *bytes, size_t length)
 {
     (void)user;
@@ -36,9 +40,10 @@ static size_t writeBytes(void *user, const uint8_t *bytes, size_t length)
     ++writes;
     return length;
 }
-/*******************************************************************************
+
+/**
  * main
- ******************************************************************************/
+ */
 int main(void)
 {
     KymoEndpoint endpoint = {0};

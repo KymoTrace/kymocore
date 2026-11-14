@@ -167,7 +167,7 @@ The default firmware build supports scalar Y only. Enable `KYMO_ENABLE_X`,
 be removed with `KYMO_ENABLE_RUNTIME=0`. MCU decoding is opt-in through
 `KYMO_ENABLE_DECODER=1`; it rejects layouts disabled in that firmware build.
 The wire layout and the desktop receiver's supported formats are unchanged.
-All settings and profiles live in `src/kymo_config.h`, which also validates them.
+All settings and profiles live in `src/kymo_config.h`; `src/kymo_config_check.h` validates them.
 Compiler definitions may override the header.
 
 KymoCore provides a portable C++11 cyclic API. The v6.1 NO_CRC extension keeps

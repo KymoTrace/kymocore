@@ -9,7 +9,9 @@
  *
  * | Folder / header                  | Module                         | Enabled by            |
  * |----------------------------------|--------------------------------|-----------------------|
- * | kymo_config.h                    | Version, switches, sizes       | always                |
+ * | kymo_config.h                    | Profile, switches, sizes       | always                |
+ * | kymo_version.h                   | Library version                | always                |
+ * | kymo_config_check.h              | Validation, KYMO_EFFECTIVE_*   | always (internal)     |
  * | kymo_types.h                     | KymoStatus, shared callbacks   | always                |
  * | telemetry/kymo_protocol.h        | DATA frame codec               | always                |
  * | telemetry/kymo_runtime.h         | Kymo_Init / Kymo_Main          | KYMO_ENABLE_RUNTIME=1 |

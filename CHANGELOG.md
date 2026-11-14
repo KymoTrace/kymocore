@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Split `kymo_config.h`: it now holds only profile, switches and sizes. The
+  version moved to `kymo_version.h`, validation and `KYMO_EFFECTIVE_*` to the
+  internal `kymo_config_check.h`. `kymo_config.h` includes both; macros,
+  defaults and error messages are unchanged.
+
 ## 7.4.0 - 2026-11-13
 
 - Add `KymoPlotBinding` and `Kymo_SampleBound`: plot `float` variables through

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_trace_records.h
+/**
+ * @file kymo_trace_records.h
  * @brief Canonical trace descriptions for this fixed native example.
  * @details Static session 1, domain 0, 1000 Hz, context 1, marker 1.
  * Update metadata and dictionary_hash together when changing bindings.

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/** @file kymo_trace.cpp
+/**
+ * @file kymo_trace.cpp
  * @brief Trace startup, bounded output and finite shutdown behind one feature.
  */
 #include "kymo_trace.h"
@@ -12,18 +13,18 @@ enum TraceMetadataStage
     METADATA_COMPLETE
 };
 
-/*******************************************************************************
+/****************************************************************************************************
  * stopTrace
- ******************************************************************************/
+ ***************************************************************************************************/
 static void stopTrace(void *user)
 {
     KymoEndpointTrace *feature = static_cast<KymoEndpointTrace *>(user);
     feature->mux.config.health_period_ticks = 0u;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * produceMetadata
- ******************************************************************************/
+ ***************************************************************************************************/
 static KymoStatus produceMetadata(KymoEndpointTrace *feature, uint8_t draining)
 {
     KymoStatus status = KYMO_OK;
@@ -60,9 +61,9 @@ static KymoStatus produceMetadata(KymoEndpointTrace *feature, uint8_t draining)
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * produceTrace
- ******************************************************************************/
+ ***************************************************************************************************/
 static KymoStatus produceTrace(void *user, uint8_t source, uint32_t now, uint8_t draining)
 {
     KymoEndpointTrace *feature = static_cast<KymoEndpointTrace *>(user);
@@ -107,9 +108,9 @@ static KymoStatus produceTrace(void *user, uint8_t source, uint32_t now, uint8_t
     return status;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoEndpointTrace_Init
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoStatus KymoEndpointTrace_Init(KymoEndpoint *endpoint, KymoEndpointTrace *feature,
                                   const KymoEndpointTraceConfig *config)
 {
@@ -145,9 +146,9 @@ KymoStatus KymoEndpointTrace_Init(KymoEndpoint *endpoint, KymoEndpointTrace *fea
     return kymoEndpointFinish(endpoint, binding, status);
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoEndpointTrace_Recorder
- ******************************************************************************/
+ ***************************************************************************************************/
 KymoTraceRecorder *KymoEndpointTrace_Recorder(KymoEndpointTrace *feature)
 {
     KymoTraceRecorder *recorder = nullptr;
@@ -160,9 +161,9 @@ KymoTraceRecorder *KymoEndpointTrace_Recorder(KymoEndpointTrace *feature)
     return recorder;
 }
 
-/*******************************************************************************
+/****************************************************************************************************
  * KymoEndpointTrace_IsReady
- ******************************************************************************/
+ ***************************************************************************************************/
 uint8_t KymoEndpointTrace_IsReady(const KymoEndpointTrace *feature)
 {
     uint8_t ready = 0u;
