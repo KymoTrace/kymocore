@@ -77,7 +77,7 @@ class StartPage(QWidget):
         kicker.setObjectName("startKicker")
         title = QLabel(tr("What should KymoCore do in your firmware?"))
         title.setObjectName("startTitle")
-        intro = QLabel(tr("Creates the build configuration for KymoCore 7 (configuration API "
+        intro = QLabel(tr("Creates the build configuration for KymoCore 8 (configuration API "
                           "{version}): which features are compiled in, which channels are "
                           "sent and which of your functions connect KymoCore to the hardware.",
                           version=CORE_CONFIG_API_VERSION))

@@ -4,6 +4,7 @@
 
 | Topic / Thema | Document / Dokument |
 |---|---|
+| Core entry and migration / Core-Einstieg und Migration | [Public Core and features](CORE_ENTRY.md) |
 | Integration and API / Integration und API | [English](GUIDE.md) · [Deutsch](GUIDE.de.md) |
 | Modular Init/Main / Modulare Integration | [Endpoint and feature modules](ENDPOINT.md) |
 | DATA, parameters, live variables and memory / Daten und Rückkanal | [Protocol](PROTOCOL.md) |
@@ -19,12 +20,12 @@
 
 ## Documentation scope / Geltungsbereich
 
-The guides describe KymoCore **7.3.0**, including the optional Endpoint and
+The guides describe KymoCore **8.0.0**, including the optional Endpoint and
 separate feature modules. Use the documentation shipped with the version you
 integrate. A local version bump or package build does not publish that version;
 the release steps are documented in [PUBLISHING.md](PUBLISHING.md).
 
-Die Anleitungen beschreiben KymoCore **7.3.0**, einschließlich Endpoint und
+Die Anleitungen beschreiben KymoCore **8.0.0**, einschließlich Endpoint und
 getrennter Feature-Module. Für eine andere Version gilt deren mitgelieferte
 Dokumentation. Versionsanhebung und Paketbau veröffentlichen noch nichts;
 der Ablauf steht in [PUBLISHING.md](PUBLISHING.md).

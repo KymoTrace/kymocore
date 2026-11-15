@@ -13,16 +13,16 @@
 #define KYMO_VERSION_H
 
 /** @brief Library major version; incremented for incompatible API changes. */
-#define KYMO_VERSION_MAJOR 7
+#define KYMO_VERSION_MAJOR 8
 
 /** @brief Library minor version; incremented for compatible additions. */
-#define KYMO_VERSION_MINOR 4
+#define KYMO_VERSION_MINOR 0
 
 /** @brief Library patch version; incremented for compatible fixes. */
 #define KYMO_VERSION_PATCH 0
 
 /** @brief Library version as a string literal. */
-#define KYMO_VERSION_STRING "7.4.0"
+#define KYMO_VERSION_STRING "8.0.0"
 
 /** @brief Version of the compile-time configuration contract consumed by tools. */
 #define KYMO_CONFIG_API_VERSION 2

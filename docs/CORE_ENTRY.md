@@ -1,9 +1,9 @@
 # Public Core and feature interfaces
 
-This development branch introduces a small default-Core interface and reorganizes
-all library sources. It is an **API-breaking development branch**, not a release update:
-include paths and C function names have changed. The branch keeps the existing
-module behavior and explicit-instance integration, using the new names.
+KymoCore 8.0.0 introduces a small default-Core interface and reorganizes all
+library sources. This is an **API-breaking major release**: include paths and C
+function names have changed. Existing module behavior and explicit-instance
+integration remain available under the new names. Wire protocols are unchanged.
 
 ## Start here
 

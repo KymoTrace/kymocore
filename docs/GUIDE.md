@@ -5,7 +5,7 @@
 This guide explains setup, data path and protocol. The technical API reference
 at the end describes the detailed contracts.
 
-This checkout also documents unreleased 7.3 features; see the
+For the KymoCore 8.0.0 public entry points, see [Core and features](CORE_ENTRY.md) and the
 [documentation scope](README.md#documentation-scope--geltungsbereich).
 
 ## Architecture and data path

@@ -1,4 +1,4 @@
-> Entwicklungsbranch: Die neue [Core-Schnittstelle für alle fünf Features und Ordnerstruktur](docs/CORE_ENTRY.md) ändert API-Namen und Include-Pfade. Einstieg: [vollständiges Core-Beispiel](examples/core_features/README.md).
+> KymoCore 8.0.0: Die neue [Core-Schnittstelle für alle fünf Features und Ordnerstruktur](docs/CORE_ENTRY.md) ändert API-Namen und Include-Pfade. Einstieg: [vollständiges Core-Beispiel](examples/core_features/README.md).
 
 <p align="center">
   <a href="README.md"><img alt="English" src="https://img.shields.io/badge/%F0%9F%8C%90-English-A78BFA"></a>
@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 7.3.0" src="https://img.shields.io/badge/version-7.3.0-7C5CFF">
+  <img alt="Version 8.0.0" src="https://img.shields.io/badge/version-8.0.0-7C5CFF">
   <img alt="Lizenz MIT" src="https://img.shields.io/badge/Lizenz-MIT-15123A">
   <img alt="C++11 mit C-API" src="https://img.shields.io/badge/C%2B%2B11-C--API-A78BFA">
   <img alt="Plattformen" src="https://img.shields.io/badge/Arduino%20%C2%B7%20ESP32%20%C2%B7%20STM32-PlatformIO-FDE047">
@@ -101,7 +101,7 @@ In der `platformio.ini` deines Projekts eintragen:
 
 ```ini
 lib_deps =
-    codename666/KymoCore @ 7.3.0
+    codename666/KymoCore @ 8.0.0
 ```
 
 ### Vollständiges Beispiel für Arduino und ESP32

@@ -72,8 +72,8 @@ def render_watch_source(settings: dict[str, Any]) -> str:
               f"    static KymoWatchRange ranges[{max(1, len(ranges))}u];",
               "    const uint8_t *id = nullptr;", "    size_t id_length = 0u;"]
     for index, (start, end) in enumerate(ranges):
-        lines += [f"    ranges[{index}].start = (uint32_t)(uintptr_t)&{start};",
-                  f"    ranges[{index}].length = (uint32_t)((uintptr_t)&{end} - (uintptr_t)&{start});"]
+        lines += [f"    ranges[{index}].startAddress = (uint32_t)(uintptr_t)&{start};",
+                  f"    ranges[{index}].sizeBytes = (uint32_t)((uintptr_t)&{end} - (uintptr_t)&{start});"]
     if build_id:
         lines.append(f"    id_length = {build_id}(&id);")
     lines += [f"    const KymoWatchConfig config = {{ ranges, {len(ranges)}u, id, id_length, nullptr, nullptr }};",

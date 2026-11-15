@@ -5,7 +5,8 @@
 Diese Anleitung erklärt Einrichtung, Datenweg und Protokoll auf Deutsch. Die
 anschließende API-Referenz beschreibt die technischen Verträge.
 
-Dieser Arbeitsstand dokumentiert auch unveröffentlichte 7.3-Features; siehe
+Die öffentlichen Einstiegspunkte von KymoCore 8.0.0 stehen unter
+[Core und Features](CORE_ENTRY.md); siehe auch den
 [Geltungsbereich](README.md#documentation-scope--geltungsbereich).
 
 ## Architektur und Datenweg

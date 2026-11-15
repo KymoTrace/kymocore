@@ -5,8 +5,7 @@ senders and KymoStudio. The primary format is compact binary. KymoStudio still
 accepts the v5 JSON format so existing firmware does not need to be upgraded
 immediately.
 
-Live-variable and memory operations described for 7.3 belong to the unreleased
-development version; see the [documentation scope](README.md#documentation-scope--geltungsbereich).
+KymoCore 8.0.0 retains the DATA, live-variable and memory wire formats; see the [documentation scope](README.md#documentation-scope--geltungsbereich).
 
 Receiver project: [KymoStudio](https://kymotrace.de/#download).
 See the [integration guide](GUIDE.md) for setup and transport ownership.

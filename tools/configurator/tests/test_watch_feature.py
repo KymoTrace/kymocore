@@ -55,7 +55,7 @@ class WatchGenerationTest(unittest.TestCase):
         self.assertEqual(codes(project) & {"watch.no_range", "watch.identifier", "watch.range"}, set())
         files = _render(project, "development")
         source = files["kymo_generated_watch.cpp"].decode()
-        self.assertIn("ranges[1].start = (uint32_t)(uintptr_t)&_ext_ram_start;", source)
+        self.assertIn("ranges[1].startAddress = (uint32_t)(uintptr_t)&_ext_ram_start;", source)
         self.assertIn("id_length = kymo_port_build_id(&id);", source)
         self.assertIn(b"#define KYMO_WATCH_MIN_PERIOD_MS 10u", files["kymo_user_config.h"])
 

@@ -49,9 +49,9 @@ DE: dict[str, str] = {
         "umgestellt. Speichere es, um die Umstellung zu behalten.",
 
     # --- start page ---------------------------------------------------------------
-    "Creates the build configuration for KymoCore 7 (configuration API {version}): which features are "
+    "Creates the build configuration for KymoCore 8 (configuration API {version}): which features are "
     "compiled in, which channels are sent and which of your functions connect KymoCore to the hardware.":
-        "Erstellt die Build-Konfiguration für KymoCore 7 (Konfigurations-API {version}): welche Funktionen "
+        "Erstellt die Build-Konfiguration für KymoCore 8 (Konfigurations-API {version}): welche Funktionen "
         "einkompiliert werden, welche Kanäle gesendet werden und welche deiner Funktionen KymoCore mit der "
         "Hardware verbinden.",
     "Guided setup": "Geführte Einrichtung",
@@ -633,8 +633,8 @@ DE: dict[str, str] = {
     "ID must be from 1 to {maximum}": "Die ID muss zwischen 1 und {maximum} liegen",
     "ID {ident} is duplicated": "Die ID {ident} ist doppelt vergeben",
     "Kind must be one of: {choices}": "Die Art muss eine dieser sein: {choices}",
-    "KymoCore 7.0 requires configuration API version {api}":
-        "KymoCore 7.0 braucht die Konfigurations-API-Version {api}",
+    "KymoCore requires configuration API version {api}":
+        "KymoCore braucht die Konfigurations-API-Version {api}",
     "Name must be a valid identifier": "Der Name muss ein gültiger Bezeichner sein",
     "Name must be at most 128 UTF-8 bytes": "Der Name darf höchstens 128 UTF-8-Bytes lang sein",
     "Name {name!r} is duplicated": "Der Name {name!r} ist doppelt vergeben",

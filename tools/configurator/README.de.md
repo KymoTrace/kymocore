@@ -1,6 +1,6 @@
 # KymoCore-Konfigurator
 
-Erstellt die Build-Konfiguration für **KymoCore 7** (Konfigurations-API 2): welche
+Erstellt die Build-Konfiguration für **KymoCore 8** (Konfigurations-API 2): welche
 Features einkompiliert werden, welche Kanäle gesendet werden und welche Funktionen der
 Anwendung KymoCore mit der Hardware verbinden. Der Konfigurator ist ein optionales Entwicklungswerkzeug. Python-Engine und CLI benötigen nur die Standardbibliothek; PySide6 wird ausschließlich für die Widgets-Oberfläche gebraucht. Firmware-Builds verwenden feste erzeugte C/C++-Snapshots und starten weder Python noch Qt.
 

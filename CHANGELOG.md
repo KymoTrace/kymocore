@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased: Core and feature interfaces
+## 8.0.0 - 2026-11-15
 
 - Reorganize sources by feature, Core, communication and binary helpers.
 - Add library-owned Core entry points for all five features; include each feature
@@ -10,9 +10,10 @@
   types, Cbk callback fields and Av array spans.
 - Keep fixed example configurations outside startup functions; standardize
   indentation, Allman braces and spacing before documentation blocks.
-- This is a breaking development prototype; see [migration notes](docs/CORE_ENTRY.md).
-
-## Unreleased
+- Breaking API release: update includes, C function names and configurations using
+  the [migration notes](docs/CORE_ENTRY.md). Existing wire protocols are unchanged.
+- Fix generated Watch linker-symbol ranges to use the renamed public fields;
+  verify the CMake export against the reorganized library.
 
 - Split `kymo_config.h`: it now holds only profile, switches and sizes. The
   version moved to `kymo_version.h`, validation and `KYMO_EFFECTIVE_*` to the

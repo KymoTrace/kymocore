@@ -1,6 +1,6 @@
 # KymoCore Configurator
 
-Creates the build configuration for **KymoCore 7** (configuration API 2): which
+Creates the build configuration for **KymoCore 8** (configuration API 2): which
 features are compiled in, which channels are sent and which application functions
 connect KymoCore to the hardware. The configurator is an optional development tool. Its Python engine and CLI use only the standard library; PySide6 is needed only for the Widgets editor. Firmware builds consume fixed generated C/C++ snapshot files and do not launch Python or Qt.
 
@@ -51,7 +51,7 @@ Diagnostics have stable codes and JSON field paths; `validate --json` emits them
 
 ## Generated files and build exports
 
-Each snapshot contains `kymo_user_config.h`, `kymo_generated_config.h/.cpp`, trace ID/dictionary development files, a manifest with hashes, and GCC, CMake, and PlatformIO export files. PlatformIO uses both `kymo_build_export.py` (pre-build global include/definitions) and `kymo_build_sources.py` (generated source). The C++ configuration follows the KymoCore 7 API: a static `KymoChannel` table and a `KymoConfig` with `channels`, `channel_count`, `clock_ms`, `sample`, `write`, optional `busy`/`service` and user pointer bindings; `KYMO_MAX_CHANNELS` is sized to the channel table. It references callbacks by validated identifier and never owns their implementations. Keep those implementations in a hand-maintained port source file.
+Each snapshot contains `kymo_user_config.h`, `kymo_generated_config.h/.cpp`, trace ID/dictionary development files, a manifest with hashes, and GCC, CMake, and PlatformIO export files. PlatformIO uses both `kymo_build_export.py` (pre-build global include/definitions) and `kymo_build_sources.py` (generated source). The C++ configuration uses the explicit-instance runtime API in KymoCore 8: a static `KymoChannel` table and a `KymoConfig` with `channels`, `channel_count`, `clock_ms`, `sample`, `write`, optional `busy`/`service` and user pointer bindings; `KYMO_MAX_CHANNELS` is sized to the channel table. It references callbacks by validated identifier and never owns their implementations. Keep those implementations in a hand-maintained port source file.
 
 When the optional C++ sender is enabled, `bindings.cpp_stream` names a user-owned `KymoStream &` reference, which may refer to an instance of an application subclass. Do not declare an abstract `KymoStream` object. The generated `kymo_generated_sender` is default-constructed without calling user bindings; after the stream and clock are ready, call `kymo_generated_init_cpp_sender()` before using the sender. With effective timestamps enabled, initialization installs the configured no-argument `uint32_t` clock through `KymoSender::setClock` and samples it once as the start epoch. With timestamps disabled, an omitted `cpp_timestamp_default` defaults to false. An explicit true request while effective timestamps are off is invalid.
 

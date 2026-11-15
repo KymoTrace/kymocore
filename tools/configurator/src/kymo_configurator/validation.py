@@ -89,7 +89,7 @@ def validate(project: dict[str, Any], profile_name: str | None = None) -> list[D
     elif project["schema_version"] == 1: add("schema.version","schema_version","Schema version 1 targets KymoCore 6.x","Run: kymo-configurator migrate <project> --to-schema {schema}",schema=SCHEMA_VERSION)
     elif project["schema_version"] != SCHEMA_VERSION: add("schema.version","schema_version","Unsupported schema version {version}; supported version is {schema}",version=project['schema_version'],schema=SCHEMA_VERSION)
     if not isinstance(project.get("project_name"),str) or not project.get("project_name","").strip(): add("project.name","project_name","Project name must not be empty")
-    if type(project.get("core_config_api_version")) is not int or project.get("core_config_api_version") != CORE_CONFIG_API_VERSION: add("core.api","core_config_api_version","KymoCore 7.0 requires configuration API version {api}",api=CORE_CONFIG_API_VERSION)
+    if type(project.get("core_config_api_version")) is not int or project.get("core_config_api_version") != CORE_CONFIG_API_VERSION: add("core.api","core_config_api_version","KymoCore requires configuration API version {api}",api=CORE_CONFIG_API_VERSION)
     profiles=project.get("profiles")
     if not isinstance(profiles,dict) or not profiles:
         add("profiles.empty","profiles","At least one named profile is required"); profiles={}
